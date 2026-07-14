@@ -14,7 +14,7 @@ name: drift-guard
 
 on:
   push:
-    branches: [main, master]
+    branches: [develop, prod]
   pull_request:
 
 concurrency:
