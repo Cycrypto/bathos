@@ -32,8 +32,12 @@ pub const ARTIFACT_PATH_OUTSIDE_ROOT: &str = "artifact_path_outside_root";
 pub const MD_LINK_BROKEN: &str = "md_link_broken";
 pub const ARTIFACT_SHA256_MISMATCH: &str = "artifact_sha256_mismatch";
 
-pub const RULE_IDS: &[&str] =
-    &[ARTIFACT_PATH_MISSING, ARTIFACT_PATH_OUTSIDE_ROOT, MD_LINK_BROKEN, ARTIFACT_SHA256_MISMATCH];
+pub const RULE_IDS: &[&str] = &[
+    ARTIFACT_PATH_MISSING,
+    ARTIFACT_PATH_OUTSIDE_ROOT,
+    MD_LINK_BROKEN,
+    ARTIFACT_SHA256_MISMATCH,
+];
 
 pub fn run(ctx: &InspectCtx, pv: Option<&ProjectView>) -> GroupResult {
     let mut findings = Vec::new();
@@ -51,7 +55,10 @@ pub fn run(ctx: &InspectCtx, pv: Option<&ProjectView>) -> GroupResult {
 /// (the `".agent-team/<wave>/..."` form — per the `bathos-state::model::Artifact.path`
 /// comment). [Source: state-audit-contract-kr.md §1.2 artifacts[], model.rs Artifact]
 fn project_root(agent_team_path: &Path) -> PathBuf {
-    agent_team_path.parent().map(Path::to_path_buf).unwrap_or_else(|| agent_team_path.to_path_buf())
+    agent_team_path
+        .parent()
+        .map(Path::to_path_buf)
+        .unwrap_or_else(|| agent_team_path.to_path_buf())
 }
 
 /// Returns `false` if `path` (a string taken verbatim from manifest.json) can escape the
@@ -107,7 +114,10 @@ fn check_artifact_paths(pv: &ProjectView, agent_team_path: &Path, findings: &mut
                 ARTIFACT_PATH_MISSING,
                 Severity::Fail,
                 loc,
-                format!("artifacts[{idx}].path='{}' 실파일이 없습니다.", artifact.path),
+                format!(
+                    "artifacts[{idx}].path='{}' 실파일이 없습니다.",
+                    artifact.path
+                ),
                 "경로를 정정하거나 산출물을 재생성하세요.".to_string(),
             ));
             continue; // If the file is missing, sha256 comparison is meaningless.
@@ -150,7 +160,9 @@ fn check_markdown_links(agent_team_path: &Path, findings: &mut Vec<Finding>) {
     let md_files = collect_files_with_ext(agent_team_path, "md");
 
     for file in &md_files {
-        let Ok(content) = std::fs::read_to_string(file) else { continue };
+        let Ok(content) = std::fs::read_to_string(file) else {
+            continue;
+        };
         let display = relative_display(agent_team_path, file);
 
         // Track fenced-code-block (``` / ~~~) state across the whole file — `](`/`)` notation
@@ -234,7 +246,10 @@ fn check_relative_link(
             MD_LINK_BROKEN,
             Severity::Fail,
             format!("{display}:{line_no}"),
-            format!("상대링크 '{target}'이 resolve되지 않습니다({}).", resolved.display()),
+            format!(
+                "상대링크 '{target}'이 resolve되지 않습니다({}).",
+                resolved.display()
+            ),
             "링크 경로를 정정하거나 대상 파일을 생성하세요.".to_string(),
         ));
     }
@@ -283,8 +298,10 @@ fn is_relative_link_target(target: &str) -> bool {
 }
 
 /// Known document/asset extensions (this project's relative-link convention, `.md` being the vast majority).
-const KNOWN_FILE_EXTENSIONS: &[&str] =
-    &["md", "html", "htm", "json", "yaml", "yml", "toml", "txt", "pdf", "png", "jpg", "jpeg", "svg", "css", "js"];
+const KNOWN_FILE_EXTENSIONS: &[&str] = &[
+    "md", "html", "htm", "json", "yaml", "yml", "toml", "txt", "pdf", "png", "jpg", "jpeg", "svg",
+    "css", "js",
+];
 
 /// Decides "whether it looks like an actual file path" (the core false-positive-prevention heuristic).
 ///
@@ -298,7 +315,10 @@ fn looks_like_file_path(path_part: &str) -> bool {
         return false;
     }
     let lower = path_part.to_ascii_lowercase();
-    path_part.contains('/') || KNOWN_FILE_EXTENSIONS.iter().any(|ext| lower.ends_with(&format!(".{ext}")))
+    path_part.contains('/')
+        || KNOWN_FILE_EXTENSIONS
+            .iter()
+            .any(|ext| lower.ends_with(&format!(".{ext}")))
 }
 
 /// The target inside `[[...]]` (the optional `|display-name` alias is discarded).
@@ -336,7 +356,9 @@ fn extract_between(line: &str, open: &str, close: &str) -> Vec<String> {
 /// written too (`name.md`).
 fn wiki_link_resolves(md_files: &[PathBuf], target: &str) -> bool {
     let want = target.trim_end_matches(".md");
-    md_files.iter().any(|p| p.file_stem().and_then(|s| s.to_str()) == Some(want))
+    md_files
+        .iter()
+        .any(|p| p.file_stem().and_then(|s| s.to_str()) == Some(want))
 }
 
 #[cfg(test)]
@@ -345,7 +367,12 @@ mod tests {
     use crate::loader::{ArtifactView, ChainStatus, ManifestForm, ProjectMeta, ProjectStatus};
 
     fn ctx(path: PathBuf) -> InspectCtx {
-        InspectCtx { agent_team_path: path, json: false, verbose: false, strict: false }
+        InspectCtx {
+            agent_team_path: path,
+            json: false,
+            verbose: false,
+            strict: false,
+        }
     }
 
     fn empty_project_view(artifacts: Vec<ArtifactView>) -> ProjectView {
@@ -392,8 +419,10 @@ mod tests {
         }]);
 
         let group = run(&ctx(agent_team.clone()), Some(&pv));
-        assert!(group.findings.iter().any(|f| f.rule_id == ARTIFACT_PATH_MISSING
-            && f.severity == Severity::Fail));
+        assert!(group
+            .findings
+            .iter()
+            .any(|f| f.rule_id == ARTIFACT_PATH_MISSING && f.severity == Severity::Fail));
     }
 
     #[test]
@@ -412,7 +441,10 @@ mod tests {
         }]);
 
         let group = run(&ctx(agent_team), Some(&pv));
-        assert!(!group.findings.iter().any(|f| f.rule_id == ARTIFACT_PATH_MISSING));
+        assert!(!group
+            .findings
+            .iter()
+            .any(|f| f.rule_id == ARTIFACT_PATH_MISSING));
     }
 
     // ── M-1: path-escape defense (absolute path / '..') ─────────────────────
@@ -454,8 +486,14 @@ mod tests {
 
         // An escaped path skips both the existence check and sha256 computation — no other
         // rule_id (especially sha256 mismatch) should appear at all.
-        assert!(!group.findings.iter().any(|f| f.rule_id == ARTIFACT_PATH_MISSING));
-        assert!(!group.findings.iter().any(|f| f.rule_id == ARTIFACT_SHA256_MISMATCH));
+        assert!(!group
+            .findings
+            .iter()
+            .any(|f| f.rule_id == ARTIFACT_PATH_MISSING));
+        assert!(!group
+            .findings
+            .iter()
+            .any(|f| f.rule_id == ARTIFACT_SHA256_MISMATCH));
     }
 
     /// **M-1 repro (`..` parent reference):** even a relative path can escape the project root
@@ -482,7 +520,10 @@ mod tests {
             .findings
             .iter()
             .any(|f| f.rule_id == ARTIFACT_PATH_OUTSIDE_ROOT && f.severity == Severity::Fail));
-        assert!(!group.findings.iter().any(|f| f.rule_id == ARTIFACT_PATH_MISSING));
+        assert!(!group
+            .findings
+            .iter()
+            .any(|f| f.rule_id == ARTIFACT_PATH_MISSING));
     }
 
     /// A normal relative path (no `..`) must diagnose normally as before (no regression).
@@ -502,8 +543,14 @@ mod tests {
         }]);
 
         let group = run(&ctx(agent_team), Some(&pv));
-        assert!(!group.findings.iter().any(|f| f.rule_id == ARTIFACT_PATH_OUTSIDE_ROOT));
-        assert!(!group.findings.iter().any(|f| f.rule_id == ARTIFACT_PATH_MISSING));
+        assert!(!group
+            .findings
+            .iter()
+            .any(|f| f.rule_id == ARTIFACT_PATH_OUTSIDE_ROOT));
+        assert!(!group
+            .findings
+            .iter()
+            .any(|f| f.rule_id == ARTIFACT_PATH_MISSING));
     }
 
     #[test]
@@ -526,14 +573,18 @@ mod tests {
         let pv = empty_project_view(vec![ArtifactView {
             path: ".agent-team/real.md".to_string(),
             owner_role: None,
-            sha256: Some("0000000000000000000000000000000000000000000000000000000000000000".to_string()),
+            sha256: Some(
+                "0000000000000000000000000000000000000000000000000000000000000000".to_string(),
+            ),
             updated: None,
             wave_id: None,
         }]);
 
         let group = run(&ctx(agent_team), Some(&pv));
-        assert!(group.findings.iter().any(|f| f.rule_id == ARTIFACT_SHA256_MISMATCH
-            && f.severity == Severity::Warn));
+        assert!(group
+            .findings
+            .iter()
+            .any(|f| f.rule_id == ARTIFACT_SHA256_MISMATCH && f.severity == Severity::Warn));
         assert_eq!(group.status, Severity::Warn);
     }
 
@@ -604,7 +655,11 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let agent_team = dir.path().join(".agent-team");
         std::fs::create_dir_all(agent_team.join("04-architecture")).unwrap();
-        std::fs::write(agent_team.join("04-architecture").join("target.md"), "# 대상").unwrap();
+        std::fs::write(
+            agent_team.join("04-architecture").join("target.md"),
+            "# 대상",
+        )
+        .unwrap();
         std::fs::write(
             agent_team.join("04-architecture").join("a.md"),
             "코드 `foo()` 설명 뒤 정상 링크 [링크](./target.md)와 \
@@ -616,7 +671,10 @@ mod tests {
         assert!(group.findings.iter().any(|f| f.rule_id == MD_LINK_BROKEN
             && f.severity == Severity::Fail
             && f.message.contains("nope.md")));
-        assert!(!group.findings.iter().any(|f| f.message.contains("target.md")));
+        assert!(!group
+            .findings
+            .iter()
+            .any(|f| f.message.contains("target.md")));
     }
 
     #[test]
@@ -631,8 +689,10 @@ mod tests {
         .unwrap();
 
         let group = run(&ctx(agent_team), None);
-        assert!(group.findings.iter().any(|f| f.rule_id == MD_LINK_BROKEN
-            && f.severity == Severity::Fail));
+        assert!(group
+            .findings
+            .iter()
+            .any(|f| f.rule_id == MD_LINK_BROKEN && f.severity == Severity::Fail));
     }
 
     #[test]
@@ -640,7 +700,11 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let agent_team = dir.path().join(".agent-team");
         std::fs::create_dir_all(agent_team.join("04-architecture")).unwrap();
-        std::fs::write(agent_team.join("04-architecture").join("target.md"), "# 대상").unwrap();
+        std::fs::write(
+            agent_team.join("04-architecture").join("target.md"),
+            "# 대상",
+        )
+        .unwrap();
         std::fs::write(
             agent_team.join("04-architecture").join("a.md"),
             "참고: [링크](./target.md) 입니다.",
@@ -664,7 +728,11 @@ mod tests {
             .iter()
             .find(|f| f.rule_id == MD_LINK_BROKEN)
             .expect("깨진 위키링크 finding 있어야 함");
-        assert_eq!(f.severity, Severity::Warn, "위키링크는 fail이 아니라 warn이어야 함(O-4)");
+        assert_eq!(
+            f.severity,
+            Severity::Warn,
+            "위키링크는 fail이 아니라 warn이어야 함(O-4)"
+        );
         // When only the wikilink is broken, the group status must not be promoted to fail.
         assert_ne!(group.status, Severity::Fail);
     }
@@ -700,7 +768,11 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let agent_team = dir.path().join(".agent-team");
         std::fs::create_dir_all(&agent_team).unwrap();
-        std::fs::write(agent_team.join("a.md"), "참고: [외부](https://example.com/x).").unwrap();
+        std::fs::write(
+            agent_team.join("a.md"),
+            "참고: [외부](https://example.com/x).",
+        )
+        .unwrap();
 
         let group = run(&ctx(agent_team), None);
         assert!(group.findings.is_empty());

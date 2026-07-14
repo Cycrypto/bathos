@@ -64,7 +64,10 @@ pub fn lint_file(file: &Path) -> Result<StoryLint, StoryLoadError> {
     })?;
 
     let display_name = display_name(file);
-    let story_dir = file.parent().map(Path::to_path_buf).unwrap_or_else(|| PathBuf::from("."));
+    let story_dir = file
+        .parent()
+        .map(Path::to_path_buf)
+        .unwrap_or_else(|| PathBuf::from("."));
 
     Ok(lint_content(&content, &display_name, &story_dir))
 }
@@ -114,8 +117,10 @@ pub fn lint_content(content: &str, display_name: &str, story_dir: &Path) -> Stor
 
     // The case where the developer_context section itself is missing (included in missing_sections)
     // is already reported above as story_missing_section, so it is not reported twice.
-    let developer_context_missing_entirely =
-        validation.missing_sections.iter().any(|s| s == "developer_context");
+    let developer_context_missing_entirely = validation
+        .missing_sections
+        .iter()
+        .any(|s| s == "developer_context");
     if validation.developer_context_empty && !developer_context_missing_entirely {
         let line = frontmatter::find_heading_line(content, "developer_context").unwrap_or(1);
         findings.push(Finding::new(
@@ -136,7 +141,11 @@ pub fn lint_content(content: &str, display_name: &str, story_dir: &Path) -> Stor
         //   total absence ([Source:] marker nowhere in the doc) + sourceless present → fail
         //   partial omission ([Source:] marker present but some sourceless remains)   → warn
         let has_any_source_marker = content.contains("[Source:");
-        let severity = if has_any_source_marker { Severity::Warn } else { Severity::Fail };
+        let severity = if has_any_source_marker {
+            Severity::Warn
+        } else {
+            Severity::Fail
+        };
         findings.push(Finding::new(
             rules::SOURCE_MISSING,
             severity,
@@ -184,8 +193,7 @@ pub fn lint_content(content: &str, display_name: &str, story_dir: &Path) -> Stor
             rules::READINESS_VERDICT_MISSING,
             Severity::Warn,
             format!("{}:1", readiness::READINESS_REPORT_FILE),
-            "같은 폴더에서 readiness-report-kr.md의 verdict 필드를 찾지 못했습니다."
-                .to_string(),
+            "같은 폴더에서 readiness-report-kr.md의 verdict 필드를 찾지 못했습니다.".to_string(),
             "W3 게이트 산출물(readiness-report-kr.md)에 verdict: PASS|CONCERNS|FAIL을 기록하세요."
                 .to_string(),
         ));
@@ -283,7 +291,11 @@ source_hash: "abc123"
         let content = fully_compliant_story();
         let lint = lint_content(&content, "fixture-kr.md", Path::new("/nonexistent"));
         assert_eq!(lint.summary.fail, 0, "findings: {:?}", lint.findings);
-        assert_eq!(lint.summary.warn, 1, "readiness-report 없음 1건만 남아야 함: {:?}", lint.findings);
+        assert_eq!(
+            lint.summary.warn, 1,
+            "readiness-report 없음 1건만 남아야 함: {:?}",
+            lint.findings
+        );
         assert!(lint.ready_for_dev);
         assert!(!lint.has_fail());
     }
@@ -346,9 +358,12 @@ content
 content
 "#;
         let lint = lint_content(content, "fixture-kr.md", Path::new("/nonexistent"));
-        assert!(lint.findings.iter().any(|f| f.rule_id == rules::STORY_MISSING_SECTION
-            && f.message.contains("story_requirements")
-            && !f.message.contains("story_requirements_extra")));
+        assert!(lint
+            .findings
+            .iter()
+            .any(|f| f.rule_id == rules::STORY_MISSING_SECTION
+                && f.message.contains("story_requirements")
+                && !f.message.contains("story_requirements_extra")));
     }
 
     /// M-6 false-positive regression: even with `---`/`|---|` in the body, the frontmatter parses fine.
@@ -436,11 +451,9 @@ content
             .collect::<Vec<_>>()
             .join("\n");
         let lint = lint_content(&without_pc, "fixture-kr.md", Path::new("/nonexistent"));
-        assert!(lint
-            .findings
-            .iter()
-            .any(|f| f.rule_id == rules::CONDITIONAL_SECTION_MISSING
-                && f.severity == Severity::Warn));
+        assert!(lint.findings.iter().any(
+            |f| f.rule_id == rules::CONDITIONAL_SECTION_MISSING && f.severity == Severity::Warn
+        ));
         assert_eq!(lint.summary.fail, 0);
     }
 
@@ -478,7 +491,11 @@ content
             .iter()
             .find(|f| f.rule_id == rules::SOURCE_MISSING)
             .expect("source_missing finding이 있어야 함");
-        assert_eq!(finding.severity, Severity::Fail, "완전 부재는 fail이어야 함: {finding:?}");
+        assert_eq!(
+            finding.severity,
+            Severity::Fail,
+            "완전 부재는 fail이어야 함: {finding:?}"
+        );
         assert!(lint.has_fail());
     }
 
@@ -516,7 +533,11 @@ content [Source: fixture.md#f]
             .iter()
             .find(|f| f.rule_id == rules::SOURCE_MISSING)
             .expect("source_missing finding이 있어야 함(부분 sourceless 잔존)");
-        assert_eq!(finding.severity, Severity::Warn, "부분 누락은 warn이어야 함: {finding:?}");
+        assert_eq!(
+            finding.severity,
+            Severity::Warn,
+            "부분 누락은 warn이어야 함: {finding:?}"
+        );
         assert!(!lint.has_fail());
     }
 
@@ -552,7 +573,11 @@ content
     #[test]
     fn readiness_report_missing_yields_warn() {
         let content = fully_compliant_story();
-        let lint = lint_content(&content, "fixture-kr.md", Path::new("/definitely/not/there"));
+        let lint = lint_content(
+            &content,
+            "fixture-kr.md",
+            Path::new("/definitely/not/there"),
+        );
         assert!(lint
             .findings
             .iter()
@@ -606,7 +631,11 @@ content
     /// the original decision of the leaf `StoryCompiler::validate_completeness`.
     fn assert_golden_equivalence(content: &str) {
         let engine = StoryCompiler::validate_completeness(content);
-        let lint = lint_content(content, "golden-kr.md", Path::new("/nonexistent-for-golden"));
+        let lint = lint_content(
+            content,
+            "golden-kr.md",
+            Path::new("/nonexistent-for-golden"),
+        );
 
         // missing_sections: reverse-extract the section name from lint's story_missing_section findings.
         let mut lint_missing: Vec<String> = lint
@@ -615,10 +644,7 @@ content
             .filter(|f| f.rule_id == rules::STORY_MISSING_SECTION)
             .filter_map(|f| {
                 // message format: "required section `<name>` is missing (...)"; take the name between backticks.
-                f.message
-                    .split('`')
-                    .nth(1)
-                    .map(|s| s.to_string())
+                f.message.split('`').nth(1).map(|s| s.to_string())
             })
             .collect();
         let mut engine_missing = engine.missing_sections.clone();
@@ -631,13 +657,16 @@ content
 
         // developer_context_empty: match the engine decision with whether lint emitted a
         // developer_context_empty finding (when developer_context is not in missing_sections).
-        let developer_context_entirely_missing =
-            engine.missing_sections.iter().any(|s| s == "developer_context");
+        let developer_context_entirely_missing = engine
+            .missing_sections
+            .iter()
+            .any(|s| s == "developer_context");
         let lint_reports_empty = lint
             .findings
             .iter()
             .any(|f| f.rule_id == rules::DEVELOPER_CONTEXT_EMPTY);
-        let expected_empty_finding = engine.developer_context_empty && !developer_context_entirely_missing;
+        let expected_empty_finding =
+            engine.developer_context_empty && !developer_context_entirely_missing;
         assert_eq!(
             lint_reports_empty, expected_empty_finding,
             "developer_context_empty finding 유무가 leaf 판정과 일치해야 함(CR-2)"

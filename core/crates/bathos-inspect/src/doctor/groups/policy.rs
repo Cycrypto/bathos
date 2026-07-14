@@ -37,7 +37,9 @@ pub fn run(agent_team_path: &Path) -> GroupResult {
     let md_files = collect_files_with_ext(agent_team_path, "md");
 
     for file in &md_files {
-        let Ok(content) = std::fs::read_to_string(file) else { continue };
+        let Ok(content) = std::fs::read_to_string(file) else {
+            continue;
+        };
         let display = relative_display(agent_team_path, file);
         check_emoji(&content, &display, &mut findings);
     }
@@ -77,8 +79,12 @@ fn check_emoji(content: &str, display: &str, findings: &mut Vec<Finding>) {
 /// explicitly narrowed to HTML artifacts — recorded in the impl-note as a **lead-confirmation item**.
 fn check_bilingual_html_artifacts(agent_team_path: &Path, findings: &mut Vec<Finding>) {
     for file in collect_files_with_ext(agent_team_path, "html") {
-        let Ok(content) = std::fs::read_to_string(&file) else { continue };
-        let has_korean = content.chars().any(|c| ('\u{AC00}'..='\u{D7A3}').contains(&c));
+        let Ok(content) = std::fs::read_to_string(&file) else {
+            continue;
+        };
+        let has_korean = content
+            .chars()
+            .any(|c| ('\u{AC00}'..='\u{D7A3}').contains(&c));
         // **Temporary heuristic — subject to future intensity tuning (Thomas L-3,
         // findings.md, 2026-07-02 lead decision: keep as-is).** It decides "English prose
         // present" from just "an ASCII alphabetic character exists + one space exists". We are
@@ -110,7 +116,11 @@ mod tests {
     #[test]
     fn clean_ascii_and_allowed_symbols_yield_zero_findings() {
         let dir = tempfile::tempdir().unwrap();
-        std::fs::write(dir.path().join("a.md"), "정상 문서 · 화살표 → 체크 ✓ 실패 ✗ 별 ★ $100").unwrap();
+        std::fs::write(
+            dir.path().join("a.md"),
+            "정상 문서 · 화살표 → 체크 ✓ 실패 ✗ 별 ★ $100",
+        )
+        .unwrap();
         let group = run(dir.path());
         assert!(group.findings.is_empty(), "findings: {:?}", group.findings);
     }
@@ -125,7 +135,11 @@ mod tests {
             .findings
             .iter()
             .any(|f| f.rule_id == EMOJI_COLOR_VIOLATION && f.severity == Severity::Warn));
-        assert_ne!(group.status, Severity::Fail, "policy 그룹은 항상 warn 이하여야 함(P1)");
+        assert_ne!(
+            group.status,
+            Severity::Fail,
+            "policy 그룹은 항상 warn 이하여야 함(P1)"
+        );
     }
 
     #[test]
@@ -140,8 +154,11 @@ mod tests {
     #[test]
     fn english_only_html_yields_bilingual_missing_warn() {
         let dir = tempfile::tempdir().unwrap();
-        std::fs::write(dir.path().join("report.html"), "<html><body>Hello world report</body></html>")
-            .unwrap();
+        std::fs::write(
+            dir.path().join("report.html"),
+            "<html><body>Hello world report</body></html>",
+        )
+        .unwrap();
         let group = run(dir.path());
         assert!(group
             .findings
@@ -159,7 +176,10 @@ mod tests {
         )
         .unwrap();
         let group = run(dir.path());
-        assert!(!group.findings.iter().any(|f| f.rule_id == BILINGUAL_MISSING));
+        assert!(!group
+            .findings
+            .iter()
+            .any(|f| f.rule_id == BILINGUAL_MISSING));
     }
 
     /// A pure markdown source document (no html) never emits bilingual_missing (the decision
@@ -167,9 +187,16 @@ mod tests {
     #[test]
     fn markdown_only_tree_never_triggers_bilingual_missing() {
         let dir = tempfile::tempdir().unwrap();
-        std::fs::write(dir.path().join("story-1-1-a-kr.md"), "한국어 전용 문서 내용입니다.").unwrap();
+        std::fs::write(
+            dir.path().join("story-1-1-a-kr.md"),
+            "한국어 전용 문서 내용입니다.",
+        )
+        .unwrap();
         let group = run(dir.path());
-        assert!(!group.findings.iter().any(|f| f.rule_id == BILINGUAL_MISSING));
+        assert!(!group
+            .findings
+            .iter()
+            .any(|f| f.rule_id == BILINGUAL_MISSING));
     }
 
     #[test]

@@ -93,10 +93,14 @@ pub(crate) fn collect_files_with_ext(root: &Path, ext: &str) -> Vec<PathBuf> {
 /// a read-only diagnostic tool need not handle.
 /// [Source: findings.md L-2, ETHOS Boil the Ocean (full edge-case handling)]
 fn visit(dir: &Path, ext: &str, out: &mut Vec<PathBuf>) {
-    let Ok(entries) = std::fs::read_dir(dir) else { return };
+    let Ok(entries) = std::fs::read_dir(dir) else {
+        return;
+    };
     for entry in entries.filter_map(|e| e.ok()) {
         // If file_type() fails (permissions, etc.) skip just this entry, no crash.
-        let Ok(file_type) = entry.file_type() else { continue };
+        let Ok(file_type) = entry.file_type() else {
+            continue;
+        };
         if file_type.is_symlink() {
             continue; // Do not follow symbolic links (cycle prevention, L-2).
         }
@@ -111,7 +115,10 @@ fn visit(dir: &Path, ext: &str, out: &mut Vec<PathBuf>) {
 
 /// Shorten a finding's location to a `root`-relative path (avoids exposing absolute paths).
 pub(crate) fn relative_display(root: &Path, file: &Path) -> String {
-    file.strip_prefix(root).unwrap_or(file).display().to_string()
+    file.strip_prefix(root)
+        .unwrap_or(file)
+        .display()
+        .to_string()
 }
 
 #[cfg(test)]
@@ -120,7 +127,12 @@ mod tests {
     use crate::story::Severity;
 
     fn ctx(path: PathBuf, json: bool, strict: bool) -> InspectCtx {
-        InspectCtx { agent_team_path: path, json, verbose: false, strict }
+        InspectCtx {
+            agent_team_path: path,
+            json,
+            verbose: false,
+            strict,
+        }
     }
 
     fn write_manifest(dir: &Path, json: &str) {
@@ -151,9 +163,16 @@ mod tests {
         let report = run_doctor(&ctx(dir.path().to_path_buf(), false, false));
         assert_eq!(report.manifest_form, "unknown");
 
-        let manifest_group = report.groups.iter().find(|g| g.group == "manifest").unwrap();
+        let manifest_group = report
+            .groups
+            .iter()
+            .find(|g| g.group == "manifest")
+            .unwrap();
         assert_eq!(manifest_group.status, Severity::Fail);
-        assert!(manifest_group.findings.iter().any(|f| f.rule_id == "manifest_missing"));
+        assert!(manifest_group
+            .findings
+            .iter()
+            .any(|f| f.rule_id == "manifest_missing"));
 
         // The story group diagnoses normally regardless of the manifest failure and produces
         // findings (at least one "no readiness-report" warn — fully crash-free).
@@ -171,7 +190,10 @@ mod tests {
         write_manifest(dir.path(), r#"{"project":"x"}"#);
         let report = run_doctor(&ctx(dir.path().to_path_buf(), false, false));
         let order: Vec<&str> = report.groups.iter().map(|g| g.group.as_str()).collect();
-        assert_eq!(order, vec!["manifest", "gates", "audit", "artifacts", "story", "policy"]);
+        assert_eq!(
+            order,
+            vec!["manifest", "gates", "audit", "artifacts", "story", "policy"]
+        );
     }
 
     #[test]
@@ -287,7 +309,11 @@ mod tests {
         std::os::unix::fs::symlink(&real, dir.path().join("alias.md")).unwrap();
 
         let files = collect_files_with_ext(dir.path(), "md");
-        assert_eq!(files, vec![real], "심볼릭 링크 파일(alias.md)은 수집되면 안 됨");
+        assert_eq!(
+            files,
+            vec![real],
+            "심볼릭 링크 파일(alias.md)은 수집되면 안 됨"
+        );
     }
 
     #[test]

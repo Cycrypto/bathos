@@ -104,9 +104,9 @@ pub static LEVEL_MATRIX: [LevelEntry; 5] = [
             "Thomas",
             "Timothy",
             "Matthias",
-            "Michael",   // W6 security (#13)
-            "Hananiah",  // W6 refactoring (#14)
-            "Martin", // W6
+            "Michael",  // W6 security (#13)
+            "Hananiah", // W6 refactoring (#14)
+            "Martin",   // W6
         ],
         w4_mode: W4Mode::Optional,
         story_engineer: true,
@@ -132,9 +132,9 @@ pub static LEVEL_MATRIX: [LevelEntry; 5] = [
             "Thomas",
             "Timothy",
             "Matthias",
-            "Michael",   // W6 security (#13)
-            "Hananiah",  // W6 refactoring (#14)
-            "Martin", // W6
+            "Michael",  // W6 security (#13)
+            "Hananiah", // W6 refactoring (#14)
+            "Martin",   // W6
         ],
         w4_mode: W4Mode::Optional,
         story_engineer: true,
@@ -160,9 +160,9 @@ pub static LEVEL_MATRIX: [LevelEntry; 5] = [
             "Thomas",
             "Timothy",
             "Matthias",
-            "Michael",   // W6 security (#13)
-            "Hananiah",  // W6 refactoring (#14)
-            "Martin", // W6
+            "Michael",  // W6 security (#13)
+            "Hananiah", // W6 refactoring (#14)
+            "Martin",   // W6
         ],
         w4_mode: W4Mode::Required,
         story_engineer: true,

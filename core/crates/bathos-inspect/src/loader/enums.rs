@@ -29,7 +29,11 @@ fn unknown(warnings: &mut WarningSink, kind: &str, raw: &str, location: &str) {
 }
 
 /// ProjectStatus — lowercase.
-pub fn str_to_project_status(raw: &str, warnings: &mut WarningSink, location: &str) -> ProjectStatus {
+pub fn str_to_project_status(
+    raw: &str,
+    warnings: &mut WarningSink,
+    location: &str,
+) -> ProjectStatus {
     match raw {
         "active" => ProjectStatus::Active,
         "paused" => ProjectStatus::Paused,
@@ -216,11 +220,20 @@ mod tests {
     #[test]
     fn wave_status_all_variants_map() {
         let mut w = WarningSink::default();
-        assert_eq!(str_to_wave_status("pending", &mut w, "l"), WaveStatus::Pending);
-        assert_eq!(str_to_wave_status("active", &mut w, "l"), WaveStatus::Active);
+        assert_eq!(
+            str_to_wave_status("pending", &mut w, "l"),
+            WaveStatus::Pending
+        );
+        assert_eq!(
+            str_to_wave_status("active", &mut w, "l"),
+            WaveStatus::Active
+        );
         assert_eq!(str_to_wave_status("gated", &mut w, "l"), WaveStatus::Gated);
         assert_eq!(str_to_wave_status("done", &mut w, "l"), WaveStatus::Done);
-        assert_eq!(str_to_wave_status("skipped", &mut w, "l"), WaveStatus::Skipped);
+        assert_eq!(
+            str_to_wave_status("skipped", &mut w, "l"),
+            WaveStatus::Skipped
+        );
         assert!(w.is_empty());
     }
 

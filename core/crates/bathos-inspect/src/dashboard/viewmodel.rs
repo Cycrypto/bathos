@@ -34,33 +34,93 @@ pub struct Badge {
 /// WaveStatus → Badge. [Source: ui-spec-kr.md §5.1]
 pub fn wave_status_badge(s: &WaveStatus) -> Badge {
     match s {
-        WaveStatus::Pending => Badge { symbol: "·", css_class: "muted", label_key: "wave.pending" },
-        WaveStatus::Active => Badge { symbol: "→", css_class: "teal", label_key: "wave.active" },
-        WaveStatus::Gated => Badge { symbol: "★", css_class: "warn", label_key: "wave.gated" },
-        WaveStatus::Done => Badge { symbol: "✓", css_class: "pass", label_key: "wave.done" },
-        WaveStatus::Skipped => Badge { symbol: "—", css_class: "muted", label_key: "wave.skipped" },
-        WaveStatus::Unknown(_) => Badge { symbol: "·", css_class: "muted", label_key: "wave.unknown" },
+        WaveStatus::Pending => Badge {
+            symbol: "·",
+            css_class: "muted",
+            label_key: "wave.pending",
+        },
+        WaveStatus::Active => Badge {
+            symbol: "→",
+            css_class: "teal",
+            label_key: "wave.active",
+        },
+        WaveStatus::Gated => Badge {
+            symbol: "★",
+            css_class: "warn",
+            label_key: "wave.gated",
+        },
+        WaveStatus::Done => Badge {
+            symbol: "✓",
+            css_class: "pass",
+            label_key: "wave.done",
+        },
+        WaveStatus::Skipped => Badge {
+            symbol: "—",
+            css_class: "muted",
+            label_key: "wave.skipped",
+        },
+        WaveStatus::Unknown(_) => Badge {
+            symbol: "·",
+            css_class: "muted",
+            label_key: "wave.unknown",
+        },
     }
 }
 
 /// Verdict → Badge. [Source: ui-spec-kr.md §5.2]
 pub fn verdict_badge(v: &Verdict) -> Badge {
     match v {
-        Verdict::Pass => Badge { symbol: "✓", css_class: "pass", label_key: "verdict.pass" },
-        Verdict::Concerns => Badge { symbol: "★", css_class: "warn", label_key: "verdict.concerns" },
-        Verdict::Fail => Badge { symbol: "✗", css_class: "fail", label_key: "verdict.fail" },
-        Verdict::Unknown(_) => Badge { symbol: "·", css_class: "muted", label_key: "verdict.unknown" },
+        Verdict::Pass => Badge {
+            symbol: "✓",
+            css_class: "pass",
+            label_key: "verdict.pass",
+        },
+        Verdict::Concerns => Badge {
+            symbol: "★",
+            css_class: "warn",
+            label_key: "verdict.concerns",
+        },
+        Verdict::Fail => Badge {
+            symbol: "✗",
+            css_class: "fail",
+            label_key: "verdict.fail",
+        },
+        Verdict::Unknown(_) => Badge {
+            symbol: "·",
+            css_class: "muted",
+            label_key: "verdict.unknown",
+        },
     }
 }
 
 /// RoleStatus → Badge. [Source: ui-spec-kr.md §5.4]
 pub fn role_status_badge(s: &RoleStatus) -> Badge {
     match s {
-        RoleStatus::Spawned => Badge { symbol: "·", css_class: "muted", label_key: "role.spawned" },
-        RoleStatus::Working => Badge { symbol: "→", css_class: "teal", label_key: "role.working" },
-        RoleStatus::Idle => Badge { symbol: "★", css_class: "warn", label_key: "role.idle" },
-        RoleStatus::Shutdown => Badge { symbol: "—", css_class: "muted", label_key: "role.shutdown" },
-        RoleStatus::Unknown(_) => Badge { symbol: "·", css_class: "muted", label_key: "role.unknown" },
+        RoleStatus::Spawned => Badge {
+            symbol: "·",
+            css_class: "muted",
+            label_key: "role.spawned",
+        },
+        RoleStatus::Working => Badge {
+            symbol: "→",
+            css_class: "teal",
+            label_key: "role.working",
+        },
+        RoleStatus::Idle => Badge {
+            symbol: "★",
+            css_class: "warn",
+            label_key: "role.idle",
+        },
+        RoleStatus::Shutdown => Badge {
+            symbol: "—",
+            css_class: "muted",
+            label_key: "role.shutdown",
+        },
+        RoleStatus::Unknown(_) => Badge {
+            symbol: "·",
+            css_class: "muted",
+            label_key: "role.unknown",
+        },
     }
 }
 
@@ -69,10 +129,26 @@ pub fn role_status_badge(s: &RoleStatus) -> Badge {
 /// decision — extending a representation convention, not fabrication).
 pub fn project_status_badge(s: &ProjectStatus) -> Badge {
     match s {
-        ProjectStatus::Active => Badge { symbol: "→", css_class: "teal", label_key: "status.active" },
-        ProjectStatus::Paused => Badge { symbol: "·", css_class: "muted", label_key: "status.paused" },
-        ProjectStatus::Done => Badge { symbol: "✓", css_class: "pass", label_key: "status.done" },
-        ProjectStatus::Unknown(_) => Badge { symbol: "·", css_class: "muted", label_key: "status.unknown" },
+        ProjectStatus::Active => Badge {
+            symbol: "→",
+            css_class: "teal",
+            label_key: "status.active",
+        },
+        ProjectStatus::Paused => Badge {
+            symbol: "·",
+            css_class: "muted",
+            label_key: "status.paused",
+        },
+        ProjectStatus::Done => Badge {
+            symbol: "✓",
+            css_class: "pass",
+            label_key: "status.done",
+        },
+        ProjectStatus::Unknown(_) => Badge {
+            symbol: "·",
+            css_class: "muted",
+            label_key: "status.unknown",
+        },
     }
 }
 
@@ -104,19 +180,44 @@ pub fn model_tier_label(m: &ModelTier) -> String {
 /// ChainStatus → Badge (+ detail, only when Broken). [Source: ui-spec-kr.md §5.5, §4.1]
 pub fn chain_status_badge(c: &ChainStatus) -> (Badge, Option<String>) {
     match c {
-        ChainStatus::Valid => {
-            (Badge { symbol: "✓", css_class: "pass", label_key: "audit.integrity_valid" }, None)
-        }
-        ChainStatus::Broken { seq, expected, actual } => (
-            Badge { symbol: "✗", css_class: "fail", label_key: "audit.integrity_broken" },
-            Some(format!("seq {seq} · hash_prev={expected} ≠ hash_self={actual}")),
+        ChainStatus::Valid => (
+            Badge {
+                symbol: "✓",
+                css_class: "pass",
+                label_key: "audit.integrity_valid",
+            },
+            None,
         ),
-        ChainStatus::Absent => {
-            (Badge { symbol: "·", css_class: "muted", label_key: "audit.no_history" }, None)
-        }
-        ChainStatus::NotChecked => {
-            (Badge { symbol: "·", css_class: "muted", label_key: "audit.not_checked" }, None)
-        }
+        ChainStatus::Broken {
+            seq,
+            expected,
+            actual,
+        } => (
+            Badge {
+                symbol: "✗",
+                css_class: "fail",
+                label_key: "audit.integrity_broken",
+            },
+            Some(format!(
+                "seq {seq} · hash_prev={expected} ≠ hash_self={actual}"
+            )),
+        ),
+        ChainStatus::Absent => (
+            Badge {
+                symbol: "·",
+                css_class: "muted",
+                label_key: "audit.no_history",
+            },
+            None,
+        ),
+        ChainStatus::NotChecked => (
+            Badge {
+                symbol: "·",
+                css_class: "muted",
+                label_key: "audit.not_checked",
+            },
+            None,
+        ),
     }
 }
 
@@ -270,7 +371,11 @@ fn insert_path(level: &mut Vec<TreeNode>, segments: &[&str], artifact: &Artifact
     let node = match level.iter_mut().find(|n| n.name == head) {
         Some(n) => n,
         None => {
-            level.push(TreeNode { name: head.to_string(), leaf: None, children: Vec::new() });
+            level.push(TreeNode {
+                name: head.to_string(),
+                leaf: None,
+                children: Vec::new(),
+            });
             level.last_mut().unwrap()
         }
     };
@@ -345,9 +450,17 @@ pub struct StoryCardView {
 /// representation convention, not fabrication).
 pub fn story_ready_badge(ready_for_dev: bool) -> Badge {
     if ready_for_dev {
-        Badge { symbol: "✓", css_class: "pass", label_key: "story.ready" }
+        Badge {
+            symbol: "✓",
+            css_class: "pass",
+            label_key: "story.ready",
+        }
     } else {
-        Badge { symbol: "·", css_class: "muted", label_key: "story.not_ready" }
+        Badge {
+            symbol: "·",
+            css_class: "muted",
+            label_key: "story.not_ready",
+        }
     }
 }
 
@@ -355,11 +468,23 @@ pub fn story_ready_badge(ready_for_dev: bool) -> Badge {
 /// PASS/WARN/FAIL priority — any fail → fail, otherwise warn takes priority.]
 pub fn story_lint_badge(summary: &crate::story::Summary) -> Badge {
     if summary.fail > 0 {
-        Badge { symbol: "✗", css_class: "fail", label_key: "severity.error" }
+        Badge {
+            symbol: "✗",
+            css_class: "fail",
+            label_key: "severity.error",
+        }
     } else if summary.warn > 0 {
-        Badge { symbol: "★", css_class: "warn", label_key: "severity.warning" }
+        Badge {
+            symbol: "★",
+            css_class: "warn",
+            label_key: "severity.warning",
+        }
     } else {
-        Badge { symbol: "✓", css_class: "pass", label_key: "severity.ok" }
+        Badge {
+            symbol: "✓",
+            css_class: "pass",
+            label_key: "severity.ok",
+        }
     }
 }
 
@@ -373,7 +498,10 @@ pub fn story_card_vm(
     file_name: &str,
     stale_story_keys: &[String],
 ) -> StoryCardView {
-    let story_key = lint.story_key.clone().unwrap_or_else(|| file_name.to_string());
+    let story_key = lint
+        .story_key
+        .clone()
+        .unwrap_or_else(|| file_name.to_string());
     let stale = lint
         .story_key
         .as_deref()
@@ -382,7 +510,10 @@ pub fn story_card_vm(
 
     StoryCardView {
         story_key,
-        status_label: lint.status.clone().unwrap_or_else(|| "(status 없음)".to_string()),
+        status_label: lint
+            .status
+            .clone()
+            .unwrap_or_else(|| "(status 없음)".to_string()),
         ready_badge: story_ready_badge(lint.ready_for_dev),
         stale,
         lint_badge: story_lint_badge(&lint.summary),
@@ -526,7 +657,10 @@ mod tests {
         assert_eq!(wave_status_badge(&WaveStatus::Gated).symbol, "★");
         assert_eq!(wave_status_badge(&WaveStatus::Active).css_class, "teal");
         assert_eq!(wave_status_badge(&WaveStatus::Skipped).symbol, "—");
-        assert_eq!(wave_status_badge(&WaveStatus::Unknown("x".into())).css_class, "muted");
+        assert_eq!(
+            wave_status_badge(&WaveStatus::Unknown("x".into())).css_class,
+            "muted"
+        );
     }
 
     #[test]
@@ -561,7 +695,10 @@ mod tests {
             decided: None,
         };
         let vm = gate_card_vm(&g);
-        assert!(vm.release_critical_warning, "Release + critical>0은 반드시 경고 플래그");
+        assert!(
+            vm.release_critical_warning,
+            "Release + critical>0은 반드시 경고 플래그"
+        );
     }
 
     /// Even Release, if critical=0, no warning (false-positive guard).
@@ -662,7 +799,10 @@ mod tests {
         let mut pv = empty_pv();
         pv.meta.codename = None;
         let vm = build_vm(&pv, &[]);
-        assert_eq!(vm.codename, None, "\"(제목 없음)\" 치환은 render.rs 책임 — VM은 원값 보존");
+        assert_eq!(
+            vm.codename, None,
+            "\"(제목 없음)\" 치환은 render.rs 책임 — VM은 원값 보존"
+        );
     }
 
     // ── chain Broken → ✗ + seq detail ────────────────────────────────────
@@ -670,8 +810,11 @@ mod tests {
     #[test]
     fn broken_chain_status_includes_seq_in_detail() {
         let mut pv = empty_pv();
-        pv.chain_status =
-            ChainStatus::Broken { seq: 5, expected: "aaa".into(), actual: "bbb".into() };
+        pv.chain_status = ChainStatus::Broken {
+            seq: 5,
+            expected: "aaa".into(),
+            actual: "bbb".into(),
+        };
         let vm = build_vm(&pv, &[]);
         assert_eq!(vm.chain_badge.symbol, "✗");
         assert!(vm.chain_detail.unwrap().contains("seq 5"));
@@ -709,7 +852,11 @@ mod tests {
             },
         ];
         let vm = build_vm(&pv, &[]);
-        assert_eq!(vm.artifacts_tree.len(), 1, "07-design 디렉터리 노드 1개로 그룹화");
+        assert_eq!(
+            vm.artifacts_tree.len(),
+            1,
+            "07-design 디렉터리 노드 1개로 그룹화"
+        );
         let dir = &vm.artifacts_tree[0];
         assert_eq!(dir.name, "07-design");
         assert_eq!(dir.children.len(), 2);
@@ -775,14 +922,26 @@ mod tests {
     /// ui-spec §5.3 priority: any fail always yields the fail badge (even coexisting with warn).
     #[test]
     fn story_lint_badge_prioritizes_fail_over_warn_over_pass() {
-        let fail_and_warn = crate::story::Summary { pass: 0, warn: 1, fail: 1 };
+        let fail_and_warn = crate::story::Summary {
+            pass: 0,
+            warn: 1,
+            fail: 1,
+        };
         assert_eq!(story_lint_badge(&fail_and_warn).symbol, "✗");
         assert_eq!(story_lint_badge(&fail_and_warn).css_class, "fail");
 
-        let warn_only = crate::story::Summary { pass: 6, warn: 1, fail: 0 };
+        let warn_only = crate::story::Summary {
+            pass: 6,
+            warn: 1,
+            fail: 0,
+        };
         assert_eq!(story_lint_badge(&warn_only).symbol, "★");
 
-        let all_pass = crate::story::Summary { pass: 7, warn: 0, fail: 0 };
+        let all_pass = crate::story::Summary {
+            pass: 7,
+            warn: 0,
+            fail: 0,
+        };
         assert_eq!(story_lint_badge(&all_pass).symbol, "✓");
         assert_eq!(story_lint_badge(&all_pass).css_class, "pass");
     }
@@ -807,8 +966,16 @@ mod tests {
     /// When story_key is absent, falls back to the file name (shows a real value instead of a fabricated placeholder).
     #[test]
     fn story_card_vm_falls_back_to_file_name_when_story_key_missing() {
-        let lint =
-            fixture_lint(None, None, false, crate::story::Summary { pass: 7, warn: 0, fail: 0 });
+        let lint = fixture_lint(
+            None,
+            None,
+            false,
+            crate::story::Summary {
+                pass: 7,
+                warn: 0,
+                fail: 0,
+            },
+        );
         let card = story_card_vm(&lint, "story-1-1-a-kr.md", &[]);
         assert_eq!(card.story_key, "story-1-1-a-kr.md");
         assert_eq!(card.status_label, "(status 없음)");
@@ -824,7 +991,11 @@ mod tests {
             Some("2-1-dashboard-report"),
             Some("ready-for-dev"),
             true,
-            crate::story::Summary { pass: 7, warn: 0, fail: 0 },
+            crate::story::Summary {
+                pass: 7,
+                warn: 0,
+                fail: 0,
+            },
         );
         let stale_keys = vec!["2-1-dashboard-report".to_string()];
         let card = story_card_vm(&lint, "story-2-1-dashboard-report-kr.md", &stale_keys);
@@ -841,7 +1012,11 @@ mod tests {
             Some("9-9-fresh"),
             Some("ready-for-dev"),
             true,
-            crate::story::Summary { pass: 7, warn: 0, fail: 0 },
+            crate::story::Summary {
+                pass: 7,
+                warn: 0,
+                fail: 0,
+            },
         );
         let card = story_card_vm(&lint, "story-9-9-fresh-kr.md", &["other-key".to_string()]);
         assert!(!card.stale);

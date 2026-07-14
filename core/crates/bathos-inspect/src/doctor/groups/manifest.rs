@@ -148,7 +148,10 @@ fn check_required_fields(pv: &ProjectView, findings: &mut Vec<Finding>) {
         ("project_id", pv.meta.project_id.is_none()),
         ("codename", pv.meta.codename.is_none()),
         ("current_level", pv.meta.current_level.is_none()),
-        ("status", matches!(pv.meta.status, ProjectStatus::Unknown(_))),
+        (
+            "status",
+            matches!(pv.meta.status, ProjectStatus::Unknown(_)),
+        ),
         ("lang", pv.meta.lang.is_none()),
         ("created", pv.meta.created.is_none()),
     ];
@@ -196,13 +199,19 @@ mod tests {
         let state_dir = dir.path().join("_state");
         std::fs::create_dir_all(&state_dir).unwrap();
         std::fs::write(state_dir.join("manifest.json"), json).unwrap();
-        crate::loader::load_project(dir.path(), crate::loader::LoadOpts { verify_chain: false })
+        crate::loader::load_project(
+            dir.path(),
+            crate::loader::LoadOpts {
+                verify_chain: false,
+            },
+        )
     }
 
     #[test]
     fn missing_manifest_yields_fail_not_fatal_abort() {
-        let result: Result<ProjectView, LoadError> =
-            Err(LoadError::ManifestMissing { path: PathBuf::from("/x/_state/manifest.json") });
+        let result: Result<ProjectView, LoadError> = Err(LoadError::ManifestMissing {
+            path: PathBuf::from("/x/_state/manifest.json"),
+        });
         let group = run(&result);
         assert_eq!(group.status, Severity::Fail);
         assert_eq!(group.findings.len(), 1);
@@ -284,7 +293,9 @@ mod tests {
                 "created": "2026-07-02T00:00:00Z"
             }"#,
         );
-        let pv = result.as_ref().expect("load 성공해야 함(엔진형 6필드 모두 존재)");
+        let pv = result
+            .as_ref()
+            .expect("load 성공해야 함(엔진형 6필드 모두 존재)");
         // Precondition: first confirm the loader actually left a W-ENUM-UNKNOWN.
         assert!(
             pv.warnings
@@ -298,7 +309,10 @@ mod tests {
 
         // H-1: before the regression these findings were completely empty (status unchecked +
         // pv.warnings unconsumed, doctor --strict misjudging "no problem" with exit 0).
-        assert!(!group.findings.is_empty(), "H-1 회귀: findings가 비어있으면 안 됨");
+        assert!(
+            !group.findings.is_empty(),
+            "H-1 회귀: findings가 비어있으면 안 됨"
+        );
         let warn = group
             .findings
             .iter()
@@ -323,17 +337,29 @@ mod tests {
         // 1:1 in both count and content — since report's banner also shows the same
         // pv.warnings as-is, this correspondence is exactly the "report warning == doctor
         // warn" consistency.
-        let expected: Vec<_> =
-            pv.warnings.iter().filter(|w| w.code != "W-AUDIT-LINE-SKIP").collect();
+        let expected: Vec<_> = pv
+            .warnings
+            .iter()
+            .filter(|w| w.code != "W-AUDIT-LINE-SKIP")
+            .collect();
         let exposed: Vec<_> = group
             .findings
             .iter()
-            .filter(|f| f.rule_id != MANIFEST_REQUIRED_FIELD_MISSING && f.rule_id != MANIFEST_FORM_DESCRIPTIVE)
+            .filter(|f| {
+                f.rule_id != MANIFEST_REQUIRED_FIELD_MISSING
+                    && f.rule_id != MANIFEST_FORM_DESCRIPTIVE
+            })
             .collect();
-        assert_eq!(exposed.len(), expected.len(), "exposed={exposed:?} expected={expected:?}");
+        assert_eq!(
+            exposed.len(),
+            expected.len(),
+            "exposed={exposed:?} expected={expected:?}"
+        );
         for w in expected {
             assert!(
-                exposed.iter().any(|f| f.rule_id == w.code && f.location == w.location && f.message == w.message),
+                exposed.iter().any(|f| f.rule_id == w.code
+                    && f.location == w.location
+                    && f.message == w.message),
                 "누락된 경고: {w:?}"
             );
         }
@@ -398,14 +424,19 @@ mod tests {
         let group = run(&result);
 
         assert!(
-            !group.findings.iter().any(|f| f.rule_id == MANIFEST_REQUIRED_FIELD_MISSING),
+            !group
+                .findings
+                .iter()
+                .any(|f| f.rule_id == MANIFEST_REQUIRED_FIELD_MISSING),
             "D-1 회귀: coerce 실패가 required_field_missing fail로 이중보고됨: {:?}",
             group.findings
         );
         let warn = group
             .findings
             .iter()
-            .find(|f| f.rule_id == "W-FIELD-COERCED" && f.location == "_state/manifest.json#created")
+            .find(|f| {
+                f.rule_id == "W-FIELD-COERCED" && f.location == "_state/manifest.json#created"
+            })
             .expect("created 날짜 coerce 실패 경고가 warn으로 노출돼야 함(H-1)");
         assert_eq!(warn.severity, Severity::Warn);
         assert_eq!(group.status, Severity::Warn, "fail 없이 warn만 있어야 함");
@@ -424,10 +455,9 @@ mod tests {
         );
         let group = run(&result);
         assert_eq!(group.status, Severity::Fail);
-        assert!(group
-            .findings
-            .iter()
-            .any(|f| f.rule_id == MANIFEST_REQUIRED_FIELD_MISSING && f.location.contains("created")));
+        assert!(group.findings.iter().any(
+            |f| f.rule_id == MANIFEST_REQUIRED_FIELD_MISSING && f.location.contains("created")
+        ));
     }
 
     /// D-1 safety-net regression (generalized): if `lang` is not a string (e.g. a number) the

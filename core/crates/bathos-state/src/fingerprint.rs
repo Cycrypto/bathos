@@ -152,7 +152,8 @@ mod tests {
     #[test]
     fn timestamped_and_bare_header_produce_same_hash() {
         let bare = "--- a/f\n+++ b/f\n@@ -1 +1 @@\n-x\n+y\n";
-        let timestamped = "--- a/f\t2026-07-08 10:00:00\n+++ b/f\t2026-07-08 10:00:00\n@@ -1 +1 @@\n-x\n+y\n";
+        let timestamped =
+            "--- a/f\t2026-07-08 10:00:00\n+++ b/f\t2026-07-08 10:00:00\n@@ -1 +1 @@\n-x\n+y\n";
         assert_eq!(
             compute_fingerprint(bare),
             compute_fingerprint(timestamped),
@@ -173,7 +174,9 @@ mod tests {
     fn fingerprint_is_64_char_lowercase_hex() {
         let h = compute_fingerprint("--- a/f\n+++ b/f\n");
         assert_eq!(h.len(), 64);
-        assert!(h.chars().all(|c| c.is_ascii_hexdigit() && !c.is_ascii_uppercase()));
+        assert!(h
+            .chars()
+            .all(|c| c.is_ascii_hexdigit() && !c.is_ascii_uppercase()));
     }
 
     #[test]

@@ -90,7 +90,12 @@ fn check_release_critical(gate: &GateView, loc: &str, findings: &mut Vec<Finding
 /// is also a valid string value) — checking only `is_none()` would miss this real case
 /// (the test fixture `facilitator=""`).
 fn check_facilitator(gate: &GateView, loc: &str, findings: &mut Vec<Finding>) {
-    let is_blank = gate.facilitator.as_deref().map(str::trim).unwrap_or("").is_empty();
+    let is_blank = gate
+        .facilitator
+        .as_deref()
+        .map(str::trim)
+        .unwrap_or("")
+        .is_empty();
     if is_blank {
         findings.push(Finding::new(
             GATE_FACILITATOR_MISSING,
@@ -106,7 +111,9 @@ fn check_facilitator(gate: &GateView, loc: &str, findings: &mut Vec<Finding>) {
 /// finished but its exit gate is recorded as PASS (T-2). `WaveView.exit_gate` is a `GateRef`
 /// the loader already parsed from the `"<label>(<VERDICT>)"` string (H-1, no re-parsing).
 fn check_wave_exit_gate_mismatch(wave: &WaveView, findings: &mut Vec<Finding>) {
-    let Some(exit_gate) = &wave.exit_gate else { return };
+    let Some(exit_gate) = &wave.exit_gate else {
+        return;
+    };
     let is_pass = matches!(exit_gate.verdict, Some(Verdict::Pass));
     let wave_done = matches!(wave.status, WaveStatus::Done);
 
@@ -134,7 +141,13 @@ mod tests {
         let state_dir = dir.path().join("_state");
         std::fs::create_dir_all(&state_dir).unwrap();
         std::fs::write(state_dir.join("manifest.json"), json).unwrap();
-        crate::loader::load_project(dir.path(), LoadOpts { verify_chain: false }).unwrap()
+        crate::loader::load_project(
+            dir.path(),
+            LoadOpts {
+                verify_chain: false,
+            },
+        )
+        .unwrap()
     }
 
     #[test]
@@ -146,7 +159,9 @@ mod tests {
 
     #[test]
     fn no_gates_no_waves_yields_zero_findings() {
-        let pv = load(r#"{"project_id":"p","codename":"c","current_level":1,"status":"active","lang":"en","created":"2026-07-02T00:00:00Z"}"#);
+        let pv = load(
+            r#"{"project_id":"p","codename":"c","current_level":1,"status":"active","lang":"en","created":"2026-07-02T00:00:00Z"}"#,
+        );
         let group = run(Some(&pv));
         assert!(group.findings.is_empty());
     }

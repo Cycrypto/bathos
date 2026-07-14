@@ -49,11 +49,15 @@ fn get_string(obj: &Map<String, Value>, key: &str) -> Option<String> {
 }
 
 fn get_u8(obj: &Map<String, Value>, key: &str) -> Option<u8> {
-    obj.get(key).and_then(Value::as_u64).and_then(|n| u8::try_from(n).ok())
+    obj.get(key)
+        .and_then(Value::as_u64)
+        .and_then(|n| u8::try_from(n).ok())
 }
 
 fn get_u32(obj: &Map<String, Value>, key: &str) -> Option<u32> {
-    obj.get(key).and_then(Value::as_u64).and_then(|n| u32::try_from(n).ok())
+    obj.get(key)
+        .and_then(Value::as_u64)
+        .and_then(|n| u32::try_from(n).ok())
 }
 
 fn get_bool(obj: &Map<String, Value>, key: &str) -> Option<bool> {
@@ -63,12 +67,19 @@ fn get_bool(obj: &Map<String, Value>, key: &str) -> Option<bool> {
 fn get_str_vec(obj: &Map<String, Value>, key: &str) -> Vec<String> {
     obj.get(key)
         .and_then(Value::as_array)
-        .map(|arr| arr.iter().filter_map(|v| v.as_str().map(str::to_string)).collect())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|v| v.as_str().map(str::to_string))
+                .collect()
+        })
         .unwrap_or_default()
 }
 
 fn get_array<'a>(obj: &'a Map<String, Value>, key: &str) -> &'a [Value] {
-    obj.get(key).and_then(Value::as_array).map(Vec::as_slice).unwrap_or(&[])
+    obj.get(key)
+        .and_then(Value::as_array)
+        .map(Vec::as_slice)
+        .unwrap_or(&[])
 }
 
 /// Leniently parse an RFC3339 date string. Failure/absence → `None` + a warning, no crash.
@@ -166,10 +177,16 @@ pub fn parse_gate_ref(raw: &str, warnings: &mut WarningSink, location: &str) -> 
             let label = raw[..open].to_string();
             let inner = &raw[open + 1..raw.len() - 1];
             let verdict = str_to_verdict(inner, warnings, location);
-            return GateRef { label, verdict: Some(verdict) };
+            return GateRef {
+                label,
+                verdict: Some(verdict),
+            };
         }
     }
-    GateRef { label: raw.to_string(), verdict: None }
+    GateRef {
+        label: raw.to_string(),
+        verdict: None,
+    }
 }
 
 fn get_gate_ref(
@@ -214,7 +231,11 @@ pub fn build_meta(root: &Map<String, Value>, warnings: &mut WarningSink) -> Proj
 
 /// Defend the `active_roles` invariant — if len()>3, keep only the first 3 + a warning.
 /// [Source: exceptions-kr.md §1 W-ACTIVE-ROLES-OVERFLOW]
-fn clamp_active_roles(mut roles: Vec<String>, warnings: &mut WarningSink, location: &str) -> Vec<String> {
+fn clamp_active_roles(
+    mut roles: Vec<String>,
+    warnings: &mut WarningSink,
+    location: &str,
+) -> Vec<String> {
     if roles.len() > 3 {
         warnings.push(
             "W-ACTIVE-ROLES-OVERFLOW",
@@ -480,7 +501,10 @@ fn map_artifact_item(item: &Value, idx: usize, warnings: &mut WarningSink) -> Op
 // routing[] (LevelDecision)
 // ─────────────────────────────────────────────────────────────────────────────
 
-pub fn map_routing(root: &Map<String, Value>, warnings: &mut WarningSink) -> Vec<LevelDecisionView> {
+pub fn map_routing(
+    root: &Map<String, Value>,
+    warnings: &mut WarningSink,
+) -> Vec<LevelDecisionView> {
     get_array(root, "routing")
         .iter()
         .enumerate()
@@ -488,7 +512,11 @@ pub fn map_routing(root: &Map<String, Value>, warnings: &mut WarningSink) -> Vec
         .collect()
 }
 
-fn map_routing_item(item: &Value, idx: usize, warnings: &mut WarningSink) -> Option<LevelDecisionView> {
+fn map_routing_item(
+    item: &Value,
+    idx: usize,
+    warnings: &mut WarningSink,
+) -> Option<LevelDecisionView> {
     let obj = item.as_object()?;
     let loc = format!("_state/manifest.json#routing[{idx}]");
 
@@ -580,7 +608,10 @@ mod tests {
     fn codename_present_used_directly() {
         let v = json!({"codename": "BATHOS"});
         let mut w = WarningSink::default();
-        assert_eq!(resolve_codename(obj(&v), &mut w), Some("BATHOS".to_string()));
+        assert_eq!(
+            resolve_codename(obj(&v), &mut w),
+            Some("BATHOS".to_string())
+        );
         assert!(w.is_empty());
     }
 

@@ -114,7 +114,10 @@ fn compare_multi_label(tokens: &[(String, String)], root: &Path) -> StaleVerdict
     let mut uncomparable_labels: Vec<String> = Vec::new();
 
     for (label, stored_hash12) in tokens {
-        match LABEL_PATH_MAP.iter().find(|(mapped_label, _)| mapped_label == label) {
+        match LABEL_PATH_MAP
+            .iter()
+            .find(|(mapped_label, _)| mapped_label == label)
+        {
             None => {
                 uncomparable_labels.push(format!("{label}(경로 매핑 미문서화)"));
             }
@@ -202,7 +205,9 @@ fn parse_multi_label(s: &str) -> Option<Vec<(String, String)>> {
         let mut parts = tok.splitn(2, ':');
         match (parts.next(), parts.next()) {
             (Some(label), Some(hex))
-                if !label.is_empty() && !hex.is_empty() && hex.chars().all(|c| c.is_ascii_hexdigit()) =>
+                if !label.is_empty()
+                    && !hex.is_empty()
+                    && hex.chars().all(|c| c.is_ascii_hexdigit()) =>
             {
                 out.push((label.to_string(), hex.to_string()));
             }
@@ -268,7 +273,11 @@ mod tests {
         let root = tempfile::tempdir().unwrap();
         let api_content = "api 산출물 원문";
         let exc_content = "exceptions 산출물 원문";
-        write_mapped(root.path(), "04-architecture/api-contracts-kr.md", api_content);
+        write_mapped(
+            root.path(),
+            "04-architecture/api-contracts-kr.md",
+            api_content,
+        );
         write_mapped(root.path(), "04-architecture/exceptions-kr.md", exc_content);
 
         let hash = format!("api:{} exc:{}", sha12(api_content), sha12(exc_content));
@@ -282,7 +291,11 @@ mod tests {
     fn changed_mapped_file_yields_stale_with_reason() {
         let root = tempfile::tempdir().unwrap();
         let api_content = "api 산출물 원문";
-        write_mapped(root.path(), "04-architecture/api-contracts-kr.md", api_content);
+        write_mapped(
+            root.path(),
+            "04-architecture/api-contracts-kr.md",
+            api_content,
+        );
 
         // The stored hash is the hash of the "old content" — induces a mismatch with the current file.
         let stale_hash12 = sha12("api 산출물 옛 내용");
@@ -290,7 +303,10 @@ mod tests {
         let verdict = compare_source_hash(Some(&hash), root.path());
         match verdict {
             StaleVerdict::Stale { reason } => {
-                assert!(reason.contains("api"), "reason에 어떤 레이블이 변경됐는지 담겨야 함: {reason}");
+                assert!(
+                    reason.contains("api"),
+                    "reason에 어떤 레이블이 변경됐는지 담겨야 함: {reason}"
+                );
             }
             other => panic!("Stale이어야 함, got {other:?}"),
         }
@@ -321,11 +337,18 @@ mod tests {
     fn mixed_fresh_and_uncomparable_labels_downgrades_to_uncomparable() {
         let root = tempfile::tempdir().unwrap();
         let api_content = "api 산출물 원문";
-        write_mapped(root.path(), "04-architecture/api-contracts-kr.md", api_content);
+        write_mapped(
+            root.path(),
+            "04-architecture/api-contracts-kr.md",
+            api_content,
+        );
 
         let hash = format!("api:{} design:abcdef123456", sha12(api_content));
         let verdict = compare_source_hash(Some(&hash), root.path());
-        assert!(matches!(verdict, StaleVerdict::Uncomparable { .. }), "{verdict:?}");
+        assert!(
+            matches!(verdict, StaleVerdict::Uncomparable { .. }),
+            "{verdict:?}"
+        );
     }
 
     /// If any label is confirmed stale, stale is the final decision even when another label is
@@ -334,7 +357,11 @@ mod tests {
     fn stale_signal_wins_over_uncomparable_labels() {
         let root = tempfile::tempdir().unwrap();
         let api_content = "api 산출물 원문";
-        write_mapped(root.path(), "04-architecture/api-contracts-kr.md", api_content);
+        write_mapped(
+            root.path(),
+            "04-architecture/api-contracts-kr.md",
+            api_content,
+        );
 
         let stale_hash12 = sha12("api 산출물 옛 내용");
         let hash = format!("api:{stale_hash12} design:abcdef123456");
@@ -383,7 +410,11 @@ mod tests {
     fn resolve_yields_fresh_when_hash_matches_and_not_in_engine_list() {
         let root = tempfile::tempdir().unwrap();
         let api_content = "api 산출물 원문";
-        write_mapped(root.path(), "04-architecture/api-contracts-kr.md", api_content);
+        write_mapped(
+            root.path(),
+            "04-architecture/api-contracts-kr.md",
+            api_content,
+        );
         let hash = format!("api:{}", sha12(api_content));
 
         let engine_stale: Vec<String> = vec![];
@@ -395,7 +426,10 @@ mod tests {
     fn badge_symbols_are_colorless_allowed_glyphs() {
         assert_eq!(StaleVerdict::Fresh.badge(), "✓");
         assert_eq!(StaleVerdict::Stale { reason: "x".into() }.badge(), "★");
-        assert_eq!(StaleVerdict::Uncomparable { reason: "x".into() }.badge(), "?");
+        assert_eq!(
+            StaleVerdict::Uncomparable { reason: "x".into() }.badge(),
+            "?"
+        );
     }
 
     // ── real-project mapping confirmation regression (pins item 1's empirical basis) ───────────────────
@@ -409,10 +443,17 @@ mod tests {
     fn pilot_project_adr_label_is_genuinely_stale_not_a_false_positive() {
         // The pilot project path relative to the repository root (the test runs from the crate
         // directory, so it walks up via a relative path).
-        let pilot_root: PathBuf =
-            [env!("CARGO_MANIFEST_DIR"), "..", "..", "..", "..", "pilot", ".agent-team"]
-                .iter()
-                .collect();
+        let pilot_root: PathBuf = [
+            env!("CARGO_MANIFEST_DIR"),
+            "..",
+            "..",
+            "..",
+            "..",
+            "pilot",
+            ".agent-team",
+        ]
+        .iter()
+        .collect();
         if !pilot_root.is_dir() {
             // An environment without the pilot artifacts (e.g. CI with only the crate extracted) — skip.
             return;

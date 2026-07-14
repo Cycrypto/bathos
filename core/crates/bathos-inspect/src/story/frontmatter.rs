@@ -38,7 +38,12 @@ pub fn extract(content: &str) -> FrontmatterMeta {
     let source_hash = StoryCompiler::extract_source_hash(content);
     let likely_parse_failed = story_key.is_none() && status.is_none() && source_hash.is_none();
 
-    FrontmatterMeta { story_key, status, source_hash, likely_parse_failed }
+    FrontmatterMeta {
+        story_key,
+        status,
+        source_hash,
+        likely_parse_failed,
+    }
 }
 
 /// The 1-based line number of a `key:`-form frontmatter field (for display, not decision).

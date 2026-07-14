@@ -59,7 +59,12 @@ mod tests {
     use crate::story::Severity;
 
     fn ctx(path: std::path::PathBuf) -> InspectCtx {
-        InspectCtx { agent_team_path: path, json: false, verbose: false, strict: false }
+        InspectCtx {
+            agent_team_path: path,
+            json: false,
+            verbose: false,
+            strict: false,
+        }
     }
 
     fn valid_story(key: &str) -> String {
@@ -130,8 +135,14 @@ content [Source: x#f]
             .map(|f| (f.rule_id.clone(), f.severity, f.location.clone()))
             .collect();
 
-        assert_eq!(via_group.len(), direct.len(), "findings 개수가 완전히 일치해야 함(CR-2)");
-        assert!(direct.iter().any(|(id, sev, _)| id == "story_missing_section" && *sev == Severity::Fail));
+        assert_eq!(
+            via_group.len(),
+            direct.len(),
+            "findings 개수가 완전히 일치해야 함(CR-2)"
+        );
+        assert!(direct
+            .iter()
+            .any(|(id, sev, _)| id == "story_missing_section" && *sev == Severity::Fail));
         assert_eq!(group.status, Severity::Fail);
     }
 
@@ -152,6 +163,10 @@ content [Source: x#f]
         assert_eq!(group.findings.len(), 1, "exactly one scoping-skip finding");
         assert_eq!(group.findings[0].severity, Severity::Warn);
         assert_eq!(group.findings[0].rule_id, "story_noncanonical_skipped");
-        assert_ne!(group.status, Severity::Fail, "a lite note must not fail the story group");
+        assert_ne!(
+            group.status,
+            Severity::Fail,
+            "a lite note must not fail the story group"
+        );
     }
 }
