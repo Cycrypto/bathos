@@ -158,6 +158,9 @@ mod tests {
         std::fs::create_dir_all(&nested).unwrap();
 
         let found = find_agent_team_upward(&nested);
-        assert!(found.is_none(), "파일인 .agent-team은 후보에서 제외되어야 함");
+        assert!(
+            found.is_none(),
+            "파일인 .agent-team은 후보에서 제외되어야 함"
+        );
     }
 }

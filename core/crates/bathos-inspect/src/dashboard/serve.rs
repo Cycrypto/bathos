@@ -122,14 +122,21 @@ fn run_serve_inner(
         Err(e) => return initial_load_error(&e, ctx.json),
     };
     let initial_html = initial_page_html(&pv, lang);
-    let state = Arc::new(ServeState { html: Mutex::new(initial_html), version: AtomicU64::new(0) });
+    let state = Arc::new(ServeState {
+        html: Mutex::new(initial_html),
+        version: AtomicU64::new(0),
+    });
 
     // 2) HTTP bind — E-PORT-IN-USE if the port is taken. [Source: exceptions-kr.md §5]
     let server = match Server::http(("127.0.0.1", port)) {
         Ok(s) => s,
         Err(e) => return port_in_use_error(port, e.as_ref(), ctx.json),
     };
-    let bound_port = server.server_addr().to_ip().map(|a| a.port()).unwrap_or(port);
+    let bound_port = server
+        .server_addr()
+        .to_ip()
+        .map(|a| a.port())
+        .unwrap_or(port);
     if let Some(tx) = ready_tx {
         let _ = tx.send(bound_port);
     }
@@ -229,7 +236,13 @@ fn inject_live_reload(html: &str) -> String {
 /// files, and this function neither acquires a lock nor writes state. Even when
 /// create/delete events for `.lock` files arrive, they are given no special treatment and
 /// are used merely as a re-render trigger (`W-LOCK-IGNORED`). [Source: exceptions-kr.md §5]
-fn watch_loop(root: PathBuf, lang: LangArg, state: Arc<ServeState>, verbose: bool, stop: Arc<AtomicBool>) {
+fn watch_loop(
+    root: PathBuf,
+    lang: LangArg,
+    state: Arc<ServeState>,
+    verbose: bool,
+    stop: Arc<AtomicBool>,
+) {
     let (tx, rx) = mpsc::channel::<notify::Result<notify::Event>>();
     let mut watcher = match recommended_watcher(move |res| {
         let _ = tx.send(res);
@@ -238,7 +251,9 @@ fn watch_loop(root: PathBuf, lang: LangArg, state: Arc<ServeState>, verbose: boo
         Err(e) => {
             // A file-watch init failure is not fatal — the initial render is already being
             // served, so we degrade to "keep serving without live updates" and just notify.
-            eprintln!("[bathos inspect serve] 파일와치 초기화 실패(라이브 갱신 비활성, 서빙은 계속): {e}");
+            eprintln!(
+                "[bathos inspect serve] 파일와치 초기화 실패(라이브 갱신 비활성, 서빙은 계속): {e}"
+            );
             return;
         }
     };
@@ -247,11 +262,17 @@ fn watch_loop(root: PathBuf, lang: LangArg, state: Arc<ServeState>, verbose: boo
         let p = root.join(sub);
         if p.exists() {
             if let Err(e) = watcher.watch(&p, RecursiveMode::Recursive) {
-                eprintln!("[bathos inspect serve] 파일와치 등록 실패({}): {e}", p.display());
+                eprintln!(
+                    "[bathos inspect serve] 파일와치 등록 실패({}): {e}",
+                    p.display()
+                );
             }
         } else if verbose {
             // absence is normal (Absent-OK) — may be not yet created, or a directory this project does not use.
-            eprintln!("[bathos inspect serve] 감시 대상 경로 부재(정상): {}", p.display());
+            eprintln!(
+                "[bathos inspect serve] 감시 대상 경로 부재(정상): {}",
+                p.display()
+            );
         }
     }
 
@@ -321,17 +342,28 @@ fn serve_loop(server: Server, state: Arc<ServeState>, stop: Arc<AtomicBool>) -> 
 fn handle_request(request: tiny_http::Request, state: &Arc<ServeState>) {
     let path = request.url().split('?').next().unwrap_or("/").to_string();
 
-    let (status, content_type, body): (u16, &str, String) = if path == "/" || path == "/index.html" {
+    let (status, content_type, body): (u16, &str, String) = if path == "/" || path == "/index.html"
+    {
         (200, "text/html; charset=utf-8", read_html(&state.html))
     } else if path == VERSION_PATH {
-        (200, "text/plain; charset=utf-8", state.version.load(Ordering::SeqCst).to_string())
+        (
+            200,
+            "text/plain; charset=utf-8",
+            state.version.load(Ordering::SeqCst).to_string(),
+        )
     } else {
-        (404, "text/plain; charset=utf-8", "404 not found".to_string())
+        (
+            404,
+            "text/plain; charset=utf-8",
+            "404 not found".to_string(),
+        )
     };
 
     let header = Header::from_bytes(&b"Content-Type"[..], content_type.as_bytes())
         .expect("정적 Content-Type 문자열은 항상 유효한 HTTP 헤더값");
-    let response = Response::from_string(body).with_status_code(status).with_header(header);
+    let response = Response::from_string(body)
+        .with_status_code(status)
+        .with_header(header);
     // The client may have already dropped the connection (polling cancel, etc.) — a response failure is harmless, so ignore it.
     let _ = request.respond(response);
 }
@@ -342,7 +374,10 @@ fn handle_request(request: tiny_http::Request, state: &Arc<ServeState>) {
 
 fn initial_load_error(e: &LoadError, json: bool) -> i32 {
     if json {
-        eprintln!("{}", serde_json::json!({ "error": "load_failed", "message": e.to_string() }));
+        eprintln!(
+            "{}",
+            serde_json::json!({ "error": "load_failed", "message": e.to_string() })
+        );
     } else {
         eprintln!("[bathos inspect serve] {e}");
     }
@@ -350,7 +385,11 @@ fn initial_load_error(e: &LoadError, json: bool) -> i32 {
 }
 
 /// `E-PORT-IN-USE` — suggests a different port and exits 1. [Source: exceptions-kr.md §5]
-fn port_in_use_error(port: u16, e: &(dyn std::error::Error + Send + Sync + 'static), json: bool) -> i32 {
+fn port_in_use_error(
+    port: u16,
+    e: &(dyn std::error::Error + Send + Sync + 'static),
+    json: bool,
+) -> i32 {
     let alt = port.wrapping_add(1);
     let message = format!(
         "127.0.0.1:{port} 포트를 사용할 수 없습니다({e}). 다른 포트를 지정하세요: --port {alt}"
@@ -390,12 +429,17 @@ fn open_url_platform(url: &str) -> std::io::Result<std::process::Child> {
 
 #[cfg(target_os = "windows")]
 fn open_url_platform(url: &str) -> std::io::Result<std::process::Child> {
-    std::process::Command::new("cmd").args(["/C", "start", "", url]).spawn()
+    std::process::Command::new("cmd")
+        .args(["/C", "start", "", url])
+        .spawn()
 }
 
 #[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
 fn open_url_platform(_url: &str) -> std::io::Result<std::process::Child> {
-    Err(std::io::Error::new(std::io::ErrorKind::Unsupported, "지원되지 않는 플랫폼"))
+    Err(std::io::Error::new(
+        std::io::ErrorKind::Unsupported,
+        "지원되지 않는 플랫폼",
+    ))
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -446,13 +490,21 @@ mod tests {
         let expected = crate::dashboard::build_report(&pv, &[], LangArg::Both);
         let served = initial_page_html(&pv, LangArg::Both);
 
-        let footer_idx = expected.find("<footer>").expect("report 출력은 항상 <footer>를 포함해야 함");
+        let footer_idx = expected
+            .find("<footer>")
+            .expect("report 출력은 항상 <footer>를 포함해야 함");
         assert!(
             served.starts_with(&expected[..footer_idx]),
             "serve 초기 HTML은 footer(생성 시각) 이전까지 build_report 산출물과 완전히 동일해야 함(ADR-P-0005)"
         );
-        assert!(served.contains("<footer>"), "serve도 report와 동일하게 footer를 포함해야 함");
-        assert!(served.contains(r#"aria-live="polite""#), "라이브 갱신 영역에 aria-live=polite 필요(AC)");
+        assert!(
+            served.contains("<footer>"),
+            "serve도 report와 동일하게 footer를 포함해야 함"
+        );
+        assert!(
+            served.contains(r#"aria-live="polite""#),
+            "라이브 갱신 영역에 aria-live=polite 필요(AC)"
+        );
         assert!(served.contains("</body>") && served.contains("</html>"));
     }
 
@@ -468,15 +520,27 @@ mod tests {
         let before_meta = fs::metadata(&manifest_path).unwrap().modified().unwrap();
         let before_bytes = fs::read(&manifest_path).unwrap();
 
-        let state = Arc::new(ServeState { html: Mutex::new(String::new()), version: AtomicU64::new(0) });
+        let state = Arc::new(ServeState {
+            html: Mutex::new(String::new()),
+            version: AtomicU64::new(0),
+        });
         reload_and_store(dir.path(), LangArg::Both, &state, false);
         reload_and_store(dir.path(), LangArg::Both, &state, false);
 
         let after_meta = fs::metadata(&manifest_path).unwrap().modified().unwrap();
         let after_bytes = fs::read(&manifest_path).unwrap();
-        assert_eq!(before_meta, after_meta, "serve는 상태 파일 mtime을 절대 바꾸지 않아야 함(CR-1)");
-        assert_eq!(before_bytes, after_bytes, "serve는 상태 파일 내용을 절대 바꾸지 않아야 함(CR-1)");
-        assert!(state.version.load(Ordering::SeqCst) >= 2, "성공한 재로드마다 버전이 증가해야 함");
+        assert_eq!(
+            before_meta, after_meta,
+            "serve는 상태 파일 mtime을 절대 바꾸지 않아야 함(CR-1)"
+        );
+        assert_eq!(
+            before_bytes, after_bytes,
+            "serve는 상태 파일 내용을 절대 바꾸지 않아야 함(CR-1)"
+        );
+        assert!(
+            state.version.load(Ordering::SeqCst) >= 2,
+            "성공한 재로드마다 버전이 증가해야 함"
+        );
     }
 
     /// Even if a `.lock` file exists, the tool ignores it without taking a lock and still reads successfully.
@@ -487,10 +551,17 @@ mod tests {
         write_manifest(dir.path(), r#"{"project": "LockIgnored"}"#);
         fs::write(dir.path().join("_state").join("audit-log.jsonl.lock"), b"").unwrap();
 
-        let state = Arc::new(ServeState { html: Mutex::new(String::new()), version: AtomicU64::new(0) });
+        let state = Arc::new(ServeState {
+            html: Mutex::new(String::new()),
+            version: AtomicU64::new(0),
+        });
         reload_and_store(dir.path(), LangArg::Both, &state, false);
 
-        assert_eq!(state.version.load(Ordering::SeqCst), 1, ".lock 존재해도 재로드는 성공해야 함(W-LOCK-IGNORED)");
+        assert_eq!(
+            state.version.load(Ordering::SeqCst),
+            1,
+            ".lock 존재해도 재로드는 성공해야 함(W-LOCK-IGNORED)"
+        );
         assert!(read_html(&state.html).contains("BATHOS inspect"));
     }
 
@@ -509,8 +580,16 @@ mod tests {
         fs::remove_file(dir.path().join("_state").join("manifest.json")).unwrap();
         reload_and_store(dir.path(), LangArg::Both, &state, false);
 
-        assert_eq!(read_html(&state.html), "<html>LAST-GOOD</html>", "실패 시 마지막 정상 HTML 유지");
-        assert_eq!(state.version.load(Ordering::SeqCst), 5, "실패 시 버전 증가 없음(갱신 없음)");
+        assert_eq!(
+            read_html(&state.html),
+            "<html>LAST-GOOD</html>",
+            "실패 시 마지막 정상 HTML 유지"
+        );
+        assert_eq!(
+            state.version.load(Ordering::SeqCst),
+            5,
+            "실패 시 버전 증가 없음(갱신 없음)"
+        );
     }
 
     // ── feature-on smoke (real tiny_http bind → GET / → HTML response) ──────
@@ -547,12 +626,18 @@ mod tests {
         stop.store(true, Ordering::SeqCst);
         let code = handle.join().expect("serve 스레드 join 실패");
 
-        assert!(response.starts_with("HTTP/1.1 200"), "GET / 응답이 200이어야 함: {response}");
+        assert!(
+            response.starts_with("HTTP/1.1 200"),
+            "GET / 응답이 200이어야 함: {response}"
+        );
         assert!(
             response.to_lowercase().contains("<!doctype html"),
             "응답 본문에 HTML 문서가 포함돼야 함"
         );
-        assert!(response.contains("aria-live=\"polite\""), "라이브 리전이 응답에 포함돼야 함");
+        assert!(
+            response.contains("aria-live=\"polite\""),
+            "라이브 리전이 응답에 포함돼야 함"
+        );
         assert_eq!(code, 0, "정상 stop 신호로 종료 시 exit code 0");
     }
 
@@ -567,9 +652,12 @@ mod tests {
         let (ready_tx, ready_rx) = mpsc::channel::<u16>();
         let stop = Arc::new(AtomicBool::new(false));
         let stop2 = Arc::clone(&stop);
-        let handle =
-            std::thread::spawn(move || run_serve_inner(&ctx, 0, LangArg::Both, false, Some(stop2), Some(ready_tx)));
-        let port = ready_rx.recv_timeout(Duration::from_secs(5)).expect("포트 통지 타임아웃");
+        let handle = std::thread::spawn(move || {
+            run_serve_inner(&ctx, 0, LangArg::Both, false, Some(stop2), Some(ready_tx))
+        });
+        let port = ready_rx
+            .recv_timeout(Duration::from_secs(5))
+            .expect("포트 통지 타임아웃");
 
         let fetch_version = |port: u16| -> String {
             let mut stream = std::net::TcpStream::connect(("127.0.0.1", port)).unwrap();
@@ -585,7 +673,10 @@ mod tests {
         };
 
         let before = fetch_version(port);
-        assert!(before.contains("\r\n\r\n0"), "초기 버전은 0이어야 함: {before}");
+        assert!(
+            before.contains("\r\n\r\n0"),
+            "초기 버전은 0이어야 함: {before}"
+        );
 
         // Update the manifest to trigger a file-watch event. An OS file-event backend
         // (e.g. macOS FSEvents) can lag more than the debounce window (300ms), so instead
@@ -605,6 +696,9 @@ mod tests {
         stop.store(true, Ordering::SeqCst);
         let _ = handle.join();
 
-        assert_ne!(before, after, "파일 변경 후 버전이 증가해야 함(디바운스 재렌더, 5초 내)");
+        assert_ne!(
+            before, after,
+            "파일 변경 후 버전이 증가해야 함(디바운스 재렌더, 5초 내)"
+        );
     }
 }

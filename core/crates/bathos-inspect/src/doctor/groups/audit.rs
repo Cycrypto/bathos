@@ -28,7 +28,11 @@ pub fn run(ctx: &InspectCtx, pv: Option<&ProjectView>) -> GroupResult {
     let mut findings = Vec::new();
 
     match &chain_status {
-        ChainStatus::Broken { seq, expected, actual } => {
+        ChainStatus::Broken {
+            seq,
+            expected,
+            actual,
+        } => {
             findings.push(Finding::new(
                 AUDIT_CHAIN_BROKEN,
                 Severity::Fail,
@@ -85,7 +89,12 @@ mod tests {
     use bathos_state::audit::append_audit_entry;
 
     fn ctx(path: std::path::PathBuf) -> InspectCtx {
-        InspectCtx { agent_team_path: path, json: false, verbose: false, strict: false }
+        InspectCtx {
+            agent_team_path: path,
+            json: false,
+            verbose: false,
+            strict: false,
+        }
     }
 
     /// audit-log.jsonl absent → `audit_absent` pass (a single finding, informational).
@@ -93,13 +102,14 @@ mod tests {
     fn absent_audit_log_yields_pass_finding_via_project_view() {
         let dir = tempfile::tempdir().unwrap();
         std::fs::create_dir_all(dir.path().join("_state")).unwrap();
-        std::fs::write(dir.path().join("_state").join("manifest.json"), r#"{"project":"x"}"#)
-            .unwrap();
-        let pv = crate::loader::load_project(
-            dir.path(),
-            crate::loader::LoadOpts { verify_chain: true },
+        std::fs::write(
+            dir.path().join("_state").join("manifest.json"),
+            r#"{"project":"x"}"#,
         )
         .unwrap();
+        let pv =
+            crate::loader::load_project(dir.path(), crate::loader::LoadOpts { verify_chain: true })
+                .unwrap();
 
         let group = run(&ctx(dir.path().to_path_buf()), Some(&pv));
         assert_eq!(group.status, Severity::Pass);
@@ -119,7 +129,10 @@ mod tests {
 
         let group = run(&ctx(dir.path().to_path_buf()), None);
         assert_eq!(group.status, Severity::Pass);
-        assert!(group.findings.is_empty(), "정상 체인 + pv=None이면 findings 0건(Valid는 finding 없음)");
+        assert!(
+            group.findings.is_empty(),
+            "정상 체인 + pv=None이면 findings 0건(Valid는 finding 없음)"
+        );
     }
 
     /// G-1 golden (core): a tampered-chain fixture → `audit_chain_broken` fail (+ the broken seq).
@@ -139,18 +152,15 @@ mod tests {
         let content = std::fs::read_to_string(&audit_path).unwrap();
         let mut lines: Vec<String> = content.lines().map(str::to_string).collect();
         let mut second: serde_json::Value = serde_json::from_str(&lines[1]).unwrap();
-        second["hash_prev"] = serde_json::json!(
-            "deadbeef00000000000000000000000000000000000000000000000000000000"
-        );
+        second["hash_prev"] =
+            serde_json::json!("deadbeef00000000000000000000000000000000000000000000000000000000");
         lines[1] = serde_json::to_string(&second).unwrap();
         std::fs::write(&audit_path, lines.join("\n") + "\n").unwrap();
 
         std::fs::write(state_dir.join("manifest.json"), r#"{"project":"golden"}"#).unwrap();
-        let pv = crate::loader::load_project(
-            dir.path(),
-            crate::loader::LoadOpts { verify_chain: true },
-        )
-        .unwrap();
+        let pv =
+            crate::loader::load_project(dir.path(), crate::loader::LoadOpts { verify_chain: true })
+                .unwrap();
 
         let group = run(&ctx(dir.path().to_path_buf()), Some(&pv));
         assert_eq!(group.status, Severity::Fail);
@@ -160,7 +170,11 @@ mod tests {
             .find(|f| f.rule_id == AUDIT_CHAIN_BROKEN)
             .expect("audit_chain_broken finding 있어야 함");
         assert_eq!(f.severity, Severity::Fail);
-        assert!(f.location.contains("seq=2"), "깨진 seq(2)가 위치에 표기되어야 함: {}", f.location);
+        assert!(
+            f.location.contains("seq=2"),
+            "깨진 seq(2)가 위치에 표기되어야 함: {}",
+            f.location
+        );
     }
 
     /// A valid chain (Valid) emits no finding (unlike Absent/Broken, it passes silently with no
@@ -173,11 +187,9 @@ mod tests {
         append_audit_entry(&state_dir.join("audit-log.jsonl"), "p", "User", "a", "t").unwrap();
         std::fs::write(state_dir.join("manifest.json"), r#"{"project":"p"}"#).unwrap();
 
-        let pv = crate::loader::load_project(
-            dir.path(),
-            crate::loader::LoadOpts { verify_chain: true },
-        )
-        .unwrap();
+        let pv =
+            crate::loader::load_project(dir.path(), crate::loader::LoadOpts { verify_chain: true })
+                .unwrap();
         let group = run(&ctx(dir.path().to_path_buf()), Some(&pv));
         assert_eq!(group.status, Severity::Pass);
         assert!(group.findings.is_empty());
@@ -193,16 +205,17 @@ mod tests {
         append_audit_entry(&audit_path, "p", "User", "a", "t").unwrap();
         {
             use std::io::Write;
-            let mut f = std::fs::OpenOptions::new().append(true).open(&audit_path).unwrap();
+            let mut f = std::fs::OpenOptions::new()
+                .append(true)
+                .open(&audit_path)
+                .unwrap();
             writeln!(f, "{{\"not_an_audit_entry\": true}}").unwrap();
         }
         std::fs::write(state_dir.join("manifest.json"), r#"{"project":"p"}"#).unwrap();
 
-        let pv = crate::loader::load_project(
-            dir.path(),
-            crate::loader::LoadOpts { verify_chain: true },
-        )
-        .unwrap();
+        let pv =
+            crate::loader::load_project(dir.path(), crate::loader::LoadOpts { verify_chain: true })
+                .unwrap();
         let group = run(&ctx(dir.path().to_path_buf()), Some(&pv));
         assert!(group
             .findings

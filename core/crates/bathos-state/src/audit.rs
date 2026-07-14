@@ -467,7 +467,12 @@ pub fn reseal_chain(log_path: &Path) -> StateResult<usize> {
         PathBuf::from(p)
     };
     std::fs::copy(log_path, &bak_path).map_err(|e| StateError::AuditWriteFailed {
-        reason: format!("backup {} -> {}: {}", log_path.display(), bak_path.display(), e),
+        reason: format!(
+            "backup {} -> {}: {}",
+            log_path.display(),
+            bak_path.display(),
+            e
+        ),
     })?;
 
     // 4. Re-seal every entry under the resolved key (reuse the key from step 2).
@@ -493,7 +498,12 @@ pub fn reseal_chain(log_path: &Path) -> StateResult<usize> {
         reason: format!("write temp {}: {}", tmp_path.display(), e),
     })?;
     std::fs::rename(&tmp_path, log_path).map_err(|e| StateError::AuditWriteFailed {
-        reason: format!("rename {} -> {}: {}", tmp_path.display(), log_path.display(), e),
+        reason: format!(
+            "rename {} -> {}: {}",
+            tmp_path.display(),
+            log_path.display(),
+            e
+        ),
     })?;
 
     // 6. Verify the re-sealed chain under the new keyed algorithm.

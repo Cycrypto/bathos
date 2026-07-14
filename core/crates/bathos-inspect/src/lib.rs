@@ -97,13 +97,23 @@ mod tests {
     fn report_and_serve_return_exit_1_without_panic_when_agent_team_absent() {
         assert_eq!(
             run(
-                InspectCommand::Report { out: PathBuf::from("out.html"), lang: LangArg::Both },
+                InspectCommand::Report {
+                    out: PathBuf::from("out.html"),
+                    lang: LangArg::Both
+                },
                 ctx()
             ),
             1
         );
         assert_eq!(
-            run(InspectCommand::Serve { port: 8787, lang: LangArg::Both, open: false }, ctx()),
+            run(
+                InspectCommand::Serve {
+                    port: 8787,
+                    lang: LangArg::Both,
+                    open: false
+                },
+                ctx()
+            ),
             1
         );
     }
@@ -115,7 +125,14 @@ mod tests {
     #[test]
     fn story_subcommand_is_wired_not_stub() {
         assert_eq!(
-            run(InspectCommand::Story { key: None, lint: false, stale: false }, ctx()),
+            run(
+                InspectCommand::Story {
+                    key: None,
+                    lint: false,
+                    stale: false
+                },
+                ctx()
+            ),
             0
         );
     }

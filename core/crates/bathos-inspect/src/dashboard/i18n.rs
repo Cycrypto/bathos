@@ -156,7 +156,12 @@ mod tests {
     /// Spot-check that core labels have en≠kr (regression guard).
     #[test]
     fn core_labels_are_actually_bilingual() {
-        for key in ["status.active", "gate.facilitator_missing", "audit.no_history", "stale.badge"] {
+        for key in [
+            "status.active",
+            "gate.facilitator_missing",
+            "audit.no_history",
+            "stale.badge",
+        ] {
             let l = t(key);
             assert_ne!(l.en, l.kr, "key={key} en/kr이 동일 — 번역 누락 의심");
         }

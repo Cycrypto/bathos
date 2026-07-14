@@ -133,9 +133,11 @@ fn load_story_cards(ctx: &crate::InspectCtx, pv: &ProjectView) -> Vec<StoryCardV
         .filter_map(|view| {
             let file_path = story_dir.join(&view.file_name);
             match crate::story::lint_story(&file_path) {
-                Ok(lint) => {
-                    Some(viewmodel::story_card_vm(&lint, &view.file_name, &pv.stale_story_keys))
-                }
+                Ok(lint) => Some(viewmodel::story_card_vm(
+                    &lint,
+                    &view.file_name,
+                    &pv.stale_story_keys,
+                )),
                 Err(e) => {
                     if ctx.verbose {
                         eprintln!(
@@ -155,7 +157,10 @@ fn load_story_cards(ctx: &crate::InspectCtx, pv: &ProjectView) -> Vec<StoryCardV
 /// message, but only this path was missing it (Thomas W6 review L-1). Extracted as a
 /// pure function so a string unit test can pin the code-prefix presence directly.
 fn out_write_error_message(out: &Path, e: &std::io::Error) -> String {
-    format!("[bathos inspect report] [E-OUT-WRITE] 출력 파일 쓰기 실패: {} — {e}", out.display())
+    format!(
+        "[bathos inspect report] [E-OUT-WRITE] 출력 파일 쓰기 실패: {} — {e}",
+        out.display()
+    )
 }
 
 /// Prints a Fatal `LoadError` as a human/machine-readable message and returns exit 1.
@@ -163,7 +168,10 @@ fn out_write_error_message(out: &Path, e: &std::io::Error) -> String {
 /// "the user-specified out.html on success".)
 fn report_load_error(e: &LoadError, json: bool) -> i32 {
     if json {
-        eprintln!("{}", serde_json::json!({ "error": "load_failed", "message": e.to_string() }));
+        eprintln!(
+            "{}",
+            serde_json::json!({ "error": "load_failed", "message": e.to_string() })
+        );
     } else {
         eprintln!("[bathos inspect report] {e}");
     }
@@ -221,7 +229,10 @@ mod tests {
         assert_eq!(code, 0);
         let html = fs::read_to_string(&out).unwrap();
         assert!(html.contains("BATHOS DevTools"));
-        assert!(html.contains("banners"), "서술형 manifest는 배너를 포함해야 함");
+        assert!(
+            html.contains("banners"),
+            "서술형 manifest는 배너를 포함해야 함"
+        );
     }
 
     /// `--json` mode → must be able to return the DashboardVM structure without writing
@@ -316,10 +327,16 @@ content [Source: x#j]
         let code = run_report(&ctx, &out, Lang::Both);
         assert_eq!(code, 0);
         let html = fs::read_to_string(&out).unwrap();
-        assert!(html.contains("1-1-a"), "스토리 카드가 story_key로 렌더되어야 함");
+        assert!(
+            html.contains("1-1-a"),
+            "스토리 카드가 story_key로 렌더되어야 함"
+        );
         // compliant_story is warn=1/fail=0 due to the absent readiness-report-kr.md — the
         // card should show that summary (if it were an empty slice this string would be absent).
-        assert!(html.contains("warn=1"), "린트 요약(warn=1)이 카드에 표시되어야 함");
+        assert!(
+            html.contains("warn=1"),
+            "린트 요약(warn=1)이 카드에 표시되어야 함"
+        );
     }
 
     /// A story with a FAIL must be reflected in the fail badge/summary (false-case guard).
@@ -343,10 +360,16 @@ content [Source: x#j]
             strict: false,
         };
         let code = run_report(&ctx, &out, Lang::Both);
-        assert_eq!(code, 0, "report 자체는 스토리 FAIL과 무관하게 exit 0(진단 도구)");
+        assert_eq!(
+            code, 0,
+            "report 자체는 스토리 FAIL과 무관하게 exit 0(진단 도구)"
+        );
         let html = fs::read_to_string(&out).unwrap();
         assert!(html.contains("9-9-broken"));
-        assert!(html.contains("fail=6"), "6개 필수섹션 전부 없음 → fail=6이 카드에 표시");
+        assert!(
+            html.contains("fail=6"),
+            "6개 필수섹션 전부 없음 → fail=6이 카드에 표시"
+        );
     }
 
     /// Even if the story folder itself is absent (Absent-OK), report still succeeds and
@@ -366,7 +389,10 @@ content [Source: x#j]
         let code = run_report(&ctx, &out, Lang::Both);
         assert_eq!(code, 0);
         let html = fs::read_to_string(&out).unwrap();
-        assert!(html.contains("Related stories"), "스토리 섹션 자체는 항상 표시되어야 함");
+        assert!(
+            html.contains("Related stories"),
+            "스토리 섹션 자체는 항상 표시되어야 함"
+        );
         assert!(html.contains("no stories") || html.contains("스토리 없음"));
     }
 
@@ -402,7 +428,10 @@ content [Source: x#j]
     fn out_write_error_message_includes_e_out_write_code_prefix() {
         let e = std::io::Error::new(std::io::ErrorKind::PermissionDenied, "denied");
         let msg = out_write_error_message(Path::new("/tmp/does-not-matter.html"), &e);
-        assert!(msg.contains("[E-OUT-WRITE]"), "메시지에 에러코드가 포함돼야 함: {msg}");
+        assert!(
+            msg.contains("[E-OUT-WRITE]"),
+            "메시지에 에러코드가 포함돼야 함: {msg}"
+        );
         assert!(msg.contains("denied"), "원인(e)도 함께 표시돼야 함: {msg}");
     }
 
@@ -421,6 +450,9 @@ content [Source: x#j]
             strict: false,
         };
         let code = run_report(&ctx, &out, Lang::Both);
-        assert_eq!(code, 1, "출력 경로가 디렉터리면 쓰기 실패로 exit 1이어야 함");
+        assert_eq!(
+            code, 1,
+            "출력 경로가 디렉터리면 쓰기 실패로 exit 1이어야 함"
+        );
     }
 }

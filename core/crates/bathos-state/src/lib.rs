@@ -44,7 +44,7 @@ pub mod store;
 pub use error::{StateError, StateResult};
 pub use model::{
     ApprovedFingerprint, Artifact, AuditEntry, GateVerdict, LevelDecision, PlugModule, Project,
-    ProjectContext, ProjectStatus, RiskLog, RoleInstance, RoleStatus, StoryFile, StoryStatus,
-    Task, TaskStatus, Verdict, Wave, WaveStatus,
+    ProjectContext, ProjectStatus, RiskLog, RoleInstance, RoleStatus, StoryFile, StoryStatus, Task,
+    TaskStatus, Verdict, Wave, WaveStatus,
 };
 pub use store::StateStore;

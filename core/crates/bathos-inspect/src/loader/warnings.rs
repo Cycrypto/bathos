@@ -46,7 +46,8 @@ impl WarningSink {
         message: impl Into<String>,
         location: impl Into<String>,
     ) {
-        self.warnings.push(ParseWarning::new(code, message, location));
+        self.warnings
+            .push(ParseWarning::new(code, message, location));
     }
 
     /// Number of warnings accumulated so far.

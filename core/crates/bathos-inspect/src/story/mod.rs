@@ -182,7 +182,10 @@ pub fn render_story(file: &Path) -> Result<String, StoryLoadError> {
 /// Find the file in `story_dir` whose frontmatter `story_key` exactly matches `key`.
 fn find_story_file(story_dir: &Path, key: &str) -> Result<PathBuf, StoryLoadError> {
     if !story_dir.is_dir() {
-        return Err(StoryLoadError::KeyNotFound { key: key.to_string(), dir: story_dir.to_path_buf() });
+        return Err(StoryLoadError::KeyNotFound {
+            key: key.to_string(),
+            dir: story_dir.to_path_buf(),
+        });
     }
     let entries = std::fs::read_dir(story_dir).map_err(|e| StoryLoadError::ReadFailed {
         path: story_dir.to_path_buf(),
@@ -201,7 +204,10 @@ fn find_story_file(story_dir: &Path, key: &str) -> Result<PathBuf, StoryLoadErro
         }
     }
 
-    Err(StoryLoadError::KeyNotFound { key: key.to_string(), dir: story_dir.to_path_buf() })
+    Err(StoryLoadError::KeyNotFound {
+        key: key.to_string(),
+        dir: story_dir.to_path_buf(),
+    })
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -211,15 +217,24 @@ fn find_story_file(story_dir: &Path, key: &str) -> Result<PathBuf, StoryLoadErro
 /// The `story` subcommand handler that `lib.rs::run` delegates to.
 ///
 /// [Source: api-contracts-kr.md §A-3, exceptions-kr.md §3]
-pub fn run_story(ctx: &crate::InspectCtx, key: Option<&str>, lint_flag: bool, stale_flag: bool) -> i32 {
+pub fn run_story(
+    ctx: &crate::InspectCtx,
+    key: Option<&str>,
+    lint_flag: bool,
+    stale_flag: bool,
+) -> i32 {
     let story_dir = ctx.agent_team_path.join("03-story-engineering");
 
     // Load the engine signal for stale cross-checking only when --stale (avoiding an unnecessary
     // manifest read). Even if the manifest load fails, it does not block story lookup itself (CR-3)
     // — the stale cross-check is supplementary, not a precondition of story lookup.
     let engine_stale_keys: Vec<String> = if stale_flag {
-        match crate::loader::load_project(&ctx.agent_team_path, crate::loader::LoadOpts { verify_chain: false })
-        {
+        match crate::loader::load_project(
+            &ctx.agent_team_path,
+            crate::loader::LoadOpts {
+                verify_chain: false,
+            },
+        ) {
             Ok(pv) => pv.stale_story_keys,
             Err(e) => {
                 if ctx.verbose {
@@ -235,12 +250,24 @@ pub fn run_story(ctx: &crate::InspectCtx, key: Option<&str>, lint_flag: bool, st
     };
 
     match key {
-        Some(k) => run_detail(ctx, &story_dir, k, lint_flag, stale_flag, &engine_stale_keys),
+        Some(k) => run_detail(
+            ctx,
+            &story_dir,
+            k,
+            lint_flag,
+            stale_flag,
+            &engine_stale_keys,
+        ),
         None => run_list(ctx, &story_dir, stale_flag, &engine_stale_keys),
     }
 }
 
-fn run_list(ctx: &crate::InspectCtx, story_dir: &Path, stale_flag: bool, engine_stale_keys: &[String]) -> i32 {
+fn run_list(
+    ctx: &crate::InspectCtx,
+    story_dir: &Path,
+    stale_flag: bool,
+    engine_stale_keys: &[String],
+) -> i32 {
     if !story_dir.is_dir() {
         return report_dir_absent(ctx, story_dir);
     }
@@ -282,7 +309,10 @@ fn run_list(ctx: &crate::InspectCtx, story_dir: &Path, stale_flag: bool, engine_
     }
 
     if views.is_empty() {
-        println!("스토리 없음: {} 안에 story-*-kr.md 파일이 없습니다.", story_dir.display());
+        println!(
+            "스토리 없음: {} 안에 story-*-kr.md 파일이 없습니다.",
+            story_dir.display()
+        );
         return 0;
     }
 
@@ -344,7 +374,10 @@ fn run_detail(
     if ctx.json {
         let mut json = serde_json::to_value(&lint).unwrap_or_else(|_| serde_json::json!({}));
         if let (Some(obj), Some(sv)) = (json.as_object_mut(), &stale_verdict) {
-            obj.insert("stale".to_string(), serde_json::to_value(sv).unwrap_or(serde_json::Value::Null));
+            obj.insert(
+                "stale".to_string(),
+                serde_json::to_value(sv).unwrap_or(serde_json::Value::Null),
+            );
         }
         println!("{json}");
     } else {
@@ -357,10 +390,18 @@ fn run_detail(
             Err(e) => eprintln!("[bathos inspect story] 렌더 실패(린트는 계속 진행): {e}"),
         }
 
-        let eligibility = if lint.ready_for_dev { "W5 진입 적격 ✓" } else { "W5 진입 부적격" };
+        let eligibility = if lint.ready_for_dev {
+            "W5 진입 적격 ✓"
+        } else {
+            "W5 진입 부적격"
+        };
         println!("린트 결과 — {} ({eligibility})", file.display());
         if lint.findings.is_empty() {
-            println!("  위반 없음(pass={}/{})", lint.summary.pass, rules::ALL_RULE_IDS.len());
+            println!(
+                "  위반 없음(pass={}/{})",
+                lint.summary.pass,
+                rules::ALL_RULE_IDS.len()
+            );
         }
         for f in &lint.findings {
             println!(
@@ -378,9 +419,13 @@ fn run_detail(
 
         if let Some(sv) = &stale_verdict {
             match sv {
-                StaleVerdict::Uncomparable { reason } => println!("stale 대조: {} (대조 불가 — {reason})", sv.badge()),
+                StaleVerdict::Uncomparable { reason } => {
+                    println!("stale 대조: {} (대조 불가 — {reason})", sv.badge())
+                }
                 StaleVerdict::Fresh => println!("stale 대조: {} (신선)", sv.badge()),
-                StaleVerdict::Stale { reason } => println!("stale 대조: {} (stale — {reason})", sv.badge()),
+                StaleVerdict::Stale { reason } => {
+                    println!("stale 대조: {} (stale — {reason})", sv.badge())
+                }
             }
         }
     }
@@ -412,7 +457,10 @@ fn report_dir_absent(ctx: &crate::InspectCtx, story_dir: &Path) -> i32 {
 
 fn report_load_error(ctx: &crate::InspectCtx, e: &StoryLoadError) -> i32 {
     if ctx.json {
-        println!("{}", serde_json::json!({ "error": "story_load_failed", "message": e.to_string() }));
+        println!(
+            "{}",
+            serde_json::json!({ "error": "story_load_failed", "message": e.to_string() })
+        );
     } else {
         eprintln!("[bathos inspect story] {e}");
     }
@@ -474,7 +522,11 @@ content [Source: x#f]
         write_story(dir.path(), "story-2-1-b-kr.md", &valid_story("2-1-b"));
         write_story(dir.path(), "story-1-1-a-kr.md", &valid_story("1-1-a"));
         write_story(dir.path(), "not-a-story.md", "무시되어야 함");
-        write_story(dir.path(), "readiness-report-kr.md", "무시되어야 함(story- 접두사 아님)");
+        write_story(
+            dir.path(),
+            "readiness-report-kr.md",
+            "무시되어야 함(story- 접두사 아님)",
+        );
 
         let views = list_stories(dir.path()).unwrap();
         assert_eq!(views.len(), 2);
@@ -490,14 +542,36 @@ content [Source: x#f]
     #[test]
     fn list_stories_sorts_naturally_by_epic_and_story_number_not_lexicographically() {
         let dir = tempfile::tempdir().unwrap();
-        write_story(dir.path(), "story-1-10-tenth-kr.md", &valid_story("1-10-tenth"));
-        write_story(dir.path(), "story-1-2-second-kr.md", &valid_story("1-2-second"));
-        write_story(dir.path(), "story-1-1-first-kr.md", &valid_story("1-1-first"));
-        write_story(dir.path(), "story-2-1-next-epic-kr.md", &valid_story("2-1-next-epic"));
+        write_story(
+            dir.path(),
+            "story-1-10-tenth-kr.md",
+            &valid_story("1-10-tenth"),
+        );
+        write_story(
+            dir.path(),
+            "story-1-2-second-kr.md",
+            &valid_story("1-2-second"),
+        );
+        write_story(
+            dir.path(),
+            "story-1-1-first-kr.md",
+            &valid_story("1-1-first"),
+        );
+        write_story(
+            dir.path(),
+            "story-2-1-next-epic-kr.md",
+            &valid_story("2-1-next-epic"),
+        );
 
         let views = list_stories(dir.path()).unwrap();
-        let keys: Vec<&str> = views.iter().map(|v| v.story_key.as_deref().unwrap()).collect();
-        assert_eq!(keys, vec!["1-1-first", "1-2-second", "1-10-tenth", "2-1-next-epic"]);
+        let keys: Vec<&str> = views
+            .iter()
+            .map(|v| v.story_key.as_deref().unwrap())
+            .collect();
+        assert_eq!(
+            keys,
+            vec!["1-1-first", "1-2-second", "1-10-tenth", "2-1-next-epic"]
+        );
     }
 
     /// When `story_key` is absent or its numbers fail to parse, the same info is parsed back from
@@ -532,7 +606,11 @@ content [Source: x#f]
             "story-nonstandard-name-kr.md",
             "---\nstory_key: \"not-numeric-at-all\"\nstatus: \"backlog\"\n---\n\n내용\n",
         );
-        write_story(dir.path(), "story-1-1-normal-kr.md", &valid_story("1-1-normal"));
+        write_story(
+            dir.path(),
+            "story-1-1-normal-kr.md",
+            &valid_story("1-1-normal"),
+        );
 
         let views = list_stories(dir.path()).unwrap();
         assert_eq!(views.len(), 2);
@@ -547,7 +625,10 @@ content [Source: x#f]
         let dir = tempfile::tempdir().unwrap();
         write_story(dir.path(), "story-1-1-a-kr.md", &valid_story("1-1-a"));
         let found = find_story_file(dir.path(), "1-1-a").unwrap();
-        assert_eq!(found.file_name().unwrap().to_str().unwrap(), "story-1-1-a-kr.md");
+        assert_eq!(
+            found.file_name().unwrap().to_str().unwrap(),
+            "story-1-1-a-kr.md"
+        );
     }
 
     #[test]
@@ -576,7 +657,12 @@ content [Source: x#f]
     // ── run_story (CLI handler integration) ─────────────────────────────────────────
 
     fn ctx(agent_team_path: PathBuf, json: bool) -> crate::InspectCtx {
-        crate::InspectCtx { agent_team_path, json, verbose: false, strict: false }
+        crate::InspectCtx {
+            agent_team_path,
+            json,
+            verbose: false,
+            strict: false,
+        }
     }
 
     #[test]
@@ -608,7 +694,12 @@ content [Source: x#f]
     fn run_story_detail_unknown_key_returns_exit_1() {
         let dir = tempfile::tempdir().unwrap();
         fs::create_dir_all(dir.path().join("03-story-engineering")).unwrap();
-        let code = run_story(&ctx(dir.path().to_path_buf(), false), Some("nope"), false, false);
+        let code = run_story(
+            &ctx(dir.path().to_path_buf(), false),
+            Some("nope"),
+            false,
+            false,
+        );
         assert_eq!(code, 1);
     }
 
@@ -623,7 +714,12 @@ content [Source: x#f]
             "story-1-1-a-kr.md",
             "---\nstory_key: \"1-1-a\"\nstatus: \"ready-for-dev\"\n---\n\n내용만 있음\n",
         );
-        let code = run_story(&ctx(dir.path().to_path_buf(), false), Some("1-1-a"), true, false);
+        let code = run_story(
+            &ctx(dir.path().to_path_buf(), false),
+            Some("1-1-a"),
+            true,
+            false,
+        );
         assert_eq!(code, 2);
     }
 
@@ -638,7 +734,12 @@ content [Source: x#f]
             "story-1-1-a-kr.md",
             "---\nstory_key: \"1-1-a\"\nstatus: \"ready-for-dev\"\n---\n\n내용만 있음\n",
         );
-        let code = run_story(&ctx(dir.path().to_path_buf(), false), Some("1-1-a"), false, false);
+        let code = run_story(
+            &ctx(dir.path().to_path_buf(), false),
+            Some("1-1-a"),
+            false,
+            false,
+        );
         assert_eq!(code, 0);
     }
 
@@ -648,7 +749,12 @@ content [Source: x#f]
         let story_dir = dir.path().join("03-story-engineering");
         fs::create_dir_all(&story_dir).unwrap();
         write_story(&story_dir, "story-1-1-a-kr.md", &valid_story("1-1-a"));
-        let code = run_story(&ctx(dir.path().to_path_buf(), true), Some("1-1-a"), true, true);
+        let code = run_story(
+            &ctx(dir.path().to_path_buf(), true),
+            Some("1-1-a"),
+            true,
+            true,
+        );
         assert_eq!(code, 0);
     }
 

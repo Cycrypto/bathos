@@ -25,7 +25,11 @@ pub struct GroupResult {
 impl GroupResult {
     pub fn new(group: &str, findings: Vec<Finding>) -> Self {
         let status = worst_severity(&findings);
-        Self { group: group.to_string(), status, findings }
+        Self {
+            group: group.to_string(),
+            status,
+            findings,
+        }
     }
 }
 
@@ -129,7 +133,12 @@ pub fn render_text(report: &DoctorReport, verbose: bool) -> String {
     ));
 
     for g in &report.groups {
-        out.push_str(&format!("  [{}] {} — {}\n", g.status.marker(), g.group, g.status));
+        out.push_str(&format!(
+            "  [{}] {} — {}\n",
+            g.status.marker(),
+            g.group,
+            g.status
+        ));
 
         let show_details = verbose || g.status != Severity::Pass;
         if show_details {
@@ -173,13 +182,22 @@ mod tests {
     use super::*;
 
     fn finding(rule_id: &str, severity: Severity) -> Finding {
-        Finding::new(rule_id, severity, "loc".to_string(), "msg".to_string(), "fix".to_string())
+        Finding::new(
+            rule_id,
+            severity,
+            "loc".to_string(),
+            "msg".to_string(),
+            "fix".to_string(),
+        )
     }
 
     #[test]
     fn worst_severity_prefers_fail_over_warn_over_pass() {
         assert_eq!(worst_severity(&[]), Severity::Pass);
-        assert_eq!(worst_severity(&[finding("a", Severity::Warn)]), Severity::Warn);
+        assert_eq!(
+            worst_severity(&[finding("a", Severity::Warn)]),
+            Severity::Warn
+        );
         assert_eq!(
             worst_severity(&[finding("a", Severity::Warn), finding("b", Severity::Fail)]),
             Severity::Fail
@@ -189,7 +207,10 @@ mod tests {
     #[test]
     fn summarize_counts_instances_and_categories() {
         let groups = vec![
-            GroupResult::new("manifest", vec![finding("manifest_form_descriptive", Severity::Warn)]),
+            GroupResult::new(
+                "manifest",
+                vec![finding("manifest_form_descriptive", Severity::Warn)],
+            ),
             GroupResult::new(
                 "gates",
                 vec![finding("gate_release_critical_nonzero", Severity::Fail)],
@@ -210,7 +231,10 @@ mod tests {
             verbose: false,
             strict: false,
         };
-        let groups = vec![GroupResult::new("manifest", vec![finding("manifest_missing", Severity::Fail)])];
+        let groups = vec![GroupResult::new(
+            "manifest",
+            vec![finding("manifest_missing", Severity::Fail)],
+        )];
         let report = finish(&ctx, "unknown".to_string(), groups);
         assert_eq!(report.exit_code, 0);
         assert_eq!(report.summary.fail, 1);
@@ -224,7 +248,10 @@ mod tests {
             verbose: false,
             strict: true,
         };
-        let groups = vec![GroupResult::new("manifest", vec![finding("manifest_missing", Severity::Fail)])];
+        let groups = vec![GroupResult::new(
+            "manifest",
+            vec![finding("manifest_missing", Severity::Fail)],
+        )];
         let report = finish(&ctx, "unknown".to_string(), groups);
         assert_eq!(report.exit_code, 2);
     }
@@ -237,7 +264,11 @@ mod tests {
             verbose: false,
             strict: true,
         };
-        let report = finish(&ctx, "descriptive".to_string(), vec![GroupResult::new("manifest", vec![])]);
+        let report = finish(
+            &ctx,
+            "descriptive".to_string(),
+            vec![GroupResult::new("manifest", vec![])],
+        );
         assert_eq!(report.exit_code, 0);
     }
 
@@ -282,7 +313,11 @@ mod tests {
             verbose: false,
             strict: false,
         };
-        let report = finish(&ctx, "descriptive".to_string(), vec![GroupResult::new("audit", vec![])]);
+        let report = finish(
+            &ctx,
+            "descriptive".to_string(),
+            vec![GroupResult::new("audit", vec![])],
+        );
         let text = render_text(&report, false);
         assert!(text.contains("문제 없음"));
     }
@@ -295,7 +330,10 @@ mod tests {
             verbose: false,
             strict: false,
         };
-        let groups = vec![GroupResult::new("manifest", vec![finding("manifest_missing", Severity::Fail)])];
+        let groups = vec![GroupResult::new(
+            "manifest",
+            vec![finding("manifest_missing", Severity::Fail)],
+        )];
         let report = finish(&ctx, "unknown".to_string(), groups);
         let text = render_text(&report, false);
         assert!(!text.contains("문제 없음"));

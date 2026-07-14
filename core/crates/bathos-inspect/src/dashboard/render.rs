@@ -40,7 +40,11 @@ fn esc(s: &str) -> String {
 /// — the `data-lang` toggle hides one of this pair via CSS (CR-6).
 fn bi(key: &str) -> String {
     let l = i18n::t(key);
-    format!(r#"<span class="en">{}</span><span class="kr">{}</span>"#, esc(l.en), esc(l.kr))
+    format!(
+        r#"<span class="en">{}</span><span class="kr">{}</span>"#,
+        esc(l.en),
+        esc(l.kr)
+    )
 }
 
 /// Colorless status badge — symbol (aria-hidden) + bilingual label (visible text =
@@ -78,7 +82,10 @@ fn render_header(vm: &DashboardVM, initial_lang: Lang) -> String {
     let codename_html = match &vm.codename {
         Some(c) => format!(r#"<span class="codename">{}</span>"#, esc(c)),
         // B-1: a missing codename is not an error — "(untitled)" + (the banner shows the warning separately).
-        None => format!(r#"<span class="codename missing">{}</span>"#, bi("nofollow.untitled")),
+        None => format!(
+            r#"<span class="codename missing">{}</span>"#,
+            bi("nofollow.untitled")
+        ),
     };
     format!(
         r#"<header class="appbar">
@@ -101,8 +108,11 @@ fn render_header(vm: &DashboardVM, initial_lang: Lang) -> String {
 /// Language toggle (LangToggle) — flag emoji are allowed as an exception only in this component.
 /// [Source: design-system-kr.md §5.6, ui-spec-kr.md §0]
 fn render_lang_toggle(initial: Lang) -> String {
-    let (en_pressed, kr_pressed) =
-        if matches!(initial, Lang::Kr) { ("false", "true") } else { ("true", "false") };
+    let (en_pressed, kr_pressed) = if matches!(initial, Lang::Kr) {
+        ("false", "true")
+    } else {
+        ("true", "false")
+    };
     let group_label = i18n::t("lang.toggle_group");
     format!(
         r#"<div class="langtog" role="group" aria-label="{aria}">
@@ -194,8 +204,11 @@ fn render_wave_rail(vm: &DashboardVM) -> String {
         let roles = if w.active_roles.is_empty() {
             String::new()
         } else {
-            let chips: Vec<String> =
-                w.active_roles.iter().map(|r| format!("<span>·{}</span>", esc(r))).collect();
+            let chips: Vec<String> = w
+                .active_roles
+                .iter()
+                .map(|r| format!("<span>·{}</span>", esc(r)))
+                .collect();
             chips.join(" ")
         };
         items += &format!(
@@ -223,7 +236,11 @@ fn gate_ref_html(label_key: &str, g: &Option<GateRefVM>) -> String {
     match g {
         None => String::new(),
         Some(gr) => {
-            let verdict = gr.verdict_badge.as_ref().map(badge_html).unwrap_or_default();
+            let verdict = gr
+                .verdict_badge
+                .as_ref()
+                .map(badge_html)
+                .unwrap_or_default();
             format!(
                 r#"<span class="chip">{kind}: {label} {verdict}</span>"#,
                 kind = bi(label_key),
@@ -245,7 +262,10 @@ fn render_gate_panel(vm: &DashboardVM) -> String {
     let mut cards = String::new();
     for g in &vm.gates {
         let facilitator_html = if g.facilitator_missing {
-            format!(r#"<span class="badge warn"><span aria-hidden="true">★</span> {}</span>"#, bi("gate.facilitator_missing"))
+            format!(
+                r#"<span class="badge warn"><span aria-hidden="true">★</span> {}</span>"#,
+                bi("gate.facilitator_missing")
+            )
         } else {
             esc(g.facilitator.as_deref().unwrap_or(""))
         };
@@ -316,8 +336,10 @@ fn render_audit_section(vm: &DashboardVM) -> String {
         .as_ref()
         .map(|d| format!(r#" <span class="mono">{}</span>"#, esc(d)))
         .unwrap_or_default();
-    let mut out =
-        format!(r#"<div class="chain-badge-row">{badge}{detail}</div>"#, badge = badge_html(&vm.chain_badge));
+    let mut out = format!(
+        r#"<div class="chain-badge-row">{badge}{detail}</div>"#,
+        badge = badge_html(&vm.chain_badge)
+    );
 
     if vm.audit_skipped > 0 {
         out += &format!(
@@ -379,14 +401,20 @@ fn render_tree_node(n: &TreeNode) -> String {
                 .as_ref()
                 .map(|o| format!(r#"<span class="chip">{}</span>"#, esc(o)))
                 .unwrap_or_else(|| r#"<span class="chip">&mdash;</span>"#.to_string());
-            let updated =
-                leaf.updated_iso.as_ref().map(|iso| time_el(iso)).unwrap_or_else(|| "&mdash;".to_string());
+            let updated = leaf
+                .updated_iso
+                .as_ref()
+                .map(|iso| time_el(iso))
+                .unwrap_or_else(|| "&mdash;".to_string());
             let title = leaf
                 .sha256
                 .as_ref()
                 .map(|s| format!(r#" title="sha256:{}""#, esc(s)))
                 .unwrap_or_default();
-            (format!(r#"{owner} <span class="mono">{updated}</span>"#), title)
+            (
+                format!(r#"{owner} <span class="mono">{updated}</span>"#),
+                title,
+            )
         }
         None => (String::new(), String::new()),
     };
@@ -414,7 +442,10 @@ fn render_roles(vm: &DashboardVM) -> String {
         let paths = if r.owned_paths.is_empty() {
             String::new()
         } else {
-            format!(r#"<div class="paths">{}</div>"#, esc(&r.owned_paths.join(" &middot; ")))
+            format!(
+                r#"<div class="paths">{}</div>"#,
+                esc(&r.owned_paths.join(" &middot; "))
+            )
         };
         out += &format!(
             r#"<div class="role-pill">{badge}<span class="mono">{name}</span><span class="rn">{rn}</span>{model}{wave}{paths}</div>"#,
@@ -434,7 +465,11 @@ fn render_stale(vm: &DashboardVM) -> String {
         // empty = fresh — no badge (neither error nor warning). [Source: ui-spec §6.3]
         return format!(r#"<p class="empty-note">{}</p>"#, bi("empty.stale"));
     }
-    let stale_badge = Badge { symbol: "★", css_class: "warn", label_key: "stale.badge" };
+    let stale_badge = Badge {
+        symbol: "★",
+        css_class: "warn",
+        label_key: "stale.badge",
+    };
     let mut out = String::from(r#"<div class="stale-list">"#);
     for k in &vm.stale_story_keys {
         out += &format!(
@@ -502,8 +537,11 @@ fn render_footer(vm: &DashboardVM) -> String {
         Some(iso) => time_el(iso),
         None => "&mdash;".to_string(),
     };
-    let form_label =
-        if vm.manifest_form_descriptive { bi("footer.manifest.descriptive") } else { bi("footer.manifest.engine") };
+    let form_label = if vm.manifest_form_descriptive {
+        bi("footer.manifest.descriptive")
+    } else {
+        bi("footer.manifest.engine")
+    };
     format!(
         r#"<footer>
   <span>{gen_label}: {gen_time}</span>
@@ -529,7 +567,10 @@ fn render_footer(vm: &DashboardVM) -> String {
 pub fn render_html(vm: &DashboardVM, initial_lang: Lang) -> String {
     let initial = initial_lang_attr(initial_lang);
     let html_lang_attr = if initial == "kr" { "ko" } else { "en" };
-    let title_text = vm.codename.clone().unwrap_or_else(|| i18n::t("nofollow.untitled").en.to_string());
+    let title_text = vm
+        .codename
+        .clone()
+        .unwrap_or_else(|| i18n::t("nofollow.untitled").en.to_string());
 
     let artifacts_body = if vm.artifacts_tree.is_empty() {
         format!(r#"<p class="empty-note">{}</p>"#, bi("empty.artifacts"))
@@ -658,8 +699,14 @@ mod tests {
     fn rendered_html_has_zero_external_protocol_references() {
         let vm = build_vm(&empty_pv(), &[]);
         let html = render_html(&vm, Lang::Both);
-        assert!(!html.contains("http://"), "외부 http 참조 발견 — 무CDN 위반");
-        assert!(!html.contains("https://"), "외부 https 참조 발견 — 무CDN 위반");
+        assert!(
+            !html.contains("http://"),
+            "외부 http 참조 발견 — 무CDN 위반"
+        );
+        assert!(
+            !html.contains("https://"),
+            "외부 https 참조 발견 — 무CDN 위반"
+        );
     }
 
     /// Bilingual: both en/kr spans exist and en≠kr (at least for core labels).
@@ -766,7 +813,10 @@ mod tests {
         let vm = build_vm(&empty_pv(), &[]);
         let html = render_html(&vm, Lang::Both).to_lowercase();
         for forbidden in ["token", " cost", "usd", "$/"] {
-            assert!(!html.contains(forbidden), "비-USP 위반 문구 '{forbidden}' 발견");
+            assert!(
+                !html.contains(forbidden),
+                "비-USP 위반 문구 '{forbidden}' 발견"
+            );
         }
     }
 

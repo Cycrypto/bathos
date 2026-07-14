@@ -86,8 +86,11 @@ pub fn load_project(agent_team_path: &Path, opts: LoadOpts) -> Result<ProjectVie
     let modules = manifest::map_modules(root_obj, &mut warnings);
     let stale_story_keys = manifest::map_stale_story_keys(root_obj);
 
-    let audit::AuditLoadResult { entries: audit_entries, skipped: audit_skipped, chain_status } =
-        audit::load_audit(&audit_path, opts.verify_chain, &mut warnings);
+    let audit::AuditLoadResult {
+        entries: audit_entries,
+        skipped: audit_skipped,
+        chain_status,
+    } = audit::load_audit(&audit_path, opts.verify_chain, &mut warnings);
 
     Ok(ProjectView {
         form,
@@ -153,11 +156,18 @@ mod tests {
                 "active_waves": ["W5"]
             }"#,
         );
-        let view = load_project(dir.path(), LoadOpts::default()).expect("서술형도 로드 성공해야 함");
+        let view =
+            load_project(dir.path(), LoadOpts::default()).expect("서술형도 로드 성공해야 함");
         assert_eq!(view.form, ManifestForm::Descriptive);
-        assert_eq!(view.meta.codename, Some("BATHOS DevTools 파일럿".to_string()));
+        assert_eq!(
+            view.meta.codename,
+            Some("BATHOS DevTools 파일럿".to_string())
+        );
         assert_eq!(view.meta.current_level, Some(2));
-        assert!(view.warnings.iter().any(|w| w.code == "W-MANIFEST-DESCRIPTIVE"));
+        assert!(view
+            .warnings
+            .iter()
+            .any(|w| w.code == "W-MANIFEST-DESCRIPTIVE"));
     }
 
     /// An engine-form manifest (6 required fields + waves/gates) loads successfully.

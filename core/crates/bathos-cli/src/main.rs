@@ -398,7 +398,10 @@ fn run(cli: Cli) -> Result<i32> {
 /// A context-resolution failure (`--path` auto-discovery, E-PATH-NOT-FOUND) returns after having
 /// already printed its exit-1 guidance, so here we simply propagate that code.
 /// [Source: story-1-1-crate-scaffold-cli-kr.md AC, api-contracts-kr.md §C]
-fn handle_inspect(common: bathos_inspect::CommonArgs, action: bathos_inspect::InspectCommand) -> i32 {
+fn handle_inspect(
+    common: bathos_inspect::CommonArgs,
+    action: bathos_inspect::InspectCommand,
+) -> i32 {
     match bathos_inspect::resolve_ctx(common) {
         Ok(ctx) => bathos_inspect::run(action, ctx),
         Err(exit_code) => exit_code,
@@ -1055,22 +1058,17 @@ fn handle_fingerprint(action: FingerprintAction, state_dir: &Path) -> Result<i32
                 .unwrap_or(false);
 
             let status = if approved { "approved" } else { "new" };
-            println!(
-                "{}",
-                serde_json::json!({ "status": status, "hash": hash })
-            );
+            println!("{}", serde_json::json!({ "status": status, "hash": hash }));
             Ok(0)
         }
 
         // ── bathos fingerprint approve ────────────────────────────────────────
-        FingerprintAction::Approve {
-            hash,
-            actor,
-            scope,
-        } => {
+        FingerprintAction::Approve { hash, actor, scope } => {
             // Hash format check (same as schema pattern: 64-char lowercase hex) — fail early to avoid contamination
-            let is_valid_hash =
-                hash.len() == 64 && hash.chars().all(|c| c.is_ascii_hexdigit() && !c.is_ascii_uppercase());
+            let is_valid_hash = hash.len() == 64
+                && hash
+                    .chars()
+                    .all(|c| c.is_ascii_hexdigit() && !c.is_ascii_uppercase());
             if !is_valid_hash {
                 anyhow::bail!("잘못된 hash 형식(64자 소문자 hex 필요): {hash}");
             }

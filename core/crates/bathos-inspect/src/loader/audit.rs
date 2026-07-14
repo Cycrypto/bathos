@@ -62,9 +62,15 @@ pub fn load_audit(path: &Path, verify: bool, warnings: &mut WarningSink) -> Audi
     let chain_status = if verify {
         match verify_chain(path) {
             Ok(()) => ChainStatus::Valid,
-            Err(StateError::AuditChainBroken { seq, expected, actual }) => {
-                ChainStatus::Broken { seq, expected, actual }
-            }
+            Err(StateError::AuditChainBroken {
+                seq,
+                expected,
+                actual,
+            }) => ChainStatus::Broken {
+                seq,
+                expected,
+                actual,
+            },
             Err(other) => {
                 // Not a detected "tamper" but an IO/serialization error — do not fabricate a
                 // false Broken; downgrade to NotChecked (integrity unverified, not a crash).
@@ -80,7 +86,11 @@ pub fn load_audit(path: &Path, verify: bool, warnings: &mut WarningSink) -> Audi
         ChainStatus::NotChecked
     };
 
-    AuditLoadResult { entries, skipped, chain_status }
+    AuditLoadResult {
+        entries,
+        skipped,
+        chain_status,
+    }
 }
 
 /// Per-line lenient parsing — failed lines are skipped + warned, normalized in ascending ts order.
@@ -146,7 +156,10 @@ mod tests {
         append_audit_entry(&path, "proj", "User", "action.1", "t1").unwrap();
         {
             use std::io::Write;
-            let mut f = std::fs::OpenOptions::new().append(true).open(&path).unwrap();
+            let mut f = std::fs::OpenOptions::new()
+                .append(true)
+                .open(&path)
+                .unwrap();
             writeln!(f, "{{\"not_an_audit_entry\": true}}").unwrap();
         }
 
@@ -164,7 +177,10 @@ mod tests {
         append_audit_entry(&path, "proj", "User", "action.1", "t1").unwrap();
         {
             use std::io::Write;
-            let mut f = std::fs::OpenOptions::new().append(true).open(&path).unwrap();
+            let mut f = std::fs::OpenOptions::new()
+                .append(true)
+                .open(&path)
+                .unwrap();
             // A truncated (unclosed) JSON line.
             write!(f, "{{\"seq\":2,\"project_id\":\"proj\"").unwrap();
         }
@@ -187,12 +203,22 @@ mod tests {
         let path = dir.path().join("audit-log.jsonl");
 
         // genesis → seq1 → seq2 (via a single Rust writer, a valid chain).
-        append_audit_entry(&path, "bathos-golden", "User", "project.created", "bathos-golden").unwrap();
+        append_audit_entry(
+            &path,
+            "bathos-golden",
+            "User",
+            "project.created",
+            "bathos-golden",
+        )
+        .unwrap();
         append_audit_entry(&path, "bathos-golden", "Paul", "wave.activated", "W3").unwrap();
 
         // Direct engine call result.
         let engine_result = verify_chain(&path);
-        assert!(engine_result.is_ok(), "정상 체인은 엔진 verify_chain도 Ok여야 함");
+        assert!(
+            engine_result.is_ok(),
+            "정상 체인은 엔진 verify_chain도 Ok여야 함"
+        );
 
         // Tool result.
         let mut w = WarningSink::default();
@@ -219,15 +245,17 @@ mod tests {
         let content = std::fs::read_to_string(&path).unwrap();
         let mut lines: Vec<String> = content.lines().map(str::to_string).collect();
         let mut second: serde_json::Value = serde_json::from_str(&lines[1]).unwrap();
-        second["hash_prev"] = serde_json::json!(
-            "deadbeef00000000000000000000000000000000000000000000000000000000"
-        );
+        second["hash_prev"] =
+            serde_json::json!("deadbeef00000000000000000000000000000000000000000000000000000000");
         lines[1] = serde_json::to_string(&second).unwrap();
         std::fs::write(&path, lines.join("\n") + "\n").unwrap();
 
         // Direct engine call result — expect tamper detection.
         let engine_result = verify_chain(&path);
-        assert!(engine_result.is_err(), "변조된 체인은 엔진 verify_chain이 Err여야 함");
+        assert!(
+            engine_result.is_err(),
+            "변조된 체인은 엔진 verify_chain이 Err여야 함"
+        );
         let engine_broken = matches!(engine_result, Err(StateError::AuditChainBroken { .. }));
         assert!(engine_broken, "엔진 오류가 AuditChainBroken이어야 함");
 
@@ -236,7 +264,10 @@ mod tests {
         let tool_result = load_audit(&path, true, &mut w);
         match tool_result.chain_status {
             ChainStatus::Broken { seq, .. } => {
-                assert_eq!(seq, 2, "두 번째 항목(seq=2)의 hash_prev가 오염된 hash_self를 참조하므로 깨짐");
+                assert_eq!(
+                    seq, 2,
+                    "두 번째 항목(seq=2)의 hash_prev가 오염된 hash_self를 참조하므로 깨짐"
+                );
             }
             other => panic!("Broken이어야 하는데 {other:?}"),
         }
