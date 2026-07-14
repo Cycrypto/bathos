@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, master]
+    branches: [develop, prod]
   pull_request:
 
 # 동시 push 시 이전 실행 취소 (리소스 절약)
