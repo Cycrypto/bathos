@@ -1,0 +1,20 @@
+[package]
+name    = "bathos-state"
+version = "0.1.0"
+edition = "2021"
+description = "BATHOS M1: manifest 도메인 모델, 상태 저장소(단일 쓰기·파일락), 감사 해시 체인"
+
+[dependencies]
+serde      = { workspace = true }
+serde_json = { workspace = true }
+sha2       = { workspace = true }
+thiserror  = { workspace = true }
+anyhow     = { workspace = true }
+# fs4는 워크스페이스 선언에 유지하나 state 크레이트는 Rust 1.75+ 네이티브 File::try_lock() 사용
+uuid       = { workspace = true }
+chrono     = { workspace = true }
+jsonschema = { workspace = true }
+hex        = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }

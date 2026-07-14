@@ -1,0 +1,178 @@
+/* BATHOS inspect — dashboard(report/serve) 인라인 스타일시트.
+ * 전량 CSS 변수(토큰) 기반 — 하드코딩 색/간격 금지(DoD).
+ * [Source: design-system-kr.md §2~§6, ui-spec-kr.md §0/§9]
+ * 무CDN: 이 파일은 build_report()가 include_str!로 <style> 안에 그대로 삽입한다.
+ */
+
+/* ── 1. 색 토큰(다크 기본) — design-system-kr.md §2.1 ─────────────────── */
+:root{
+  --abyss:#06171b; --deep:#0a262c; --panel:#0e333a; --raised:#12414a;
+  --line:#1b4952;
+  --teal:#1fc8d4; --brand:#0e9aa1;
+  --foam:#eaf6f4; --mist:#a9cbc9; --muted:#6f9895;
+  --pass:#4ade80; --warn:#f6c667; --fail:#fc8181;
+  --pass-bg:#4ade8022; --warn-bg:#f6c66722; --fail-bg:#fc818122;
+
+  --sans:"Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,system-ui,
+         "Apple SD Gothic Neo","Malgun Gothic",Roboto,"Segoe UI",sans-serif;
+  --mono:ui-monospace,"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;
+
+  --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px;
+  --space-5:20px; --space-6:24px; --space-8:32px; --space-10:40px;
+  --radius-sm:8px; --radius:12px; --radius-lg:14px; --radius-pill:999px;
+  --border:1px solid var(--line);
+  --shell-max:1200px;
+  --focus:2px solid var(--teal);
+  --shadow:0 8px 30px #04101340;
+  --dur-fast:.2s; --dur:.4s;
+}
+
+/* ── 2. 라이트(prefers-color-scheme) — design-system-kr.md §2.2 ────────── */
+@media (prefers-color-scheme: light){
+  :root{
+    --abyss:#f4faf9; --deep:#eaf4f2; --panel:#ffffff; --raised:#f0f7f6;
+    --line:#c9ddda;
+    --teal:#0e7c85; --brand:#0e9aa1;
+    --foam:#0a262c; --mist:#3f5b59; --muted:#6f8b88;
+    --pass:#1f9d57; --warn:#a9791a; --fail:#c23b3b;
+    --pass-bg:#1f9d5718; --warn-bg:#a9791a18; --fail-bg:#c23b3b18;
+  }
+}
+
+/* ── 3. 리셋·기본 ───────────────────────────────────────────────────────── */
+*{box-sizing:border-box}
+body{margin:0}
+.wrap{
+  font-family:var(--sans); color:var(--foam); background:var(--abyss);
+  min-height:100vh; line-height:1.6; -webkit-font-smoothing:antialiased;
+}
+code,.mono{font-family:var(--mono)}
+h1,h2,h3{text-wrap:balance; margin:0}
+a{color:var(--teal)}
+:focus-visible{outline:var(--focus); outline-offset:2px}
+@media (prefers-reduced-motion:reduce){ *{animation:none!important; transition:none!important} }
+
+/* i18n 토글 — 선례 site/index.html §i18n 계승. data-lang은 en|kr만 취급. */
+.wrap[data-lang="en"] .kr{display:none}
+.wrap[data-lang="kr"] .en{display:none}
+
+.shell{max-width:var(--shell-max); margin:0 auto; padding:0 var(--space-6) var(--space-10)}
+
+/* ── 4. 헤더(sticky) ────────────────────────────────────────────────────── */
+.appbar{
+  position:sticky; top:0; z-index:20; background:var(--abyss)ee; backdrop-filter:blur(6px);
+  border-bottom:var(--border); padding:var(--space-4) var(--space-6);
+  display:flex; align-items:center; justify-content:space-between; gap:var(--space-4); flex-wrap:wrap;
+}
+.appbar .title{font-family:var(--mono); font-weight:700; font-size:1.05rem; color:var(--brand); display:flex; gap:var(--space-3); align-items:center; flex-wrap:wrap}
+.appbar .codename{color:var(--foam); font-weight:700}
+.appbar .codename.missing{color:var(--muted); font-style:italic}
+.chip{display:inline-flex; align-items:center; gap:4px; font-family:var(--mono); font-size:.72rem; padding:2px 10px; border:var(--border); border-radius:var(--radius-pill); color:var(--mist)}
+
+/* ── 5. 배지(StatusBadge) — design-system §5.1 ─────────────────────────── */
+.badge{display:inline-flex; align-items:center; gap:6px; padding:2px 10px; border-radius:var(--radius-pill); font-family:var(--mono); font-size:.72rem; white-space:nowrap}
+.badge.pass{color:var(--pass); background:var(--pass-bg)}
+.badge.warn{color:var(--warn); background:var(--warn-bg)}
+.badge.fail{color:var(--fail); background:var(--fail-bg)}
+.badge.teal{color:var(--teal); background:#1fc8d422}
+.badge.muted{color:var(--muted); background:transparent; border:var(--border)}
+
+/* ── 6. 경고 배너 ───────────────────────────────────────────────────────── */
+.banners{padding:var(--space-3) var(--space-6) 0; display:flex; flex-direction:column; gap:var(--space-2)}
+.banner{border:var(--border); border-left:4px solid var(--warn); background:var(--warn-bg); border-radius:var(--radius-sm); padding:var(--space-3) var(--space-4); font-size:.86rem; color:var(--mist); display:flex; justify-content:space-between; gap:var(--space-3); align-items:flex-start}
+.banner b{color:var(--foam)}
+.banner .x{background:none; border:0; color:var(--mist); cursor:pointer; font-family:var(--mono); font-size:.9rem; line-height:1}
+.banner[hidden]{display:none}
+
+/* ── 7. 레이아웃(MAIN + SIDE) — ui-spec §0, design-handoff §6 ──────────── */
+.layout{display:grid; grid-template-columns:1fr 300px; gap:var(--space-6); padding-top:var(--space-6)}
+main{min-width:0}
+aside{min-width:0}
+section.block{margin-bottom:var(--space-8)}
+section.block > h2{font-size:1.3rem; font-weight:800; margin-bottom:var(--space-4); display:flex; align-items:center; gap:var(--space-3)}
+@media (max-width:1023px){
+  .layout{grid-template-columns:1fr}
+  aside{order:3}
+}
+
+/* ── 8. 웨이브 레일(WaveCell) — design-system §5.2 ─────────────────────── */
+ol.wave-rail{list-style:none; margin:0; padding:0; display:flex; gap:var(--space-3); flex-wrap:wrap}
+.wave-rail li{flex:1 1 150px; min-width:140px}
+.wave-cell{background:linear-gradient(180deg,var(--panel),var(--deep)); border:var(--border); border-radius:var(--radius); padding:var(--space-4); height:100%}
+.wave-cell.active{border-left:3px solid var(--teal)}
+.wave-cell .id{font-family:var(--mono); font-weight:700; color:var(--teal); display:flex; justify-content:space-between; align-items:center; gap:var(--space-2)}
+.wave-cell .nm{margin-top:var(--space-1); font-size:.95rem}
+.wave-cell .gates{display:flex; gap:6px; flex-wrap:wrap; margin-top:var(--space-3)}
+.wave-cell .roles{font-family:var(--mono); font-size:.68rem; color:var(--muted); margin-top:var(--space-2); display:flex; gap:6px; flex-wrap:wrap}
+@media (max-width:639px){ ol.wave-rail{flex-direction:column} .wave-rail li{flex:none} }
+
+.empty-note{color:var(--muted); font-size:.9rem; font-style:italic; padding:var(--space-3) 0}
+
+/* ── 9. 게이트 카드(GateCard) — design-system §5.3 ─────────────────────── */
+.gate-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:var(--space-3)}
+.gate-card{border:var(--border); border-left-width:4px; border-radius:var(--radius); padding:var(--space-4); background:var(--panel)}
+.gate-card.pass{border-left-color:var(--pass)} .gate-card.warn{border-left-color:var(--warn)} .gate-card.fail{border-left-color:var(--fail)} .gate-card.muted{border-left-color:var(--line)}
+.gate-card .hd{display:flex; justify-content:space-between; align-items:baseline; gap:var(--space-2)}
+.gate-card .gt{font-family:var(--mono); font-weight:700; color:var(--mist)}
+.gate-card .row{font-size:.86rem; color:var(--mist); margin-top:var(--space-2)}
+.gate-card .num{font-variant-numeric:tabular-nums; font-family:var(--mono); font-weight:700}
+.gate-card .release-warn{margin-top:var(--space-2)}
+
+/* ── 10. audit 타임라인(TimelineItem) — design-system §5.4 ─────────────── */
+.chain-badge-row{margin-bottom:var(--space-4); display:flex; align-items:center; gap:var(--space-3); flex-wrap:wrap}
+ol.timeline{list-style:none; margin:0; padding:0; position:relative; display:grid; gap:var(--space-3)}
+ol.timeline::before{content:""; position:absolute; left:4px; top:6px; bottom:6px; width:1px; background:var(--line)}
+.timeline li{position:relative; padding-left:var(--space-5)}
+.timeline li::before{content:""; position:absolute; left:0; top:6px; width:9px; height:9px; border-radius:50%; background:var(--teal); box-shadow:0 0 8px #1fc8d466}
+.timeline .ts{font-family:var(--mono); font-size:.78rem; color:var(--mist)}
+.timeline .actor{font-family:var(--mono); font-size:.72rem; color:var(--muted); border:var(--border); border-radius:var(--radius-pill); padding:0 8px; margin-left:6px}
+.timeline .action{margin-top:2px}
+.timeline .target{font-family:var(--mono); font-size:.82rem; color:var(--mist)}
+.skip-note{color:var(--warn); font-size:.82rem; margin-top:var(--space-2)}
+
+/* ── 11. 사이드 패널: 트리(TreeRow)/역할(RolePill)/stale — §6, §5.7 ────── */
+details.side-section{border:var(--border); border-radius:var(--radius); margin-bottom:var(--space-4); background:var(--panel)}
+details.side-section > summary{cursor:pointer; padding:var(--space-3) var(--space-4); font-weight:700; list-style:none; display:flex; justify-content:space-between; align-items:center}
+details.side-section > summary::-webkit-details-marker{display:none}
+details.side-section > summary::after{content:"▾"; color:var(--muted); transition:transform var(--dur-fast)}
+details.side-section:not([open]) > summary::after{transform:rotate(-90deg)}
+.side-body{padding:0 var(--space-4) var(--space-4)}
+
+ul.tree, ul.tree ul{list-style:none; margin:0; padding-left:var(--space-4)}
+ul.tree{padding-left:0}
+ul.tree li{margin:4px 0; font-size:.86rem}
+ul.tree .leaf{display:flex; align-items:center; gap:6px; flex-wrap:wrap}
+ul.tree .fname{font-family:var(--mono); color:var(--foam)}
+ul.tree .dirname{font-family:var(--mono); color:var(--mist)}
+
+.role-pill{display:flex; align-items:center; gap:8px; padding:6px 0; font-size:.86rem; flex-wrap:wrap}
+.role-pill .rn{font-family:var(--mono); color:var(--muted)}
+.role-pill .model{font-family:var(--mono); font-size:.68rem; color:var(--muted); border:var(--border); border-radius:var(--radius-pill); padding:0 8px}
+.role-pill .paths{width:100%; font-family:var(--mono); font-size:.68rem; color:var(--muted)}
+
+.stale-list{display:flex; flex-direction:column; gap:6px}
+.stale-list .item{display:flex; align-items:center; gap:8px; font-family:var(--mono); font-size:.82rem}
+
+/* ── 12. 언어토글(LangToggle) — design-system §5.6 ──────────────────────── */
+.langtog{display:inline-flex; border:var(--border); border-radius:var(--radius-pill); overflow:hidden; font-family:var(--mono); font-size:.72rem}
+.langtog button{background:transparent; color:var(--mist); border:0; padding:6px 13px; cursor:pointer; font-family:inherit; display:inline-flex; align-items:center; gap:6px; min-height:32px}
+.langtog button:hover{color:var(--foam)}
+.langtog .flag{font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif; font-size:.9rem; line-height:1}
+.wrap[data-lang="en"] .langtog button[data-setlang="en"],
+.wrap[data-lang="kr"] .langtog button[data-setlang="kr"]{background:var(--teal); color:var(--abyss); font-weight:700}
+
+/* ── 13. footer ─────────────────────────────────────────────────────────── */
+footer{border-top:var(--border); padding:var(--space-6) var(--space-6) var(--space-10); color:var(--muted); font-size:.8rem; display:flex; gap:var(--space-4); flex-wrap:wrap; justify-content:space-between}
+
+/* ── 14. 전역 에러 카드(치명 로드 실패 시 serve가 사용 — report는 stderr 종료) ── */
+.error-card{margin:var(--space-8) var(--space-6); border:1px solid var(--fail); border-radius:var(--radius); background:var(--fail-bg); padding:var(--space-6); color:var(--foam)}
+.error-card h2{color:var(--fail)}
+
+/* ── 15. 스켈레톤(SkeletonBar) — 정적 report에는 미사용, serve 라이브 전환용 예약 ── */
+.skel{background:linear-gradient(90deg,var(--raised) 25%,var(--panel) 37%,var(--raised) 63%); background-size:400% 100%; animation:skel-shimmer 1.4s ease infinite; border-radius:var(--radius-sm); height:1em}
+@keyframes skel-shimmer{0%{background-position:100% 50%} 100%{background-position:0 50%}}
+@media (prefers-reduced-motion:reduce){ .skel{animation:none; background:var(--raised)} }
+
+/* ── 16. 접근성 보조: 터치 타깃 44px, 리플로우 320px ────────────────────── */
+button, .langtog button, summary{min-height:44px}
+@media (max-width:1024px){ .shell{padding:0 var(--space-4) var(--space-8)} }

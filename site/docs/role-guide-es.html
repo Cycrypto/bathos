@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="El modelo de override en 3 capas — base / team / user — para ajustar identidad, propiedad y facilitación de roles.">
+<title>Personalizar roles · BATHOS docs</title>
+<link rel="stylesheet" href="assets/docs.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+  <button class="menu-btn" type="button" aria-label="Abrir navegación" aria-expanded="false">☰</button>
+  <div class="brand"><a href="index-es.html">βάθος · <b>BATHOS</b></a></div>
+  <span class="spacer"></span>
+  <a class="homelink" href="../index.html">← Inicio</a>
+  <div class="langtog" role="group" aria-label="Language / 언어 / Idioma"><a href="role-guide-en.html"><span class="flag" aria-hidden="true">🇺🇸</span>EN</a><a href="role-guide-kr.html"><span class="flag" aria-hidden="true">🇰🇷</span>KO</a><a href="role-guide-es.html" aria-current="true"><span class="flag" aria-hidden="true">🇪🇸</span>ES</a></div>
+</header>
+<div class="scrim" aria-hidden="true"></div>
+<div class="layout">
+  <nav class="sidebar" aria-label="Docs">
+<div class="grp"><div class="grp-t">Empezar</div><ul><li><a href="usage-es.html">Guía de uso</a></li><li><a href="usecase-es.html">Caso de uso</a></li></ul></div>
+<div class="grp"><div class="grp-t">Conceptos</div><ul><li><a href="features-es.html">Funciones y mecánica</a></li><li><a href="architecture-es.html">Arquitectura</a></li></ul></div>
+<div class="grp"><div class="grp-t">Personalizar</div><ul><li><a href="role-guide-es.html" aria-current="page">Personalizar roles</a></li><li><a href="module-guide-es.html">Escribir módulos</a></li></ul></div>
+<div class="grp"><div class="grp-t">Operar</div><ul><li><a href="quota-es.html">Tokens y cuota</a></li><li><a href="faq-es.html">FAQ</a></li></ul></div>
+<div class="grp"><div class="grp-t">Proyecto</div><ul><li><a href="readme.html">README (visión general) <span class="nat">· EN</span></a></li><li><a href="claude.html">Reglas operativas (CLAUDE.md) <span class="nat">· KR</span></a></li><li><a href="ethos.html">ETHOS (principios) <span class="nat">· KR</span></a></li></ul></div>
+  </nav>
+  <main id="main" class="article">
+    <article>
+<h1 id="bathos--personalización-de-roles-overrides-de-3-capas">BATHOS —
+Personalización de roles (overrides de 3 capas)</h1>
+<blockquote>
+<p>Ajusta los 17 roles a tu proyecto (idioma, rutas propias, plataforma,
+tono) <strong>sin tocar las definiciones base</strong>. Lo que cambias
+es <em>cómo</em> un rol aplica su oficio — no <em>quién</em> es el
+rol.</p>
+<p><strong>Ver también:</strong> <a href="module-guide-es.html">Escribir
+módulos (MODULE-GUIDE-es)</a> · <a href="usage-es.html">Uso (USAGE-es)</a>
+· 한국어: <a href="role-guide-kr.html"><code>ROLE-GUIDE-kr.md</code></a> ·
+English: <a
+href="role-guide-en.html"><code>ROLE-GUIDE-en.md</code></a></p>
+</blockquote>
+<hr />
+<h2 id="0-las-tres-capas">0. Las tres capas</h2>
+<p>La definición efectiva de un rol es la fusión ordenada de tres
+capas:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Capa</th>
+<th>Ubicación</th>
+<th>Posee</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>base</strong></td>
+<td><code>.claude/agents/_base/NN-*.md</code></td>
+<td>Identidad fija — nombre · trasfondo · modelo + estándares de oficio
+de primer nivel / filosofía / DoD</td>
+</tr>
+<tr>
+<td><strong>team</strong></td>
+<td>Overrides del proyecto</td>
+<td>Rutas propias · plataforma (web/iOS…) · énfasis de dominio · stack
+tecnológico · umbrales NFR · tono y voz</td>
+</tr>
+<tr>
+<td><strong>user</strong></td>
+<td>Overrides personales</td>
+<td>Idioma · nivel de detalle · intensidad de facilitación</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Regla de fusión:</strong> los escalares se sobrescriben (user
+&gt; team &gt; base), los arrays se anexan. Así el usuario fija el
+idioma, el equipo fija las rutas propias, y ambos se componen sobre la
+identidad base fija.</p>
+<h2 id="1-lo-que-no-se-puede-sobrescribir">1. Lo que no se puede
+sobrescribir</h2>
+<p>La capa base fija <strong>nombre · trasfondo · modelo</strong> más
+los estándares de oficio. Es inmutable a propósito — es lo que mantiene
+a los roles "de primer nivel" y consistentes. Sobrescribe <em>cómo
+aplican el oficio a tu proyecto</em>, no <em>quiénes son</em>.</p>
+<h2 id="2-anatomía-de-un-rol-base">2. Anatomía de un rol base</h2>
+<p>Cada archivo base (<code>.claude/agents/_base/NN-name.md</code>) es
+frontmatter YAML + cuerpo:</p>
+<pre class="yaml"><code>---
+role_number: 4
+name: james
+slug: james-architect          # ← el slug de agent-type usado para el spawn
+model: opus                     # opus = Opus 4.8 · sonnet = Sonnet 4.6
+wave: W2 (tras completar Joshua)
+spawnable: true                 # Paul (#0) es false — el líder es la sesión principal
+tools: [Read, Grep, Glob, Bash, Write, WebFetch, WebSearch]
+---</code></pre>
+<p>Secciones del cuerpo (estandarizadas tras la mejora): Identidad · §0
+Filosofía · Misión y entregables · Estándares de oficio (innegociables)
+· Antipatrones · Proceso · DoD · Nota de 3 capas.</p>
+<h2 id="3-añadir-un-override-de-equipo-ejemplos">3. Añadir un override
+de equipo (ejemplos)</h2>
+<p>Crea una nota de capa team que se compone sobre el rol base.
+Overrides de equipo habituales:</p>
+<ul>
+<li><strong>Rutas propias</strong> — p. ej. Andrew (#9) =
+<code>web/</code>, Phillip (#8) = <code>api/</code> (solapamiento cero →
+seguro en paralelo).</li>
+<li><strong>Plataforma/stack</strong> — "web = Next.js", "backend = Go +
+Postgres".</li>
+<li><strong>Umbrales NFR</strong> — "p95 &lt; 150ms", "bundle &lt;
+200KB".</li>
+<li><strong>Énfasis de dominio/tono</strong> — voz de marca, foco
+regulatorio.</li>
+</ul>
+<p>Los overrides de equipo deben limitarse a <em>hechos específicos del
+proyecto</em>; deja los estándares de oficio a la base.</p>
+<h2 id="4-añadir-un-override-de-usuario">4. Añadir un override de
+usuario</h2>
+<p>Ajustes personales que atraviesan proyectos:</p>
+<ul>
+<li><strong>Idioma</strong> — salida en coreano/inglés.</li>
+<li><strong>Nivel de detalle</strong> — conciso vs. detallado.</li>
+<li><strong>Facilitación</strong> — cuán proactivamente los roles hacen
+sugerencias (User Sovereignty siempre aplica).</li>
+</ul>
+<h2 id="5-generar-spawn-roles">5. Generar (spawn) roles</h2>
+<p>El líder (Paul) genera compañeros por <code>slug</code> (agent-type),
+pasando rutas de entrada, rutas propias y el DoD. Ejemplo: "Genera
+<code>james-architect</code>, lee <code>03-service-planning/</code>,
+posee <code>04-architecture/</code>, sigue ETHOS.md." Concurrencia ≤ 3;
+apagar al final de la wave.</p>
+<h2 id="6-buenos-hábitos">6. Buenos hábitos</h2>
+<p>Unos pocos hábitos mantienen la personalización limpia, segura en
+paralelo y fiel a la base:</p>
+<ul>
+<li><strong>No hagas fork de la base</strong> para cambiar hechos del
+proyecto — usa las capas team/user.</li>
+<li><strong>Mantén las rutas propias disjuntas</strong> — asigna rutas
+sin solapamiento a los roles paralelos (freeze-guard lo hace
+cumplir).</li>
+<li><strong>Mantén el listón elevado</strong> — al añadir un rol nuevo,
+sigue la estructura de primer nivel de 6 secciones (filosofía ·
+estándares de oficio · antipatrones · proceso · DoD).</li>
+<li>Si lo que necesitas es un <em>pack de dominio</em> y no un
+<em>rol</em>, usa un plug (<a
+href="module-guide-es.html"><code>MODULE-GUIDE-es.md</code></a>).</li>
+</ul>
+<hr />
+<div align="center">한국어: <a href="role-guide-kr.html">ROLE-GUIDE-kr</a> · English: <a href="role-guide-en.html">ROLE-GUIDE-en</a></div>
+
+    </article>
+<nav class="pager" aria-label="Docs"><a href="architecture-es.html"><span class="dir">← Anterior</span><span class="ttl">Arquitectura</span></a><a class="next" href="module-guide-es.html"><span class="dir">Siguiente →</span><span class="ttl">Escribir módulos</span></a></nav>
+  </main>
+<aside class="toc"><span class="cap">En esta página</span><ul><li><a class="lv2" href="#0-las-tres-capas">0. Las tres capas</a></li><li><a class="lv2" href="#1-lo-que-no-se-puede-sobrescribir">1. Lo que no se puede sobrescribir</a></li><li><a class="lv2" href="#2-anatomía-de-un-rol-base">2. Anatomía de un rol base</a></li><li><a class="lv2" href="#3-añadir-un-override-de-equipo-ejemplos">3. Añadir un override de equipo (ejemplos)</a></li><li><a class="lv2" href="#4-añadir-un-override-de-usuario">4. Añadir un override de usuario</a></li><li><a class="lv2" href="#5-generar-spawn-roles">5. Generar (spawn) roles</a></li><li><a class="lv2" href="#6-buenos-hábitos">6. Buenos hábitos</a></li></ul></aside>
+</div>
+<footer class="foot"><span class="mono">βάθος · BATHOS</span> — la profundidad sobre la superficie · MIT License · funciona sobre Claude Code v2.1.32+</footer>
+<script src="assets/docs.js"></script>
+</body>
+</html>

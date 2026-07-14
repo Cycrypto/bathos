@@ -1,0 +1,18 @@
+[package]
+name    = "bathos-router"
+version = "0.1.0"
+edition = "2021"
+description = "BATHOS M2: Scale-Adaptive 라우터 (Lv0~4 ↔ wave-set/role-set 계산) — B2 구현"
+
+[dependencies]
+bathos-state = { path = "../bathos-state" }
+serde        = { workspace = true }
+serde_json   = { workspace = true }
+serde_yaml   = { workspace = true }
+thiserror    = { workspace = true }
+anyhow       = { workspace = true }
+uuid         = { workspace = true }
+chrono       = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }

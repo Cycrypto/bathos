@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Build a custom plug-in that hangs off Wave 4 — module.yaml contract, the trigger DSL, and a full worked pack.">
+<title>Writing modules · BATHOS docs</title>
+<link rel="stylesheet" href="assets/docs.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+  <button class="menu-btn" type="button" aria-label="Open navigation" aria-expanded="false">☰</button>
+  <div class="brand"><a href="index-en.html">βάθος · <b>BATHOS</b></a></div>
+  <span class="spacer"></span>
+  <a class="homelink" href="../index.html">← Landing</a>
+  <div class="langtog" role="group" aria-label="Language / 언어 / Idioma"><a href="module-guide-en.html" aria-current="true"><span class="flag" aria-hidden="true">🇺🇸</span>EN</a><a href="module-guide-kr.html"><span class="flag" aria-hidden="true">🇰🇷</span>KO</a><a href="module-guide-es.html"><span class="flag" aria-hidden="true">🇪🇸</span>ES</a></div>
+</header>
+<div class="scrim" aria-hidden="true"></div>
+<div class="layout">
+  <nav class="sidebar" aria-label="Docs">
+<div class="grp"><div class="grp-t">Start</div><ul><li><a href="usage-en.html">Usage guide</a></li><li><a href="usecase-en.html">Use case</a></li></ul></div>
+<div class="grp"><div class="grp-t">Concepts</div><ul><li><a href="features-en.html">Features &amp; mechanics</a></li><li><a href="architecture-en.html">Architecture</a></li></ul></div>
+<div class="grp"><div class="grp-t">Customize</div><ul><li><a href="role-guide-en.html">Role customization</a></li><li><a href="module-guide-en.html" aria-current="page">Writing modules</a></li></ul></div>
+<div class="grp"><div class="grp-t">Operate</div><ul><li><a href="quota-en.html">Token &amp; quota</a></li><li><a href="faq-en.html">FAQ</a></li></ul></div>
+<div class="grp"><div class="grp-t">Project</div><ul><li><a href="readme.html">README (overview) <span class="nat">· EN</span></a></li><li><a href="claude.html">Operating rules (CLAUDE.md) <span class="nat">· KR</span></a></li><li><a href="ethos.html">ETHOS (principles) <span class="nat">· KR</span></a></li></ul></div>
+  </nav>
+  <main id="main" class="article">
+    <article>
+<h1 id="bathos--writing-custom-plug-modules">BATHOS — Writing Custom
+Plug Modules</h1>
+<blockquote>
+<p>Want to extend BATHOS with your own domain features (e.g. a
+security-audit pack, a game-design pack) <strong>without touching the
+core</strong>? That's exactly what plug modules are for. This guide
+walks you end-to-end through writing a module → installing it → enabling
+it → running it.</p>
+<p><strong>See also:</strong> <a href="features-en.html">Concepts
+(FEATURES-en)</a> · <a href="usage-en.html">Usage (USAGE-en)</a> · 한국어:
+<a href="module-guide-kr.html"><code>MODULE-GUIDE-kr.md</code></a> ·
+Español: <a
+href="module-guide-es.html"><code>MODULE-GUIDE-es.md</code></a></p>
+</blockquote>
+<hr />
+<h2 id="0-what-a-module-is-and-the-one-rule">0. What a module is (and
+the one rule)</h2>
+<p>The BATHOS <strong>core stays slim</strong>. Domain-specific features
+ship as <strong>opt-in plug modules</strong> under
+<code>modules/</code>. Two are bundled by default: <code>ip-pack</code>
+(patent application specifications) · <code>research-pack</code>
+(academic Abstract/Intro).</p>
+<blockquote>
+<p><strong>The one rule (invariant A9): the core never depends on
+modules.</strong> Modules are discovered and toggled at runtime; the
+engine has zero compile-time knowledge of any particular module. This is
+what keeps the core small and lets domains be added freely.</p>
+</blockquote>
+<p>A module contributes workflows, templates, and an output directory to
+<strong>Wave 4 (IP · Research)</strong> — the optional, off-mainline
+plug wave. Enable it with <code>bathos plug enable &lt;id&gt;</code>;
+state is persisted in <code>manifest.modules[]</code>.</p>
+<hr />
+<h2 id="1-anatomy-of-a-module">1. Anatomy of a module</h2>
+<p>A module is, in the end, just one directory under
+<code>modules/&lt;your-id&gt;/</code> — this is the structure to aim
+for:</p>
+<pre><code>modules/security-pack/
+├── module.yaml            # required — the module&#39;s self-declaration (the contract)
+├── README.md              # recommended — what it is, how to use it
+├── workflows/             # procedures the module provides
+│   └── threat-model.md
+├── templates/             # output templates the workflows fill in
+│   └── threat-model-report.md
+└── checklists/            # (optional) quality / adversarial checklists
+    └── threat-model-quality.md</code></pre>
+<p>Strictly speaking, the only thing the engine needs to
+<strong>discover</strong> a module is <code>module.yaml</code>;
+everything else exists to help the role that runs the module <em>use it
+well</em>.</p>
+<hr />
+<h2 id="2-the-moduleyaml-contract">2. The <code>module.yaml</code>
+contract</h2>
+<p><code>module.yaml</code> is where the module introduces itself to the
+engine. Below is the exact schema the engine (<code>bathos-plug</code>)
+actually parses, with every field annotated:</p>
+<pre class="yaml"><code>module_id: security               # required — unique id (ip | research | game | security ...)
+name: Security Pack               # required — human-readable name
+wave: W4                          # required — the wave it plugs into (W4)
+trigger: &quot;Lv&gt;=4 OR domain=security&quot;  # required — auto-trigger condition (DSL below)
+enabled_default: false            # optional (default false)
+provides:                         # optional
+  workflows: [threat-model]       #   file basenames under workflows/
+  templates: [threat-model-report]#   file basenames under templates/
+outputs: &quot;.agent-team/13-security/&quot;  # optional — where this module writes its outputs
+evidence_trace: true              # optional (default false) — require [Source:] evidence tracing</code></pre>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Field</th>
+<th style="text-align: center;">Required?</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>module_id</code></td>
+<td style="text-align: center;">✓</td>
+<td>Unique id used by <code>plug enable/disable &lt;id&gt;</code> and
+triggers (<code>domain=&lt;id&gt;</code>)</td>
+</tr>
+<tr>
+<td><code>name</code></td>
+<td style="text-align: center;">✓</td>
+<td>Name displayed by <code>plug list</code></td>
+</tr>
+<tr>
+<td><code>wave</code></td>
+<td style="text-align: center;">✓</td>
+<td>The wave the module runs in (currently <code>W4</code>)</td>
+</tr>
+<tr>
+<td><code>trigger</code></td>
+<td style="text-align: center;">✓</td>
+<td>Auto-trigger condition (§3)</td>
+</tr>
+<tr>
+<td><code>enabled_default</code></td>
+<td style="text-align: center;">—</td>
+<td>Enabled by default? (default <code>false</code>)</td>
+</tr>
+<tr>
+<td><code>provides.workflows</code></td>
+<td style="text-align: center;">—</td>
+<td>Basenames of provided workflows</td>
+</tr>
+<tr>
+<td><code>provides.templates</code></td>
+<td style="text-align: center;">—</td>
+<td>Basenames of provided templates</td>
+</tr>
+<tr>
+<td><code>outputs</code></td>
+<td style="text-align: center;">—</td>
+<td>Output directory (pick a new
+<code>.agent-team/NN-&lt;name&gt;/</code>)</td>
+</tr>
+<tr>
+<td><code>evidence_trace</code></td>
+<td style="text-align: center;">—</td>
+<td>If <code>true</code>, claims must carry a <code>[Source:]</code>
+marker (recommended)</td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p>For <code>outputs</code>, pick a new number that doesn't collide with
+the existing role directories (<code>00</code>–<code>12</code> are
+taken) — e.g. <code>13-security/</code>.</p>
+</blockquote>
+<hr />
+<h2 id="3-the-trigger-dsl">3. The trigger DSL</h2>
+<p><code>trigger</code> tells the router <em>when</em> to auto-activate
+this module. Syntax (parsed by <code>bathos-plug</code>):</p>
+<ul>
+<li><strong>Level:</strong> <code>Lv&gt;=N</code> · <code>Lv&gt;N</code>
+· <code>Lv&lt;=N</code> · <code>Lv&lt;N</code> · <code>Lv=N</code> (N =
+0–4)</li>
+<li><strong>Domain:</strong> <code>domain=X</code> (or
+<code>domain:X</code>) — true when the project domain matches
+<code>X</code> (usually the <code>module_id</code>)</li>
+<li><strong>Combination:</strong> join terms with <code>OR</code> —
+triggers if <strong>any</strong> term is true.</li>
+<li><strong>Safety:</strong> unparseable tokens evaluate to
+<code>false</code> (conservative).</li>
+</ul>
+<p>Examples:</p>
+<ul>
+<li><code>"Lv&gt;=3 OR domain=ip"</code> — on for large/enterprise work,
+or when the domain is explicitly IP.</li>
+<li><code>"Lv&gt;=4 OR domain=security"</code> — on only for
+enterprise/regulated builds or an explicit security domain.</li>
+<li><code>"domain=game"</code> — on only when the project domain is
+<code>game</code> (level alone never auto-enables it).</li>
+</ul>
+<blockquote>
+<p>Triggers are <em>auto-activation hints</em>. The user always retains
+control (User Sovereignty): you can
+<code>plug enable</code>/<code>disable</code> regardless, and you verify
+what actually runs.</p>
+</blockquote>
+<hr />
+<h2 id="4-step-by-step--building-a-security-pack">4. Step by step —
+building a "security-pack"</h2>
+<p>Enough theory — let's build one. We'll construct
+<code>security-pack</code> from scratch, file by file.</p>
+<h3 id="41-scaffold-the-directory">4.1 Scaffold the directory</h3>
+<pre class="bash"><code>cd your-project    # (or the bathos repo)
+mkdir -p modules/security-pack/{workflows,templates,checklists}</code></pre>
+<h3 id="42-write-moduleyaml">4.2 Write <code>module.yaml</code></h3>
+<pre class="yaml"><code>module_id: security
+name: Security Pack
+wave: W4
+trigger: &quot;Lv&gt;=4 OR domain=security&quot;
+enabled_default: false
+provides:
+  workflows: [threat-model]
+  templates: [threat-model-report]
+outputs: &quot;.agent-team/13-security/&quot;
+evidence_trace: true</code></pre>
+<h3 id="43-write-the-workflow-workflowsthreat-modelmd">4.3 Write the
+workflow (<code>workflows/threat-model.md</code>)</h3>
+<p>A workflow is a markdown procedure a role follows. Make it concrete
+and step-based — for a security pack, e.g. an OWASP Top 10 + STRIDE pass
+that fills in the template. State which inputs to read and where outputs
+go, and (since <code>evidence_trace: true</code>) make clear that every
+finding needs a <code>[Source:]</code> marker.</p>
+<h3 id="44-write-the-template-templatesthreat-model-reportmd">4.4 Write
+the template (<code>templates/threat-model-report.md</code>)</h3>
+<p>The structured deliverable the workflow fills in, with headings for
+scope, assets, threats (per STRIDE), severity, mitigations, and residual
+risk. This is what accumulates under <code>outputs</code>.</p>
+<h3
+id="45-optional-quality-checklist-checkliststhreat-model-qualitymd">4.5
+(Optional) quality checklist
+(<code>checklists/threat-model-quality.md</code>)</h3>
+<p>An adversarial self-review checklist the role runs before declaring
+the workflow done (see <code>ip-pack/checklists/patent-quality.md</code>
+for reference).</p>
+<h3 id="46-add-a-readmemd">4.6 Add a <code>README.md</code></h3>
+<p>One screenful: what it produces, what triggers it, how to enable
+it.</p>
+<hr />
+<h2 id="5-install--discover--enable">5. Install · discover · enable</h2>
+<p>Once the files are in place, three commands take the module from
+"sitting on disk" to "alive in the manifest":</p>
+<pre class="bash"><code># 1) Discover — the engine reads modules/&lt;id&gt;/module.yaml
+bathos --modules-dir modules plug list
+#   → security-pack listed with its enabled state (JSON)
+
+# 2) Enable — persisted into manifest.modules[]
+bathos -s .agent-team/_state --modules-dir modules plug enable security
+
+# 3) Disable when done
+bathos -s .agent-team/_state --modules-dir modules plug disable security
+#   nonexistent id → exit 1 (E-PLUG-NOTFOUND)</code></pre>
+<p>If you adopted BATHOS into your project via
+<code>install.sh --into</code>, put the module under that project's
+<code>modules/</code> (i.e. the directory <code>--modules-dir</code>
+points at).</p>
+<hr />
+<h2 id="6-running-it-in-a-wave">6. Running it in a wave</h2>
+<p>Modules plug into <strong>W4</strong>. After enabling, run the W4
+command and the responsible role (Mark/Nathanael for the bundled packs;
+for your own pack, assign the best-fit role or let the lead run it
+directly) executes the workflow and writes to the <code>outputs</code>
+directory:</p>
+<pre><code>/wave4-ip-research /abs/path/to/project</code></pre>
+<p>W4 sits outside the mainline (W0→W1→W2→W3→W5→W6), so it can run any
+time after W2 — if tokens are tight, feel free to defer it.</p>
+<hr />
+<h2 id="7-validating-a-module">7. Validating a module</h2>
+<p>Before trusting it, run these four quick checks — each verifies one
+link in the chain from parsing to triggering:</p>
+<ul>
+<li><strong>Parse check:</strong>
+<code>bathos --modules-dir modules plug list</code> — if the module
+shows up, <code>module.yaml</code> parsed. If not, check the 4 required
+fields (<code>module_id</code>, <code>name</code>, <code>wave</code>,
+<code>trigger</code>) and the YAML syntax.</li>
+<li><strong>Enable/persistence check:</strong> after
+<code>plug enable &lt;id&gt;</code>, run
+<code>bathos -s _state state show</code> — confirm the id in
+<code>modules[]</code>.</li>
+<li><strong>Trigger check:</strong> set the project level/domain and
+confirm the module is auto-recommended when <code>trigger</code> should
+fire.</li>
+<li><strong>Doctor:</strong> <code>bathos doctor</code> still passes
+(the module doesn't touch the core — A9).</li>
+</ul>
+<hr />
+<h2 id="8-good-habits">8. Good habits</h2>
+<p>A few habits keep modules clean, composable, and true to the BATHOS
+ethos:</p>
+<ul>
+<li><strong>Leave the core alone.</strong> Everything lives under
+<code>modules/&lt;id&gt;/</code>. If you find yourself editing a
+<code>core/</code> crate for a module, stop — that's an A9
+violation.</li>
+<li><strong>Pick non-overlapping <code>outputs</code> paths</strong>
+(<code>13-…</code>, <code>14-…</code>).</li>
+<li><strong>Turn on <code>evidence_trace</code></strong> and require
+<code>[Source:]</code> on claims — it matches the "generation ≠
+verification" ethos.</li>
+<li><strong>Write a checklist</strong> so the role does an adversarial
+self-review before declaring done.</li>
+<li><strong>Model after the bundled packs</strong> —
+<code>modules/ip-pack/</code> is the reference implementation
+(module.yaml + workflows + templates + checklists + README).</li>
+</ul>
+<hr />
+<h2 id="9-license">9. License</h2>
+<p>MIT. See <a href="readme.html"><code>../README.md</code></a>.</p>
+<hr />
+<div align="center">
+
+<p><strong>BATHOS</strong> · βάθος — depth, not surface 한국어: <a
+href="module-guide-kr.html"><code>MODULE-GUIDE-kr.md</code></a> · Español:
+<a href="module-guide-es.html"><code>MODULE-GUIDE-es.md</code></a></p>
+</div>
+
+    </article>
+<nav class="pager" aria-label="Docs"><a href="role-guide-en.html"><span class="dir">← Previous</span><span class="ttl">Role customization</span></a><a class="next" href="quota-en.html"><span class="dir">Next →</span><span class="ttl">Token &amp; quota</span></a></nav>
+  </main>
+<aside class="toc"><span class="cap">On this page</span><ul><li><a class="lv2" href="#0-what-a-module-is-and-the-one-rule">0. What a module is (and the one rule)</a></li><li><a class="lv2" href="#1-anatomy-of-a-module">1. Anatomy of a module</a></li><li><a class="lv2" href="#2-the-moduleyaml-contract">2. The module.yaml contract</a></li><li><a class="lv2" href="#3-the-trigger-dsl">3. The trigger DSL</a></li><li><a class="lv2" href="#4-step-by-step--building-a-security-pack">4. Step by step — building a &quot;security-pack&quot;</a></li><li><a class="lv3" href="#41-scaffold-the-directory">4.1 Scaffold the directory</a></li><li><a class="lv3" href="#42-write-moduleyaml">4.2 Write module.yaml</a></li><li><a class="lv3" href="#43-write-the-workflow-workflowsthreat-modelmd">4.3 Write the workflow (workflows/threat-model.md)</a></li><li><a class="lv3" href="#44-write-the-template-templatesthreat-model-reportmd">4.4 Write the template (templates/threat-model-report.md)</a></li><li><a class="lv3" href="#45-optional-quality-checklist-checkliststhreat-model-qualitymd">4.5 (Optional) quality checklist (checklists/threat-model-quality.md)</a></li><li><a class="lv3" href="#46-add-a-readmemd">4.6 Add a README.md</a></li><li><a class="lv2" href="#5-install--discover--enable">5. Install · discover · enable</a></li><li><a class="lv2" href="#6-running-it-in-a-wave">6. Running it in a wave</a></li><li><a class="lv2" href="#7-validating-a-module">7. Validating a module</a></li><li><a class="lv2" href="#8-good-habits">8. Good habits</a></li><li><a class="lv2" href="#9-license">9. License</a></li></ul></aside>
+</div>
+<footer class="foot"><span class="mono">βάθος · BATHOS</span> — depth over surface · MIT License · runs on Claude Code v2.1.32+</footer>
+<script src="assets/docs.js"></script>
+</body>
+</html>

@@ -1,0 +1,550 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Un ejemplo completo — construir un servicio nuevo desde cero, paso a paso, wave a wave.">
+<title>Caso de uso · BATHOS docs</title>
+<link rel="stylesheet" href="assets/docs.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+  <button class="menu-btn" type="button" aria-label="Abrir navegación" aria-expanded="false">☰</button>
+  <div class="brand"><a href="index-es.html">βάθος · <b>BATHOS</b></a></div>
+  <span class="spacer"></span>
+  <a class="homelink" href="../index.html">← Inicio</a>
+  <div class="langtog" role="group" aria-label="Language / 언어 / Idioma"><a href="usecase-en.html"><span class="flag" aria-hidden="true">🇺🇸</span>EN</a><a href="usecase-kr.html"><span class="flag" aria-hidden="true">🇰🇷</span>KO</a><a href="usecase-es.html" aria-current="true"><span class="flag" aria-hidden="true">🇪🇸</span>ES</a></div>
+</header>
+<div class="scrim" aria-hidden="true"></div>
+<div class="layout">
+  <nav class="sidebar" aria-label="Docs">
+<div class="grp"><div class="grp-t">Empezar</div><ul><li><a href="usage-es.html">Guía de uso</a></li><li><a href="usecase-es.html" aria-current="page">Caso de uso</a></li></ul></div>
+<div class="grp"><div class="grp-t">Conceptos</div><ul><li><a href="features-es.html">Funciones y mecánica</a></li><li><a href="architecture-es.html">Arquitectura</a></li></ul></div>
+<div class="grp"><div class="grp-t">Personalizar</div><ul><li><a href="role-guide-es.html">Personalizar roles</a></li><li><a href="module-guide-es.html">Escribir módulos</a></li></ul></div>
+<div class="grp"><div class="grp-t">Operar</div><ul><li><a href="quota-es.html">Tokens y cuota</a></li><li><a href="faq-es.html">FAQ</a></li></ul></div>
+<div class="grp"><div class="grp-t">Proyecto</div><ul><li><a href="readme.html">README (visión general) <span class="nat">· EN</span></a></li><li><a href="claude.html">Reglas operativas (CLAUDE.md) <span class="nat">· KR</span></a></li><li><a href="ethos.html">ETHOS (principios) <span class="nat">· KR</span></a></li></ul></div>
+  </nav>
+  <main id="main" class="article">
+    <article>
+<h1
+id="caso-de-uso-de-bathos--construir-un-servicio-nuevo-desde-cero-paso-a-paso">Caso
+de uso de BATHOS — construir un servicio nuevo desde cero, paso a
+paso</h1>
+<blockquote>
+<p><strong>Objetivo de este documento:</strong> mostrar de la forma más
+sencilla posible el proceso de construir <em>un servicio nuevo real
+desde cero</em> con BATHOS. La instalación usa el modo <strong>"adoptar
+en mi proyecto"</strong> (B):</p>
+<pre class="bash"><code># B) Compilar el motor + copiar el paquete de método a mi proyecto
+./install.sh --into /abs/path/to/your-project</code></pre>
+<p>Seguiremos un ejemplo concreto hasta el final:
+<strong>"ReadShelf"</strong> — una pequeña webapp para registrar los
+libros leídos y compartir reseñas cortas con amigos. Al terminar de leer
+sabrás exactamente <em>qué escribes tú, qué hace BATHOS en cada paso y
+qué archivos aparecen en disco</em>.</p>
+<p><strong>Ver también:</strong> si te interesan los principios, fija
+los conceptos con <a
+href="features-es.html"><code>FEATURES-es.md</code></a> → y el detalle de
+CLI · hooks está en la referencia <a
+href="usage-es.html"><code>USAGE-es.md</code></a>. · 한국어: <a
+href="usecase-kr.html"><code>USECASE-kr.md</code></a> · English: <a
+href="usecase-en.html"><code>USECASE-en.md</code></a></p>
+</blockquote>
+<hr />
+<h2 id="0-modelo-mental-de-30-segundos">0. Modelo mental de 30
+segundos</h2>
+<p>BATHOS <strong>no es una app que se ejecuta</strong> — es <strong>un
+paquete de método que corre sobre Claude Code</strong>. Tú:</p>
+<ol type="1">
+<li><strong>Lo instalas en tu proyecto</strong> (copia de
+<code>.claude/</code> + <code>assets/</code> + <code>modules/</code>, y
+variable de entorno con la ruta del motor).</li>
+<li><strong>Abres Claude Code en tu proyecto</strong> y escribes
+<strong>comandos slash</strong> (<code>/team-kickoff</code>,
+<code>/route</code>, <code>/wave1-discovery</code>, …).</li>
+<li>BATHOS levanta "compañeros" especialistas por wave, escribe los
+artefactos de trabajo en <code>.agent-team/</code>, y <strong>el código
+real del producto se acumula en su lugar de siempre —
+<code>src/</code></strong>.</li>
+</ol>
+<p>Eso es todo. El resto de este documento es simplemente hacer estas
+tres cosas, despacio, con un ejemplo real.</p>
+<hr />
+<h2 id="1-el-servicio-de-ejemplo-readshelf">1. El servicio de ejemplo:
+"ReadShelf"</h2>
+<div class="table-wrap"><table>
+<tbody>
+<tr>
+<td><strong>Qué</strong></td>
+<td>Webapp: registrar libros leídos → escribir reseñas cortas → seguir a
+amigos → ver el feed de lectura de los amigos.</td>
+</tr>
+<tr>
+<td><strong>Quién</strong></td>
+<td>Un desarrollador en solitario (tú).</td>
+</tr>
+<tr>
+<td><strong>Stack (plan)</strong></td>
+<td>Next.js (front) · API Node/Express · PostgreSQL. Sin AI/ML en el
+MVP.</td>
+</tr>
+<tr>
+<td><strong>Ambición</strong></td>
+<td>No una mega-plataforma: primero un <strong>MVP
+enfocado</strong>.</td>
+</tr>
+</tbody>
+</table></div>
+<p>Recuérdalo: ReadShelf es un producto <em>nuevo pero enfocado</em>.
+Esta elección será importante en el paso 4, al elegir el "nivel" de
+BATHOS.</p>
+<hr />
+<h2 id="2-preparación-previa-una-sola-vez">2. Preparación previa (una
+sola vez)</h2>
+<ul>
+<li><strong>Claude Code v2.1.32+</strong> + la funcionalidad
+experimental <strong>Agent Teams</strong>.</li>
+<li><strong>Toolchain de Rust</strong> (cargo 1.92+) — solo hace falta
+para compilar el motor una vez.</li>
+<li><strong><code>jq</code></strong> — lo usan los hooks de
+seguridad.</li>
+<li>Shell de macOS/Linux.</li>
+</ul>
+<p>El propio paquete BATHOS también debe estar en algún lugar del disco.
+Aquí asumimos que lo clonaste en <code>~/tools/bathos</code>.</p>
+<hr />
+<h2 id="3-paso-1--instalar-bathos-en-mi-proyecto-modo-b">3. Paso 1 —
+instalar BATHOS en mi proyecto (modo "B")</h2>
+<p>Crea una carpeta de proyecto vacía y, <strong>desde el repo de
+BATHOS</strong>, ejecuta el script de instalación con
+<code>--into</code> apuntando a tu proyecto:</p>
+<pre class="bash"><code># Ubicación del proyecto nuevo (puede estar vacío o ser un repo existente)
+mkdir -p ~/projects/readshelf
+
+# Desde el paquete BATHOS:
+cd ~/tools/bathos
+./install.sh --into ~/projects/readshelf</code></pre>
+<p>Lo que hace este comando (y lo que <strong>no</strong> hace):</p>
+<ul>
+<li>Compila el motor una vez →
+<code>~/tools/bathos/core/target/release/bathos</code> (~5.6MB).</li>
+<li>Copia <strong>3 carpetas</strong> a
+<code>~/projects/readshelf/</code>:
+<ul>
+<li><code>.claude/</code> — comandos slash, definiciones de los 16
+roles, 6 hooks de seguridad, <code>settings.json</code></li>
+<li><code>assets/</code> — plantillas/workflows/checklists que usan Wave
+3 y los plugs</li>
+<li><code>modules/</code> — módulos plug opcionales
+(<code>ip-pack</code>, <code>research-pack</code>)</li>
+</ul></li>
+<li><strong>Nunca borra nada</strong>, y si ya existe un
+<code>.claude/</code> no lo sobrescribe sin <code>--force</code>.</li>
+<li><strong>No copia</strong> el binario compilado al proyecto. El motor
+se queda en el repo de BATHOS y tu proyecto solo lo apunta (siguiente
+paso).</li>
+</ul>
+<p>Ahora conecta las dos variables de entorno (el script de instalación
+imprime la guía):</p>
+<pre class="bash"><code># Para que los hooks encuentren el motor:
+export BATHOS_BIN=&quot;$HOME/tools/bathos/core/target/release/bathos&quot;
+
+# Activar Agent Teams (ya viene en el settings.json copiado, pero explícito):
+export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1</code></pre>
+<blockquote>
+<p>Si pones esas dos líneas <code>export</code> en tu perfil de shell,
+se aplican en cada sesión.</p>
+</blockquote>
+<p>El proyecto ahora se ve así:</p>
+<pre><code>~/projects/readshelf/
+├── .claude/        ← (recién instalado) comandos · roles · hooks · settings
+├── assets/         ← (recién instalado) plantillas · workflows · checklists
+└── modules/        ← (recién instalado) ip-pack · research-pack</code></pre>
+<p>Todavía no hay nada más — ni <code>.agent-team/</code> ni
+<code>src/</code>. Aparecen en los siguientes pasos.</p>
+<hr />
+<h2 id="4-paso-2--abrir-claude-code-y-hacer-el-kickoff">4. Paso 2 —
+abrir Claude Code y hacer el kickoff</h2>
+<p>Abre una sesión de Claude Code en el directorio de tu proyecto
+(<code>~/projects/readshelf</code>). Esa sesión es <strong>el líder,
+"Paul"</strong>. Y entonces:</p>
+<pre class="text"><code>/team-kickoff</code></pre>
+<p><strong>Qué ocurre:</strong> BATHOS crea el área de trabajo y la
+fuente única de verdad.</p>
+<p><strong>Lo que aparece en disco:</strong></p>
+<pre><code>~/projects/readshelf/
+├── .claude/  assets/  modules/        (lo instalado)
+└── .agent-team/                       ← nuevo
+    ├── 00-plan/        (charter, task graph)
+    ├── 01-reverse/ … 12-report/       (carpetas de salida por rol)
+    └── _state/
+        └── manifest.json              ← SSOT: todo el estado del proyecto, validado por esquema</code></pre>
+<blockquote>
+<p><strong>Dos directorios, dos propósitos.</strong>
+<code>.agent-team/</code> son las <em>notas de trabajo</em> de BATHOS
+(planificación · diseño · reviews · reportes · estado). Tu <em>código de
+servicio real</em> se acumula en <code>src/</code>. No se mezclan.</p>
+</blockquote>
+<hr />
+<h2 id="5-paso-3--fijar-el-nivel-con-route-decides-tú">5. Paso 3 — fijar
+el nivel con <code>/route</code> (decides tú)</h2>
+<p>BATHOS no ejecuta todas las waves para cualquier trabajo. Ajusta el
+esfuerzo al tamaño del trabajo. Cuéntale a BATHOS los "stakes" de
+ReadShelf:</p>
+<pre class="text"><code>/route /Users/you/projects/readshelf</code></pre>
+<p>Internamente el motor puntúa cuatro ejes:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Eje</th>
+<th>Respuesta para ReadShelf</th>
+<th>Razón</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>scope</code></td>
+<td><code>feature</code></td>
+<td>MVP enfocado, no una mega-plataforma → 1 punto</td>
+</tr>
+<tr>
+<td><code>novelty</code></td>
+<td><code>true</code></td>
+<td>Idea de producto nueva → +1</td>
+</tr>
+<tr>
+<td><code>regulation_ip</code></td>
+<td><code>false</code></td>
+<td>No es un dominio centrado en regulación/patentes → +0</td>
+</tr>
+<tr>
+<td><code>team_size</code></td>
+<td><code>solo</code></td>
+<td>Solo tú → +0</td>
+</tr>
+</tbody>
+</table></div>
+<p>Total = <strong>2 → recomendación Level 2.</strong> El motor devuelve
+algo así:</p>
+<pre class="json"><code>{ &quot;recommended_level&quot;: 2, &quot;wave_set&quot;: [&quot;W1&quot;,&quot;W2&quot;,&quot;W3&quot;,&quot;W5&quot;,&quot;W6&quot;],
+  &quot;requires_confirmation&quot;: true }</code></pre>
+<blockquote>
+<p><strong>Esta es tu decisión (User Sovereignty).</strong> BATHOS
+<em>solo recomienda</em>. Tú tienes que confirmar, y solo la
+confirmación queda registrada:</p>
+<pre class="bash"><code>bathos -s .agent-team/_state route decide \
+  --stakes-json &#39;{&quot;scope&quot;:&quot;feature&quot;,&quot;novelty&quot;:true,&quot;regulation_ip&quot;:false,&quot;team_size&quot;:&quot;solo&quot;}&#39; \
+  --confirm 2</code></pre>
+<p>Ahora <code>manifest.json → current_level = 2</code>.</p>
+</blockquote>
+<p><strong>Lo que Level 2 significa para ReadShelf</strong> — estas
+waves corren en orden:</p>
+<pre><code>W1 discovery → W2 diseño → W3 story gate ★ → W5 implementación → W6 verificación</code></pre>
+<p>(Con Level 0 sería solo el arreglo de bug; con Level 3–4 se añaden el
+análisis de mercado de W0 y el IP/investigación de W4 — excesivo para un
+MVP enfocado. Si ReadShelf crece luego hasta una gran plataforma
+multi-módulo, basta con re-enrutar a Lv3.)</p>
+<hr />
+<h2 id="6-paso-4--wave-1-discovery--mercado-qué-construimos">6. Paso 4 —
+Wave 1: discovery &amp; mercado (¿qué construimos?)</h2>
+<pre class="text"><code>/wave1-discovery /Users/you/projects/readshelf</code></pre>
+<p><strong>Quién trabaja:</strong> aquí el protagonista es Caleb
+(analista de mercado). John (especialista en reverse) solo tiene sentido
+si le das un codebase de <em>referencia</em> para estudiar — en una app
+greenfield puedes omitirlo, o darle el repo open source de un servicio
+competidor.</p>
+<p><strong>Qué hace:</strong> Caleb investiga apps similares de
+lectura/social, encuentra los huecos y propone la <strong>USP</strong>
+(la razón para usar ReadShelf).</p>
+<p><strong>Qué obtienes:</strong>
+<code>.agent-team/02-market-analysis/</code> — paisaje competitivo,
+recomendación de USP.</p>
+<p><strong>Gate:</strong> <em>USP Readiness.</em> Antes de avanzar, tú
+(el líder) confirmas que la USP tiene sentido.</p>
+<blockquote>
+<p>Al final de cada wave, los compañeros que trabajaron se apagan antes
+de la siguiente. Mantener los activos concurrentes ≤ 3 ahorra
+tokens.</p>
+</blockquote>
+<hr />
+<h2 id="7-paso-5--wave-2-planificación--arquitectura--diseño">7. Paso 5
+— Wave 2: planificación · arquitectura · diseño</h2>
+<pre class="text"><code>/wave2-design /Users/you/projects/readshelf</code></pre>
+<p>Esta wave corre en un orden deliberado:</p>
+<ol type="1">
+<li><strong>Joshua (planificación de servicio)</strong> convierte la USP
+en <strong>Core Features + User Stories + Service Story</strong>
+concretas. <em>Su salida es el gate</em> — nada más arranca hasta que la
+planificación esté sólida.</li>
+<li>Luego, en paralelo:
+<ul>
+<li><strong>James (arquitecto)</strong> diseña el modelo de datos (ERD)
+· contratos de API · secuencias de servicio · manejo de excepciones — p.
+ej. tablas <code>users</code>, <code>books</code>, <code>reviews</code>,
+<code>follows</code>; <code>POST /reviews</code>,
+<code>GET /feed</code>, etc.</li>
+<li><strong>Jonnathan (diseñador)</strong> diseña los flujos UX y la UI
+— registro, estantería (shelf), editor de reseñas, feed de amigos.</li>
+</ul></li>
+</ol>
+<p><strong>Qué obtienes:</strong>
+<code>.agent-team/03-service-planning/</code>,
+<code>.agent-team/04-architecture/</code>,
+<code>.agent-team/07-design/</code>.</p>
+<p><strong>Gate:</strong> <em>Plan Readiness.</em></p>
+<blockquote>
+<p>Refuerzo opcional: antes de fijar la planificación puedes ejecutar
+gates de revisión como <code>/plan-ceo-review</code> (¿esto es un
+producto de 10?) o <code>/plan-eng-review</code> (arquitectura/casos
+límite/tests). Un revisor a la vez.</p>
+</blockquote>
+<hr />
+<h2 id="8-paso-6--wave-3-story-gate--el-corazón-de-bathos">8. Paso 6 —
+Wave 3: story gate ★ (el corazón de BATHOS)</h2>
+<pre class="text"><code>/wave3-story-gate /Users/you/projects/readshelf</code></pre>
+<p>Este es el paso que hace diferente a BATHOS. El punto donde se
+derrumban la mayoría de intentos de "que la IA me construya la app" es
+justamente <strong>diseño → implementación</strong>: quien construye
+olvida la mitad del diseño o directamente nunca la vio. Wave 3 cierra
+esa grieta.</p>
+<p><strong>Quién trabaja:</strong> <strong>Matthew (#17, story
+engineer)</strong> + los verificadores <em>independientes</em>
+<strong>Thomas</strong> y <strong>Matthias</strong>.</p>
+<p><strong>Lo que hace Matthew:</strong> condensa todo el diseño de W2
+en <strong>archivos de historia dev autocontenidos</strong> bajo
+<code>.agent-team/03-story-engineering/</code>. Cada historia (p. ej.
+<code>story-1-2-write-review-es.md</code>) está escrita para que el
+implementador pueda arrancar <em>solo con la historia</em>. Lo que el
+motor hace cumplir:</p>
+<ul>
+<li>Deben existir las <strong>6 secciones obligatorias</strong> y
+<code>developer_context</code> no puede estar vacío
+(<code>story_requirements</code>, <code>developer_context</code>,
+<code>architecture_compliance</code>,
+<code>library_framework_requirements</code>,
+<code>file_structure_requirements</code>,
+<code>testing_requirements</code>). Falta una → la compilación falla con
+<strong><code>E-CTX-LOSS</code></strong>.</li>
+<li>Cada afirmación técnica lleva la marca
+<strong><code>[Source: …]</code></strong> → trazable hasta los
+documentos de arquitectura/diseño.</li>
+</ul>
+<p><strong>El gate (aquí está lo importante):</strong> Thomas y Matthias
+revisan las historias de forma independiente y el gate devuelve
+<strong>PASS / CONCERNS / FAIL</strong>:</p>
+<ul>
+<li><strong>PASS</strong> → se avanza a implementación.</li>
+<li><strong>CONCERNS</strong> → se avanza, pero registrando el
+riesgo.</li>
+<li><strong>FAIL</strong> → el hook (<code>gate-enforce</code>)
+<strong>bloquea físicamente el arranque de Wave 5</strong> (el motor
+sale con exit code 2). Literalmente no se puede empezar a implementar
+sobre un gate de readiness fallido. Corrige las historias y
+re-gatea.</li>
+</ul>
+<blockquote>
+<p>Es la implementación física de "generación ≠ verificación": el mismo
+modelo no puede colar su propio trabajo.</p>
+</blockquote>
+<hr />
+<h2 id="9-paso-7--wave-5-implementación-escribir-el-código-de-verdad">9.
+Paso 7 — Wave 5: implementación (escribir el código de verdad)</h2>
+<pre class="text"><code>/wave5-implement /Users/you/projects/readshelf</code></pre>
+<p><strong>Quién trabaja (solo los roles que ReadShelf
+necesita):</strong></p>
+<ul>
+<li><strong>Phillip (backend)</strong> — API Express +
+esquema/migraciones de PostgreSQL, autenticación, endpoints
+<code>/reviews</code> · <code>/feed</code>.</li>
+<li><strong>Andrew (front/móvil)</strong> — la UI Next.js basada en el
+diseño de Jonnathan, conectada a los contratos de API de James.</li>
+<li><em>(El principal de AI/ML, Stephen, <strong>no se genera</strong> —
+no hay ML en el MVP de ReadShelf.)</em></li>
+</ul>
+<p><strong>Adónde va el código:</strong> al árbol de fuentes real —
+<code>~/projects/readshelf/src/</code> (y <code>api/</code>,
+<code>web/</code>, etc., donde viva el código del proyecto). Cada
+compañero edita <strong>solo sus rutas propias</strong>, así que el
+trabajo de backend y front no colisiona.</p>
+<pre><code>~/projects/readshelf/
+├── src/  api/  web/ …      ← el código real aparece aquí, historia por historia
+└── .agent-team/08-impl-notes/   ← notas de implementación (backend.md, frontend.md)</code></pre>
+<p><strong>Gate:</strong> se verifica el cierre por historia y entonces
+esa historia se considera done.</p>
+<blockquote>
+<p>Los hooks de seguridad están activos todo el tiempo:
+<code>careful-guard</code> bloquea los comandos de shell destructivos
+(<code>rm -rf</code>, <code>DROP TABLE</code> …) y
+<code>freeze-guard</code> encierra a cada compañero dentro de sus rutas
+propias.</p>
+</blockquote>
+<hr />
+<h2 id="10-paso-8--wave-6-verificación--docs--reporte">10. Paso 8 — Wave
+6: verificación · docs · reporte</h2>
+<pre class="text"><code>/wave6-verify-report /Users/you/projects/readshelf</code></pre>
+<p><strong>Quién trabaja:</strong> <strong>Thomas</strong> (revisión de
+código), <strong>Timothy</strong> (documentación de desarrollo),
+<strong>Matthias</strong> (QA / tests E2E) — en paralelo — y luego
+<strong>Martin</strong> agrega todo en un único <strong>reporte
+HTML</strong>.</p>
+<p><strong>Qué obtienes:</strong> <code>.agent-team/10-review/</code>,
+<code>.agent-team/09-docs/</code>, <code>.agent-team/11-qa/</code>,
+<code>.agent-team/12-report/report.html</code>.</p>
+<p><strong>Gate:</strong> <em>Release Readiness</em> (PASS / CONCERNS /
+FAIL). Si la revisión independiente encuentra un defecto bloqueante, se
+corrige y se re-gatea — exactamente el mismo bucle que BATHOS atravesó
+consigo mismo.</p>
+<hr />
+<h2 id="11-paso-9--confirmación-final">11. Paso 9 — confirmación
+final</h2>
+<pre class="text"><code>/team-confirm</code></pre>
+<p>El líder hace el sign-off y limpia a los compañeros. Lo que ahora
+tienes:</p>
+<pre><code>~/projects/readshelf/
+├── src/ api/ web/ …                  ← el servicio ReadShelf funcionando
+└── .agent-team/
+    ├── 02-market-analysis/  (USP)
+    ├── 03-service-planning/ (features + historias)
+    ├── 04-architecture/     (ERD, API, secuencias)
+    ├── 03-story-engineering/(archivos de historia dev)
+    ├── 07-design/           (UX/UI)
+    ├── 08-impl-notes/       (cómo se construyó)
+    ├── 10-review/ 11-qa/    (verificación independiente)
+    ├── 12-report/report.html
+    └── _state/              (manifest.json, wave-log.md, signoff.md)</code></pre>
+<p>Todo es trazable: mercado → USP → features → arquitectura → historias
+→ código → verificación.</p>
+<hr />
+<h2 id="12-el-flujo-completo-en-una-página">12. El flujo completo en una
+página</h2>
+<pre class="text"><code># Una sola vez
+cd ~/tools/bathos &amp;&amp; ./install.sh --into ~/projects/readshelf
+export BATHOS_BIN=&quot;$HOME/tools/bathos/core/target/release/bathos&quot;
+export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1
+
+# Dentro de Claude Code abierto en ~/projects/readshelf:
+/team-kickoff                                   # esqueleto de .agent-team + manifest
+/route          /Users/you/projects/readshelf   # → recomienda Lv2, tú das --confirm 2
+/wave1-discovery   /Users/you/projects/readshelf # Caleb: mercado + USP
+/wave2-design      /Users/you/projects/readshelf # Joshua → James + Jonnathan
+/wave3-story-gate  /Users/you/projects/readshelf # ★ historias + gate de readiness (FAIL bloquea la implementación)
+/wave5-implement   /Users/you/projects/readshelf # Phillip + Andrew → código en src/
+/wave6-verify-report /Users/you/projects/readshelf # review + QA + docs → report.html
+/team-confirm                                   # sign-off + limpieza
+
+# Revisión de progreso en cualquier momento:
+/team-status
+
+# Guardar todo antes de parar — reanudar en la siguiente sesión:
+/save            # o simplemente &quot;guardar&quot; / &quot;checkpoint&quot;
+/resume          # siguiente sesión: o simplemente &quot;continuar&quot; / &quot;cargar&quot;</code></pre>
+<hr />
+<h2 id="13-consejos-y-trampas-comunes">13. Consejos y trampas
+comunes</h2>
+<ul>
+<li><strong>Guarda antes de parar, reanuda al volver.</strong> Un build
+real como ReadShelf abarca varias sesiones. Termina cada sesión con
+<strong><code>/save</code></strong> (una palabra — mete estado del motor
+· git · decisiones · wave en curso · siguiente comando en
+<code>_state/SESSION-SNAPSHOT.md</code>). Empieza la siguiente con
+<strong><code>/resume</code></strong>. Funciona en lenguaje natural:
+"guardar"/"save", "continuar"/"resume". Eso sí, al reanudar los
+compañeros no reviven — vuelve a ejecutar el comando
+<code>/waveN-…</code> correspondiente (sin pérdidas gracias a los
+artefactos en disco).</li>
+<li><strong>Compañeros concurrentes ≤ 3.</strong> El costo en tokens es
+proporcional al número de roles activos. BATHOS ya secuencia las waves;
+no intentes ejecutarlo todo a la vez.</li>
+<li><strong>Genera solo los roles necesarios.</strong> Sin ML, omite a
+Stephen. En greenfield, omite a John (reverse) o dale un repo de
+referencia.</li>
+<li><strong>El que decide eres tú.</strong> Nivel · USP · planificación
+· veredictos de gate — BATHOS recomienda, tú confirmas. Cuando BATHOS
+recomienda un cambio de dirección debe presentar "recomendación +
+fundamento + contexto omitido", y no puede ejecutarlo por su
+cuenta.</li>
+<li><strong>FAIL detiene la implementación de verdad.</strong> Si
+<code>/wave5-implement</code> no arranca, revisa el veredicto de Wave 3:
+<code>bathos -s .agent-team/_state gate show</code>. Corrige las
+historias y re-gatea.</li>
+<li><strong>Nada de claves de comentario en el bloque <code>hooks</code>
+de <code>settings.json</code></strong> — provocan una espera infinita al
+arrancar los compañeros.</li>
+<li><strong>El traspaso es solo por disco.</strong> Los compañeros no
+comparten el historial de conversación del líder; todo se transmite por
+archivos de <code>.agent-team/</code>. No es una limitación sino una
+funcionalidad (zero context loss).</li>
+<li><strong>Si un compañero parece "detenido" sin salida</strong>,
+normalmente es por el límite de uso de la cuenta, no por un bug —
+re-genera tras el reinicio del límite; los artefactos en disco se
+preservan.</li>
+</ul>
+<hr />
+<h2 id="14-y-si-readshelf-fuera-más-grande">14. ¿Y si ReadShelf fuera
+más grande?</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Si ReadShelf fuera…</th>
+<th>Cambio de stakes</th>
+<th>Nivel</th>
+<th>Waves añadidas</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Un arreglo de bug de una línea</td>
+<td>scope=bug</td>
+<td><strong>Lv0</strong></td>
+<td>Solo W5 (+ W6 ligera)</td>
+</tr>
+<tr>
+<td>Un MVP enfocado <em>(este documento)</em></td>
+<td>scope=feature, novelty</td>
+<td><strong>Lv2</strong></td>
+<td>W1+W2+W3+W5+W6</td>
+</tr>
+<tr>
+<td>Un producto/plataforma nuevo en serio</td>
+<td>scope=product, team=large</td>
+<td><strong>Lv3</strong></td>
+<td>Se añade <strong>W0</strong> (análisis) + <strong>W4</strong>
+opcional (IP/investigación)</td>
+</tr>
+<tr>
+<td>Un producto centrado en regulación/patentes</td>
+<td>+ regulation_ip=true</td>
+<td><strong>Lv4</strong></td>
+<td>W0–W6 completas + <strong>W4 obligatoria</strong></td>
+</tr>
+</tbody>
+</table></div>
+<p>Para activar un plug (p. ej. el borrador de patente de un producto
+Lv3+):</p>
+<pre class="bash"><code>bathos -s .agent-team/_state --modules-dir modules plug enable ip</code></pre>
+<hr />
+<h2 id="15-licencia">15. Licencia</h2>
+<p>BATHOS es MIT, reimplementado de forma independiente desde primeros
+principios tras un análisis inverso cuidadoso de <a
+href="https://github.com/bmad-code-org/BMAD-METHOD">BMAD-METHOD</a> —
+con respeto por el trabajo previo que le sirvió de base, y sin usar sus
+marcas. Texto completo: <a
+href="readme.html"><code>../README.md</code></a>.</p>
+<hr />
+<div align="center">
+
+<p><strong>BATHOS</strong> · βάθος — profundidad, no superficie 한국어
+<a href="usecase-kr.html"><code>USECASE-kr.md</code></a> · English <a
+href="usecase-en.html"><code>USECASE-en.md</code></a></p>
+</div>
+
+    </article>
+<nav class="pager" aria-label="Docs"><a href="usage-es.html"><span class="dir">← Anterior</span><span class="ttl">Guía de uso</span></a><a class="next" href="features-es.html"><span class="dir">Siguiente →</span><span class="ttl">Funciones y mecánica</span></a></nav>
+  </main>
+<aside class="toc"><span class="cap">En esta página</span><ul><li><a class="lv2" href="#0-modelo-mental-de-30-segundos">0. Modelo mental de 30 segundos</a></li><li><a class="lv2" href="#1-el-servicio-de-ejemplo-readshelf">1. El servicio de ejemplo: &quot;ReadShelf&quot;</a></li><li><a class="lv2" href="#2-preparación-previa-una-sola-vez">2. Preparación previa (una sola vez)</a></li><li><a class="lv2" href="#3-paso-1--instalar-bathos-en-mi-proyecto-modo-b">3. Paso 1 — instalar BATHOS en mi proyecto (modo &quot;B&quot;)</a></li><li><a class="lv2" href="#4-paso-2--abrir-claude-code-y-hacer-el-kickoff">4. Paso 2 — abrir Claude Code y hacer el kickoff</a></li><li><a class="lv2" href="#5-paso-3--fijar-el-nivel-con-route-decides-tú">5. Paso 3 — fijar el nivel con /route (decides tú)</a></li><li><a class="lv2" href="#6-paso-4--wave-1-discovery--mercado-qué-construimos">6. Paso 4 — Wave 1: discovery &amp; mercado (¿qué construimos?)</a></li><li><a class="lv2" href="#7-paso-5--wave-2-planificación--arquitectura--diseño">7. Paso 5 — Wave 2: planificación · arquitectura · diseño</a></li><li><a class="lv2" href="#8-paso-6--wave-3-story-gate--el-corazón-de-bathos">8. Paso 6 — Wave 3: story gate ★ (el corazón de BATHOS)</a></li><li><a class="lv2" href="#9-paso-7--wave-5-implementación-escribir-el-código-de-verdad">9. Paso 7 — Wave 5: implementación (escribir el código de verdad)</a></li><li><a class="lv2" href="#10-paso-8--wave-6-verificación--docs--reporte">10. Paso 8 — Wave 6: verificación · docs · reporte</a></li><li><a class="lv2" href="#11-paso-9--confirmación-final">11. Paso 9 — confirmación final</a></li><li><a class="lv2" href="#12-el-flujo-completo-en-una-página">12. El flujo completo en una página</a></li><li><a class="lv2" href="#13-consejos-y-trampas-comunes">13. Consejos y trampas comunes</a></li><li><a class="lv2" href="#14-y-si-readshelf-fuera-más-grande">14. ¿Y si ReadShelf fuera más grande?</a></li><li><a class="lv2" href="#15-licencia">15. Licencia</a></li></ul></aside>
+</div>
+<footer class="foot"><span class="mono">βάθος · BATHOS</span> — la profundidad sobre la superficie · MIT License · funciona sobre Claude Code v2.1.32+</footer>
+<script src="assets/docs.js"></script>
+</body>
+</html>

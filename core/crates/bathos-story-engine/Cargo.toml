@@ -1,0 +1,22 @@
+[package]
+name    = "bathos-story-engine"
+version = "0.1.0"
+edition = "2021"
+description = "BATHOS M5: W3 스토리엔진 (6단계 컴파일·staleness·SELECTIVE_LOAD·자가검증) [B3 구현 예정]"
+
+[dependencies]
+bathos-state          = { path = "../bathos-state" }
+bathos-gate-engine    = { path = "../bathos-gate-engine" }
+# ADR-P-0007: StoryCompiler 본체는 leaf 크레이트로 추출됨(compiler.rs는 재수출
+# shim). [Source: adr-kr.md ADR-P-0007]
+bathos-story-compiler = { path = "../bathos-story-compiler" }
+serde              = { workspace = true }
+serde_json         = { workspace = true }
+sha2               = { workspace = true }
+hex                = { workspace = true }
+thiserror          = { workspace = true }
+anyhow             = { workspace = true }
+chrono             = { workspace = true }
+
+[dev-dependencies]
+tempfile           = { workspace = true }

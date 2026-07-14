@@ -1,0 +1,10 @@
+module_id: research
+name: Research Pack
+wave: W4
+trigger: "Lv>=3 OR domain=research"
+enabled_default: false
+provides:
+  workflows: [abstract-introduction]
+  templates: [abstract, introduction]
+outputs: ".agent-team/06-research/"
+evidence_trace: true

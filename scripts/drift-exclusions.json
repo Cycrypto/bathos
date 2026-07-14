@@ -1,0 +1,21 @@
+{
+  "_comment": "CF-B3 AC4 — drift-guard(check-rule-copies.sh --check-copies) 검사 제외 목록. 암묵 제외 금지 원칙(project-context-kr.md §5-3 인접 원칙) — 모든 제외 항목은 사유를 함께 남긴다. i18n 커뮤니티 번역본은 완전 병렬을 강제하지 않는 '무언 노후화 허용 계층'이다(design-handoff-kr.md §4-1).",
+  "exclusions": [
+    {
+      "path": "docs/ARCHITECTURE-en.md",
+      "reason": "커뮤니티 보조 번역(정본=kr, agent-portability-kr.md §4). 완전 병렬 번역 강제 안 함."
+    },
+    {
+      "path": "docs/ARCHITECTURE-es.md",
+      "reason": "커뮤니티 보조 번역(정본=kr). 완전 병렬 번역 강제 안 함."
+    },
+    {
+      "path": "docs/*-en.md",
+      "reason": "패턴 예시 — en 계열 보조 번역 문서 전반(무언 노후화 허용). 실제 대상은 최종 조립(LD-5) 후 bathos/docs/*-en.md가 제품 트리에 위치할 때 활성화된다."
+    },
+    {
+      "path": "docs/*-es.md",
+      "reason": "패턴 예시 — es 계열 보조 번역 문서 전반(무언 노후화 허용). 위와 동일 사유."
+    }
+  ]
+}

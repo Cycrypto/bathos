@@ -1,0 +1,105 @@
+# ─────────────────────────────────────────────────────────────
+# BATHOS Dynamis .gitignore — GitHub 업로드 제외 목록
+# 원칙: 제품 소스·docs·site·examples·.claude(에이전트/훅/커맨드)·.github 는 커밋,
+#       비밀·머신-로컬 설정·내부 운영/세션 메모리·감사로그·백업·빌드 산출물은 제외.
+# 주: Cargo.lock 은 (바이너리 크레이트라) 커밋 대상 → *.lock 일괄 제외하지 않는다.
+# ─────────────────────────────────────────────────────────────
+
+# ══ 시크릿 / 키 (최우선 — 절대 커밋 금지) ═════════════════════
+# SEC-02 감사 체인 HMAC 키 — 유출 시 감사 로그 위조 방어가 무력화된다.
+# (_state/ 제외로도 커버되나, 위치가 바뀌어도 잡히도록 명시적으로 이중 차단)
+*.audit-key
+**/*.audit-key
+# 일반 비밀·자격증명·환경변수 (실수 방지용 선제 차단)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa
+id_ed25519
+secrets.*
+credentials.*
+*.secret
+
+# ══ Claude Code 머신-로컬 설정 ════════════════════════════════
+# settings.json(공유 훅/게이트 설정)은 커밋, settings.local.json(사용자명·tmp 경로·권한 grant 포함)은 제외
+.claude/settings.local.json
+.claude/**/settings.local.json
+# macOS Finder duplicate copies of the local settings ("settings.local 2.json" 등)도 차단
+.claude/settings.local*.json
+
+# ══ BATHOS 팀 작업·산출 메타 전체 (공개 대상 아님) ═══════════
+# .agent-team/ 은 웨이브 파이프라인의 내부 작업물이다 — 기획·아키텍처·디자인·
+# 리뷰·보안·QA 산출물(결과물)과 _state/(세션 스냅샷·SSOT 덤프·감사로그·리드
+# 결정·리스크로그·사인오프)를 모두 포함하며, 개인 절대경로·이메일·세션 문맥이
+# 섞일 수 있다. 배포되는 것은 제품 소스(core/)·docs·site·.claude 등이지 이 메타가 아니다.
+.agent-team/
+# (다른 프로젝트에 중첩 실행될 때의 운영 상태도 방어적으로 차단)
+**/_state/
+# 전역 크로스-프로젝트 메모리 레지스트리(있으면)
+.bathos/
+# 감사로그·재봉인/복구 백업·격리본 (혹시 _state 밖에 있어도 차단)
+audit-log.jsonl
+*.presealbak
+*.pre-recovery.bak
+*.nonchained-quarantine.jsonl
+*.reseal.tmp
+
+# ══ 내부 R&D: 타 프로젝트 리버스-분석 노트 (비공개) ══════════
+_recon/
+
+# ══ 자동 생성 백업본 (편집/윤문 전 원본 스냅샷) ══════════════
+*.orig
+*.orig.*
+*.bak
+
+# ══ Rust 빌드 산출물 ══════════════════════════════════════════
+target/
+**/target/
+*.rs.bk
+
+# ══ Python 부산물 (site/build-docs.py, dist/mcp) ═════════════
+__pycache__/
+**/__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+
+# ══ Node / 사이트 빌드 부산물 ════════════════════════════════
+node_modules/
+.next/
+.cache/
+
+# ══ 로그 / 임시 ═══════════════════════════════════════════════
+*.log
+*.tmp
+*.swp
+*.swo
+*~
+
+# ══ OS / 에디터 정크 ══════════════════════════════════════════
+.DS_Store
+**/.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+Desktop.ini
+.idea/
+.vscode/
+*.sublime-workspace
+
+# ══ macOS Finder 중복본 ("name 2.ext", "name 3.tsx" …) ═══════
+# Finder가 복제 시 확장자 앞에 " <n>"을 붙인다 — 원본 규칙을 우회해 실수로
+# 민감/불필요 파일이 커밋되는 것을 방지(예: "settings.local 2.json").
+* [0-9].*
+* [0-9]
+
+# ══ stray 컴파일 바이너리 (core/target 밖의 수동 컴파일 산출물) ══
+# Mach-O/ELF 실행물은 소스가 아니다. core 루트의 알려진 잔재를 차단.
+/core/test_fs4_import

@@ -1,0 +1,29 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/bathos-state",
+    "crates/bathos-router",
+    "crates/bathos-wave-engine",
+    "crates/bathos-gate-engine",
+    "crates/bathos-story-engine",
+    "crates/bathos-story-compiler",
+    "crates/bathos-plug",
+    "crates/bathos-cli",
+    "crates/bathos-inspect",
+]
+
+# ── 공유 의존 버전 (workspace 레벨 고정) ───────────────────────────────────
+[workspace.dependencies]
+serde        = { version = "1",  features = ["derive"] }
+serde_json   = "1"
+serde_yaml   = "0.9"
+sha2         = "0.10"
+thiserror    = "1"
+anyhow       = "1"
+fs4          = "1"
+tempfile     = "3"
+clap         = { version = "4", features = ["derive"] }
+uuid         = { version = "1", features = ["v4"] }
+chrono       = { version = "0.4", features = ["serde"] }
+jsonschema   = { version = "0.18", default-features = false }
+hex          = "0.4"

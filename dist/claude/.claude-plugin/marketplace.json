@@ -1,0 +1,12 @@
+{
+  "name": "bathos-dynamis-marketplace",
+  "owner": "BATHOS project",
+  "_skeleton_note": "Must(CF-B1) 스켈레톤 — 실제 마켓플레이스 등록/레지스트리 계정 없음(Won't, LD-2). source는 로컬 상대경로만(실퍼블리시 시 재작성 필요).",
+  "plugins": [
+    {
+      "name": "bathos-dynamis",
+      "source": "./plugin.json",
+      "description": "BATHOS Dynamis — 17역할 7웨이브 AI 오케스트레이션 툴킷 (심화 안전망 + 멀티런타임 배포 + 자기개선 서비스 레이어)"
+    }
+  ]
+}

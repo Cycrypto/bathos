@@ -1,0 +1,19 @@
+[package]
+name        = "bathos-story-compiler"
+version     = "0.1.0"
+edition     = "2021"
+description = "BATHOS 스토리파일 구조 검증 leaf 크레이트 — 의존 0 (ADR-P-0007)"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ADR-P-0007 (`pilot/.agent-team/04-architecture/adr-kr.md`) — 이 크레이트는
+# `bathos-story-engine::compiler` 모듈(9섹션 자족 스토리파일 컴파일러)을 그대로
+# 옮긴 **순수 leaf**다. 다른 bathos 크레이트를 절대 의존하지 않는다(의존 0).
+#
+# 존재 이유: `bathos-story-engine`은 `bathos-gate-engine → bathos-wave-engine →
+# bathos-router`로 전이의존한다(쓰기 엔진 3종). `bathos-inspect`(CR-1, read-only
+# 링크그래프 강제)가 `StoryCompiler`를 재사용(CR-2)하려면 이 쓰기 엔진들이
+# `cargo tree -p bathos-inspect`에 나타나지 않아야 한다. `compiler.rs` 자체는
+# 다른 bathos 크레이트를 import하지 않는 순수 모듈이었으므로, 이 크레이트로
+# 추출해 `bathos-inspect`가 **이 leaf만** 의존하게 한다.
+# [Source: adr-kr.md ADR-P-0007, backend-w5-core.md §3.2]
+[dependencies]

@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="3계층 오버라이드(base/team/user)로 역할 정체성·소유 경로·facilitation 수위 조정.">
+<title>역할 커스터마이즈 · BATHOS docs</title>
+<link rel="stylesheet" href="assets/docs.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+  <button class="menu-btn" type="button" aria-label="내비게이션 열기" aria-expanded="false">☰</button>
+  <div class="brand"><a href="index.html">βάθος · <b>BATHOS</b></a></div>
+  <span class="spacer"></span>
+  <a class="homelink" href="../index.html">← 랜딩</a>
+  <div class="langtog" role="group" aria-label="Language / 언어 / Idioma"><a href="role-guide-en.html"><span class="flag" aria-hidden="true">🇺🇸</span>EN</a><a href="role-guide-kr.html" aria-current="true"><span class="flag" aria-hidden="true">🇰🇷</span>KO</a><a href="role-guide-es.html"><span class="flag" aria-hidden="true">🇪🇸</span>ES</a></div>
+</header>
+<div class="scrim" aria-hidden="true"></div>
+<div class="layout">
+  <nav class="sidebar" aria-label="문서">
+<div class="grp"><div class="grp-t">시작</div><ul><li><a href="usage-kr.html">사용 가이드</a></li><li><a href="usecase-kr.html">사용 사례</a></li></ul></div>
+<div class="grp"><div class="grp-t">개념</div><ul><li><a href="features-kr.html">기능·작동 원리</a></li><li><a href="architecture-kr.html">아키텍처</a></li></ul></div>
+<div class="grp"><div class="grp-t">커스터마이즈</div><ul><li><a href="role-guide-kr.html" aria-current="page">역할 커스터마이즈</a></li><li><a href="module-guide-kr.html">모듈 작성</a></li></ul></div>
+<div class="grp"><div class="grp-t">운영</div><ul><li><a href="quota-kr.html">토큰·쿼터</a></li><li><a href="faq-kr.html">FAQ</a></li></ul></div>
+<div class="grp"><div class="grp-t">프로젝트</div><ul><li><a href="readme.html">README (개요) <span class="nat">· EN</span></a></li><li><a href="claude.html">운영 규칙 (CLAUDE.md) <span class="nat">· KR</span></a></li><li><a href="ethos.html">ETHOS (원칙) <span class="nat">· KR</span></a></li></ul></div>
+  </nav>
+  <main id="main" class="article">
+    <article>
+<h1 id="bathos--역할-커스터마이즈-3계층-오버라이드">BATHOS — 역할
+커스터마이즈 (3계층 오버라이드)</h1>
+<blockquote>
+<p>17개 역할을 <strong>base 정의를 건드리지 않고</strong> 프로젝트에
+맞춰(언어·소유 경로·플랫폼·톤) 조정한다. 바꾸는 것은 역할이 크래프트를
+<em>어떻게</em> 적용하는지이지, 역할이 <em>누구인지</em>가 아니다.</p>
+<p><strong>함께 보기:</strong> <a href="module-guide-kr.html">모듈
+작성(MODULE-GUIDE-kr)</a> · <a href="usage-kr.html">사용(USAGE-kr)</a> ·
+English: <a href="role-guide-en.html"><code>ROLE-GUIDE-en.md</code></a> ·
+Español: <a
+href="role-guide-es.html"><code>ROLE-GUIDE-es.md</code></a></p>
+</blockquote>
+<hr />
+<h2 id="0-3계층">0. 3계층</h2>
+<p>역할의 유효 정의는 세 계층을 순서대로 병합한 것이다:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>계층</th>
+<th>위치</th>
+<th>소유</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>base</strong></td>
+<td><code>.claude/agents/_base/NN-*.md</code></td>
+<td>고정 정체성 — 이름·배경·모델 + 탑티어 크래프트 표준/철학/DoD</td>
+</tr>
+<tr>
+<td><strong>team</strong></td>
+<td>프로젝트 오버라이드</td>
+<td>소유 경로·플랫폼(웹/iOS…)·도메인 강조·기술 스택·NFR
+임계·톤&amp;보이스</td>
+</tr>
+<tr>
+<td><strong>user</strong></td>
+<td>개인 오버라이드</td>
+<td>언어·상세도·facilitation 수위</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>병합 규칙:</strong> 스칼라는 덮어쓰기(user &gt; team &gt;
+base), 배열은 append. 그래서 사용자는 언어를, 팀은 소유 경로를 정하고,
+둘 다 고정 base 정체성 위에 합성된다.</p>
+<h2 id="1-오버라이드-불가-항목">1. 오버라이드 불가 항목</h2>
+<p>base 계층은 <strong>이름·배경·모델</strong>과 크래프트 표준을
+고정한다. 의도적으로 불변으로 두었다 — 이것이 역할을 "탑티어"답고
+일관되게 만든다. <em>누구인지</em>가 아니라 <em>어떻게 크래프트를
+프로젝트에 적용하는지</em>를 오버라이드하라.</p>
+<h2 id="2-base-역할의-구조">2. base 역할의 구조</h2>
+<p>모든 base 파일(<code>.claude/agents/_base/NN-name.md</code>)은 YAML
+frontmatter + 본문:</p>
+<pre class="yaml"><code>---
+role_number: 4
+name: james
+slug: james-architect          # ← 스폰에 쓰는 agent-type 슬러그
+model: opus                     # opus = Opus 4.8 · sonnet = Sonnet 4.6
+wave: W2 (Joshua 완료 후)
+spawnable: true                 # Paul(#0)은 false — 리드는 메인 세션
+tools: [Read, Grep, Glob, Bash, Write, WebFetch, WebSearch]
+---</code></pre>
+<p>본문 섹션(상향 후 표준): 정체성 · §0 철학 · 미션&amp;산출물 ·
+크래프트 표준(타협 불가) · 안티패턴 · 프로세스 · DoD · 3계층 노트.</p>
+<h2 id="3-team-오버라이드-추가-예">3. team 오버라이드 추가 (예)</h2>
+<p>base 역할 위에 합성되는 team 계층 노트를 만든다. 흔한 team
+오버라이드:</p>
+<ul>
+<li><strong>소유 경로</strong> — 예: Andrew(#9)=<code>web/</code>,
+Phillip(#8)=<code>api/</code>(겹침 0 → 병렬 안전).</li>
+<li><strong>플랫폼/스택</strong> — "웹=Next.js", "백엔드=Go +
+Postgres".</li>
+<li><strong>NFR 임계</strong> — "p95 &lt; 150ms", "번들 &lt;
+200KB".</li>
+<li><strong>도메인 강조/톤</strong> — 브랜드 보이스, 규제 포커스.</li>
+</ul>
+<p>team 오버라이드는 <em>프로젝트 특정 사실</em>에 한정; 크래프트 표준은
+base에 맡긴다.</p>
+<h2 id="4-user-오버라이드-추가">4. user 오버라이드 추가</h2>
+<p>프로젝트를 가로지르는 개인 설정:</p>
+<ul>
+<li><strong>언어</strong> — 한국어/영어 출력.</li>
+<li><strong>상세도</strong> — 간결 vs 상세.</li>
+<li><strong>facilitation</strong> — 역할이 얼마나 적극적으로
+제안하는지(User Sovereignty는 항상 준수).</li>
+</ul>
+<h2 id="5-역할-스폰">5. 역할 스폰</h2>
+<p>리드(Paul)가 <code>slug</code>(agent-type)로 팀원을 스폰하며 입력
+경로·소유 경로·DoD를 전달한다. 예: "<code>james-architect</code> 스폰,
+<code>03-service-planning/</code> 읽고 <code>04-architecture/</code>
+소유, ETHOS.md 준수." 동시 ≤3; 웨이브 끝에 shutdown.</p>
+<h2 id="6-좋은-습관">6. 좋은 습관</h2>
+<p>아래 몇 가지 습관이 커스터마이즈를 깔끔하게, 병렬 안전하게, base에
+충실하게 유지해 준다:</p>
+<ul>
+<li>프로젝트 사실을 바꾸려고 <strong>base를 포크하지 말 것</strong> —
+team/user 계층 사용.</li>
+<li><strong>소유 경로 분리</strong> — 병렬 역할끼리 겹치지 않는 경로를
+배정한다(freeze-guard가 강제).</li>
+<li><strong>상향된 바 유지</strong> — 새 역할 추가 시 6섹션 탑티어
+구조(철학·크래프트 표준·안티패턴·프로세스·DoD)를 따를 것.</li>
+<li><em>역할</em>이 아니라 <em>도메인 팩</em>이 필요하면 플러그로(<a
+href="module-guide-kr.html"><code>MODULE-GUIDE-kr.md</code></a>).</li>
+</ul>
+<hr />
+<div align="center"><a href="role-guide-en.html">ROLE-GUIDE-en</a> · <a href="role-guide-es.html">ROLE-GUIDE-es</a></div>
+
+    </article>
+<nav class="pager" aria-label="문서"><a href="architecture-kr.html"><span class="dir">← 이전</span><span class="ttl">아키텍처</span></a><a class="next" href="module-guide-kr.html"><span class="dir">다음 →</span><span class="ttl">모듈 작성</span></a></nav>
+  </main>
+<aside class="toc"><span class="cap">이 문서에서</span><ul><li><a class="lv2" href="#0-3계층">0. 3계층</a></li><li><a class="lv2" href="#1-오버라이드-불가-항목">1. 오버라이드 불가 항목</a></li><li><a class="lv2" href="#2-base-역할의-구조">2. base 역할의 구조</a></li><li><a class="lv2" href="#3-team-오버라이드-추가-예">3. team 오버라이드 추가 (예)</a></li><li><a class="lv2" href="#4-user-오버라이드-추가">4. user 오버라이드 추가</a></li><li><a class="lv2" href="#5-역할-스폰">5. 역할 스폰</a></li><li><a class="lv2" href="#6-좋은-습관">6. 좋은 습관</a></li></ul></aside>
+</div>
+<footer class="foot"><span class="mono">βάθος · BATHOS</span> — 표층이 아닌 깊이 · MIT License · Claude Code v2.1.32+ 에서 동작</footer>
+<script src="assets/docs.js"></script>
+</body>
+</html>

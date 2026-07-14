@@ -1,0 +1,18 @@
+[package]
+name    = "bathos-gate-engine"
+version = "0.1.0"
+edition = "2021"
+description = "BATHOS M4: 게이트 판정 엔진 (6단계 정렬검증·병렬리뷰·PASS/CONCERNS/FAIL) [B3 구현 예정]"
+
+[dependencies]
+bathos-state       = { path = "../bathos-state" }
+bathos-wave-engine = { path = "../bathos-wave-engine" }
+serde              = { workspace = true }
+serde_json         = { workspace = true }
+thiserror          = { workspace = true }
+anyhow             = { workspace = true }
+uuid               = { workspace = true }
+chrono             = { workspace = true }
+
+[dev-dependencies]
+tempfile           = { workspace = true }

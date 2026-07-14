@@ -1,0 +1,10 @@
+module_id: ip
+name: IP Pack
+wave: W4
+trigger: "Lv>=3 OR domain=ip"
+enabled_default: false
+provides:
+  workflows: [patent-spec-draft]
+  templates: [patent-spec]
+outputs: ".agent-team/05-ip/"
+evidence_trace: true

@@ -1,0 +1,75 @@
+# =============================================================================
+# BATHOS Dynamis — drift-guard CI (스켈레톤, 실퍼블리시 아님)
+# CF-B3 / US7 AC3 — "드리프트 = CI 실패"를 로컬뿐 아니라 CI에서도 강제한다.
+#
+# 주의(story-b3 §4 인계 메모): `.github/workflows/`는 Phillip이 심화하는
+# careful-guard(A1)의 "위험 경로" 후보에 포함될 수 있다. 본 워크플로는
+# Andrew 소유 경로(risk-log §C)로 스폰 시 명시 승인되었으나, careful-guard
+# 최종 규칙과 충돌 시 Phillip과 메시지 합의 필요(미해결 — 아래 impl-notes 참조).
+#
+# 이 워크플로는 기존 bathos/.github/workflows/ci.yml(Rust 엔진 CI, Phillip
+# 축A 소관)과 별개다 — 배포 레이어(축B) 전용 job만 담는다(소유 경계 준수).
+# =============================================================================
+name: drift-guard
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+concurrency:
+  group: drift-guard-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  rule-copies-and-versions:
+    name: check-rule-copies + check-versions (Bash)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install jq (버전/포인터 검사용 — 없어도 fail-open이지만 CI에선 명시 설치)
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: check-rule-copies.sh --dup-scan (CF-B1/B2 AC1, risk-log A-4)
+        run: bash scripts/check-rule-copies.sh --dup-scan
+
+      - name: check-rule-copies.sh --check-copies (CF-B3 AC1)
+        run: bash scripts/check-rule-copies.sh --check-copies
+
+      - name: check-versions.sh (CF-B3 AC2 — 단일 semver 핀)
+        run: bash scripts/check-versions.sh
+
+  manifest-and-lib-tests:
+    name: dist/tests (매니페스트 스키마·포인터·host-detect·uninstall)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: test-manifests.sh (CF-B1/B2 §5)
+        run: bash dist/tests/test-manifests.sh
+
+      - name: test-host-detect.sh (CF-B5 §5)
+        run: bash dist/tests/test-host-detect.sh
+
+      - name: test-uninstall.sh (CF-B4 §5, 4 픽스처)
+        run: bash dist/tests/test-uninstall.sh
+
+      - name: test-check-rule-copies.sh (CF-B3 §5, 4 픽스처: byte/invariant/제외)
+        run: bash dist/tests/test-check-rule-copies.sh
+
+  mcp-reference-tests:
+    name: MCP 레퍼런스 서버 단위테스트 (CF-B6 §5, Python)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: test_mcp_server.py (순수 로직 — mcp 패키지 미설치로도 실행 가능)
+        run: python3 dist/tests/test_mcp_server.py -v

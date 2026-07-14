@@ -1,0 +1,22 @@
+[package]
+name    = "bathos-cli"
+version = "0.1.0"
+edition = "2021"
+description = "BATHOS CLI 진입점 — 훅·커맨드가 호출하는 `bathos` 바이너리"
+
+[[bin]]
+name = "bathos"
+path = "src/main.rs"
+
+[dependencies]
+bathos-state        = { path = "../bathos-state" }
+bathos-router       = { path = "../bathos-router" }
+bathos-wave-engine  = { path = "../bathos-wave-engine" }
+bathos-gate-engine  = { path = "../bathos-gate-engine" }
+bathos-story-engine = { path = "../bathos-story-engine" }
+bathos-plug         = { path = "../bathos-plug" }
+# DevTools 파일럿(read-only) — `serve` feature는 전달하지 않아 기본 빌드는 가볍다.
+bathos-inspect      = { path = "../bathos-inspect" }
+clap                = { workspace = true }
+serde_json          = { workspace = true }
+anyhow              = { workspace = true }

@@ -1,0 +1,64 @@
+[package]
+name        = "bathos-inspect"
+version     = "0.1.0"
+edition     = "2021"
+description = "BATHOS DevTools 파일럿 — read-only 상태 관측·스토리 린트·산출물 doctor (`bathos inspect`)"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CR-1 (코어 read-only, 컴파일 강제) — [Source: project-context-kr.md §2/§3, adr-kr.md ADR-P-0001]
+#
+# 이 크레이트는 상태를 절대 쓰지 않는다. 그 불변식을 "관례"가 아니라 "링크
+# 그래프"로 강제하기 위해, 아래 dependencies에는 read-only 코어 크레이트만
+# 나열한다. bathos-wave-engine·bathos-gate-engine·bathos-router·bathos-plug와
+# StateStore의 쓰기 경로는 어떤 이유로도(편의상이라도) 추가하지 않는다.
+# `cargo tree -p bathos-inspect`에 위 4개 크레이트가 나타나지 않아야 한다
+# (story-1-1 testing_requirements 컴파일 게이트).
+#
+# ── 결정 및 리스크 (Phillip, W5 story 1-1/1-2, 2026-07-02) ─────────────────
+# story-1-1 AC 원문은 "bathos-state·bathos-story-engine만 의존"이라 적혀
+# 있으나, 실제 워크스페이스를 확인한 결과(Search Before Building):
+#   bathos-story-engine → bathos-gate-engine → bathos-wave-engine → bathos-router
+# 로 이미 전이 의존이 걸려 있다(각 크레이트 Cargo.toml 실측, 2026-07-02).
+# 지금 bathos-story-engine을 추가하면 위 3개 쓰기 엔진이 즉시 cargo tree에
+# 나타나 이 스토리 자신의 컴파일 게이트를 깨고 CR-1을 위반한다.
+#
+# ── ADR-P-0007 해결 (Phillip, W5 story 3-1/3-2, 2026-07-02) ────────────────
+# 위 리스크는 리드 확정 ADR-P-0007(leaf 크레이트 추출)로 해소됐다.
+# `bathos-story-engine::compiler` 모듈(StoryCompiler·ValidationResult·
+# REQUIRED_SECTIONS — 다른 bathos 크레이트를 import하지 않는 순수 leaf)을
+# 신규 크레이트 `bathos-story-compiler`(의존 0)로 추출했고, 이 크레이트는
+# **그 leaf만** 의존한다. `bathos-story-engine` 자체(→ 쓰기 엔진 3종 전이의존)는
+# 여전히 의존하지 않는다 — CR-2(엔진과 동일 판정 재사용) ∧ CR-1(쓰기엔진
+# 미유입) 동시 충족.
+# [Source: adr-kr.md ADR-P-0007, backend-w5-core.md §3.2, backend-w5-story.md]
+[dependencies]
+bathos-state          = { path = "../bathos-state" }
+bathos-story-compiler = { path = "../bathos-story-compiler" }
+
+serde      = { workspace = true }
+serde_json = { workspace = true }
+serde_yaml = { workspace = true }
+chrono     = { workspace = true }
+sha2       = { workspace = true }
+hex        = { workspace = true }
+clap       = { workspace = true }
+anyhow     = { workspace = true }
+thiserror  = { workspace = true }
+
+# ── serve(P1, 기본 off) 후보 의존 ────────────────────────────────────────────
+# 정확 버전 핀은 스토리 2-2/W5에서 리드 승인 후 확정한다. 여기서는 story-1-1
+# library_framework_requirements에 따라 optional dep로 "선언만" 한다.
+# [Source: project-context-kr.md §2, exceptions-kr.md §6 O-1]
+tiny_http = { version = "0.12", optional = true }
+notify    = { version = "6", optional = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }
+
+[features]
+# 파일럿 최소 성공(P0) 3도구를 기본 활성화. serve(P1)는 기본 off.
+default = ["report", "story", "doctor"]
+report  = []
+story   = []
+doctor  = []
+serve   = ["tiny_http", "notify"]

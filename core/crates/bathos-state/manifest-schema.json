@@ -1,0 +1,229 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "bathos:manifest",
+  "title": "BATHOS manifest.json Schema",
+  "description": "BATHOS 오케스트레이션 상태의 기계가독 SSOT. 불변식: current_level 0~4, verdict PASS/CONCERNS/FAIL만 허용, audit hash chain append-only.",
+  "type": "object",
+  "required": ["project_id", "codename", "current_level", "status", "lang", "created"],
+  "additionalProperties": false,
+  "properties": {
+    "project_id": {
+      "type": "string",
+      "pattern": "^bathos-.+",
+      "description": "프로젝트 고유 ID (bathos-<uuid> 형식)"
+    },
+    "codename": {
+      "type": "string",
+      "minLength": 1,
+      "description": "제품 코드명 (예: BATHOS)"
+    },
+    "current_level": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 4,
+      "description": "Scale-Adaptive 레벨 (0~4). 변경 시 routing[]에 LevelDecision append 필수."
+    },
+    "status": {
+      "type": "string",
+      "enum": ["active", "paused", "done"],
+      "description": "프로젝트 전체 진행 상태"
+    },
+    "lang": {
+      "type": "string",
+      "minLength": 2,
+      "description": "주 언어 코드 (예: ko, en)"
+    },
+    "created": {
+      "type": "string",
+      "format": "date-time",
+      "description": "프로젝트 생성 시각 (RFC 3339)"
+    },
+    "stale_story_keys": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "D3 신선도 방어: StoryEngine::mark_stale()이 갱신하는 stale 스토리파일 키 목록 (B-2 추가)"
+    },
+    "routing": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["decision_id", "project_id", "recommended_level", "confirmed_level", "stakes", "wave_set", "role_set", "user_verdict", "decided"],
+        "properties": {
+          "decision_id": { "type": "string" },
+          "project_id": { "type": "string" },
+          "recommended_level": { "type": "integer", "minimum": 0, "maximum": 4 },
+          "confirmed_level": { "type": "integer", "minimum": 0, "maximum": 4 },
+          "stakes": {
+            "type": "object",
+            "required": ["scope", "novelty", "regulation_ip", "team_size"],
+            "properties": {
+              "scope": { "type": "string" },
+              "novelty": { "type": "boolean" },
+              "regulation_ip": { "type": "boolean" },
+              "team_size": { "type": "string" }
+            }
+          },
+          "wave_set": { "type": "array", "items": { "type": "string" } },
+          "role_set": { "type": "array", "items": { "type": "string" } },
+          "user_verdict": { "type": "string", "enum": ["approve", "modify", "reject"] },
+          "decided": { "type": "string", "format": "date-time" }
+        }
+      }
+    },
+    "waves": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["wave_id", "project_id", "name", "status"],
+        "properties": {
+          "wave_id": {
+            "type": "string",
+            "pattern": "^W[0-6]$",
+            "description": "웨이브 ID (W0~W6)"
+          },
+          "project_id": { "type": "string" },
+          "name": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "active", "gated", "done", "skipped"]
+          },
+          "active_roles": {
+            "type": "array",
+            "items": { "type": "string" },
+            "maxItems": 3,
+            "description": "동시 활성 역할 ≤3 (E-CONCURRENCY 불변식)"
+          }
+        }
+      }
+    },
+    "gates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["gate_id", "wave_id", "gate_type", "verdict", "issues_total", "issues_critical", "facilitator", "decided"],
+        "properties": {
+          "gate_id": { "type": "string" },
+          "wave_id": { "type": "string" },
+          "gate_type": {
+            "type": "string",
+            "enum": ["Brief", "Usp", "Plan", "Implementation", "Release"]
+          },
+          "verdict": {
+            "type": "string",
+            "enum": ["PASS", "CONCERNS", "FAIL"],
+            "description": "게이트 판정 — 세 값 외 허용 금지 (B2 불변식)"
+          },
+          "issues_total": { "type": "integer", "minimum": 0 },
+          "issues_critical": { "type": "integer", "minimum": 0 },
+          "facilitator": {
+            "type": "string",
+            "minLength": 1,
+            "description": "자동PASS 금지 — 판정 주체 반드시 기록"
+          },
+          "decided": { "type": "string", "format": "date-time" }
+        }
+      }
+    },
+    "risks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["risk_id", "gate_id", "severity", "description", "status", "owner_wave", "logged"],
+        "properties": {
+          "risk_id": { "type": "string" },
+          "gate_id": { "type": "string" },
+          "severity": { "type": "string", "enum": ["low", "med", "high"] },
+          "description": { "type": "string" },
+          "status": { "type": "string", "enum": ["open", "mitigated", "accepted"] },
+          "owner_wave": { "type": "string" },
+          "logged": { "type": "string", "format": "date-time" }
+        }
+      }
+    },
+    "modules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["module_id", "project_id", "enabled", "trigger", "wave"],
+        "properties": {
+          "module_id": { "type": "string" },
+          "project_id": { "type": "string" },
+          "enabled": { "type": "boolean" },
+          "trigger": { "type": "string" },
+          "wave": { "type": "string" }
+        }
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["artifact_id", "project_id", "wave_id", "path", "owner_role", "sha256", "updated"],
+        "properties": {
+          "artifact_id": { "type": "string" },
+          "project_id": { "type": "string" },
+          "wave_id": { "type": "string" },
+          "path": { "type": "string" },
+          "owner_role": { "type": "string" },
+          "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+          "updated": { "type": "string", "format": "date-time" }
+        }
+      }
+    },
+    "roles": {
+      "description": "M-8 추가: Project.roles[] — 웨이브 내 활성 역할 인스턴스 목록",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["role_instance_id", "wave_id", "role_no", "name", "agent_type", "model", "status"],
+        "properties": {
+          "role_instance_id": { "type": "string" },
+          "wave_id": { "type": "string" },
+          "role_no": { "type": "integer", "minimum": 1, "maximum": 17 },
+          "name": { "type": "string" },
+          "agent_type": { "type": "string" },
+          "model": { "type": "string", "enum": ["opus", "sonnet", "haiku", "inherit"] },
+          "owned_paths": { "type": "array", "items": { "type": "string" } },
+          "status": { "type": "string", "enum": ["spawned", "working", "idle", "shutdown"] }
+        }
+      }
+    },
+    "tasks": {
+      "description": "M-8 추가: Project.tasks[] — 역할이 수행하는 태스크 목록",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["task_id", "wave_id", "role_instance_id", "title", "status", "updated"],
+        "properties": {
+          "task_id": { "type": "string" },
+          "wave_id": { "type": "string" },
+          "role_instance_id": { "type": "string" },
+          "title": { "type": "string" },
+          "status": { "type": "string", "enum": ["todo", "in-progress", "blocked", "done"] },
+          "outputs": { "type": "array", "items": { "type": "string" } },
+          "updated": { "type": "string", "format": "date-time" }
+        }
+      }
+    },
+    "approved_fingerprints": {
+      "description": "SS1 · CF-A1 (Dynamis 신규): 승인된 위험 변경의 정규화 diff 지문 캐시(재승인 방지). 옵셔널 — 구버전 manifest 하위호환.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["fingerprint_id", "hash", "actor", "scope", "approved"],
+        "properties": {
+          "fingerprint_id": { "type": "string" },
+          "hash": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "description": "sha256(정규화된 unified diff)"
+          },
+          "actor": { "type": "string", "description": "승인 주체(역할/훅)" },
+          "scope": { "type": "string", "description": "대상 경로/행위 분류(예: hooks, ci, w5-entry)" },
+          "approved": { "type": "string", "format": "date-time" },
+          "expires": { "type": "string", "format": "date-time", "description": "선택: 만료(재검토 유도)" }
+        }
+      }
+    }
+  }
+}

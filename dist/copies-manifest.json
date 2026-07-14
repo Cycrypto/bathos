@@ -1,0 +1,8 @@
+{
+  "_comment": "CF-B3 AC1 — instruction-only 계층으로 '복제'된 규칙 텍스트 추적 목록. check-rule-copies.sh --check-copies가 이 목록을 순회하며 canonical 소스와의 drift를 검사한다. 이번 W4 범위(LD-2)는 Claude Code(정본, 포인터만) + MCP(포인터만, 복제 아님)만 구현하므로 현재 항목은 0건이다 — 이는 실패가 아니라 '검사 대상 없음' 정상 상태다(B3 CONCERNS 명시 처리). Cursor/Windsurf/Cline/Gemini/Copilot 등 instruction-only 어댑터를 실제로 만들 때 이 목록에 항목을 추가한다.",
+  "mode_docs": {
+    "byte": "짧은 복제본 — canonical 소스와 정규화 후(후행공백 제거+LF 통일) 바이트 동일해야 함",
+    "invariant": "긴 본문(스킬 등) — byte-equal 불가하므로 invariant 부분문자열 존재만 검사"
+  },
+  "copies": []
+}

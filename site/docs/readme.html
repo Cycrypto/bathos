@@ -1,0 +1,992 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="The repository README — project overview, quick start, and the map to everything else.">
+<title>README (overview) · BATHOS docs</title>
+<link rel="stylesheet" href="assets/docs.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+  <button class="menu-btn" type="button" aria-label="Open navigation" aria-expanded="false">☰</button>
+  <div class="brand"><a href="index-en.html">βάθος · <b>BATHOS</b></a></div>
+  <span class="spacer"></span>
+  <a class="homelink" href="../index.html">← Landing</a>
+  <div class="langtog" role="group" aria-label="Language / 언어 / Idioma"><a href="readme.html" aria-current="true"><span class="flag" aria-hidden="true">🇺🇸</span>EN</a><a href="index.html"><span class="flag" aria-hidden="true">🇰🇷</span>KO</a><a href="index-es.html"><span class="flag" aria-hidden="true">🇪🇸</span>ES</a></div>
+</header>
+<div class="scrim" aria-hidden="true"></div>
+<div class="layout">
+  <nav class="sidebar" aria-label="Docs">
+<div class="grp"><div class="grp-t">Start</div><ul><li><a href="usage-en.html">Usage guide</a></li><li><a href="usecase-en.html">Use case</a></li></ul></div>
+<div class="grp"><div class="grp-t">Concepts</div><ul><li><a href="features-en.html">Features &amp; mechanics</a></li><li><a href="architecture-en.html">Architecture</a></li></ul></div>
+<div class="grp"><div class="grp-t">Customize</div><ul><li><a href="role-guide-en.html">Role customization</a></li><li><a href="module-guide-en.html">Writing modules</a></li></ul></div>
+<div class="grp"><div class="grp-t">Operate</div><ul><li><a href="quota-en.html">Token &amp; quota</a></li><li><a href="faq-en.html">FAQ</a></li></ul></div>
+<div class="grp"><div class="grp-t">Project</div><ul><li><a href="readme.html" aria-current="page">README (overview) <span class="nat">· EN</span></a></li><li><a href="claude.html">Operating rules (CLAUDE.md) <span class="nat">· KR</span></a></li><li><a href="ethos.html">ETHOS (principles) <span class="nat">· KR</span></a></li></ul></div>
+  </nav>
+  <main id="main" class="article">
+    <article>
+<p class="langbadge">English only</p><h1 id="bathos">BATHOS</h1>
+<blockquote>
+<p><strong>βάθος</strong> (Greek) — <em>“depth, the abyss.”</em> An AI
+Workflow Agent method with overwhelming depth, in deliberate contrast to
+surface-level AI assistance.</p>
+</blockquote>
+<p> 
+  </p>
+<p>BATHOS turns a <strong>single Claude Code session into a disciplined
+product team</strong> — 16 specialist roles, a 7-wave delivery pipeline,
+scale-adaptive routing, and hard quality gates — backed by a small
+<strong>Rust engine</strong> that makes the critical invariants
+deterministic instead of vibes.</p>
+<blockquote>
+<p><strong>한국어:</strong> BATHOS는 Claude Code 위에서 <strong>17역할 ×
+7웨이브 × Scale-Adaptive Lv0~4</strong>로 제품 개발을 오케스트레이션하는
+메서드 패키지입니다. 처음이라면 <strong><a
+href="usecase-kr.html">활용 사례(새 서비스 만들기)</a></strong> →
+<strong><a href="features-kr.html">특징·구동원리</a></strong> →
+<strong><a href="usage-kr.html">사용 가이드</a></strong> 순서를
+권장합니다. (운영 규칙: <a href="claude.html"><code>CLAUDE.md</code></a> ·
+원칙: <a href="ethos.html"><code>ETHOS.md</code></a>)</p>
+</blockquote>
+<hr />
+<h2 id="table-of-contents">Table of contents</h2>
+<ul>
+<li><a href="#documentation">Documentation</a></li>
+<li><a href="#why-bathos">Why BATHOS</a></li>
+<li><a href="#how-it-works-two-planes">How it works: two planes</a></li>
+<li><a href="#requirements">Requirements</a></li>
+<li><a href="#quick-start">Quick start</a></li>
+<li><a href="#the-7-wave-pipeline">The 7-wave pipeline</a></li>
+<li><a href="#scale-adaptive-routing-lv04">Scale-adaptive routing
+(Lv0–4)</a></li>
+<li><a href="#quality-gates">Quality gates</a></li>
+<li><a href="#cli-reference-bathos-engine">CLI reference
+(<code>bathos</code> engine)</a></li>
+<li><a href="#slash-commands">Slash commands</a></li>
+<li><a href="#the-17-roles">The 17 roles</a></li>
+<li><a href="#plugin-modules">Plugin modules</a></li>
+<li><a href="#safety-hooks">Safety hooks</a></li>
+<li><a href="#repository-layout">Repository layout</a></li>
+<li><a href="#configuration">Configuration</a></li>
+<li><a href="#project-status">Project status</a></li>
+<li><a href="#how-bathos-was-built-dogfooding">How BATHOS was built
+(dogfooding)</a></li>
+<li><a href="#contributing">Contributing</a></li>
+<li><a href="#license--attribution">License &amp; attribution</a></li>
+</ul>
+<hr />
+<h2 id="documentation">Documentation</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Doc</th>
+<th style="text-align: center;">English</th>
+<th style="text-align: center;">한국어</th>
+<th style="text-align: center;">Español</th>
+<th>What it's for</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Use case</strong> — build a new service step by step</td>
+<td style="text-align: center;"><a
+href="usecase-en.html"><code>docs/USECASE-en.md</code></a></td>
+<td style="text-align: center;"><a
+href="usecase-kr.html"><code>docs/USECASE-kr.md</code></a></td>
+<td style="text-align: center;"><a
+href="usecase-es.html"><code>docs/USECASE-es.md</code></a></td>
+<td>Start here: a hands-on walkthrough (adopt into your own project,
+build "ReadShelf" end-to-end)</td>
+</tr>
+<tr>
+<td><strong>Features &amp; operating principles</strong></td>
+<td style="text-align: center;"><a
+href="features-en.html"><code>docs/FEATURES-en.md</code></a></td>
+<td style="text-align: center;"><a
+href="features-kr.html"><code>docs/FEATURES-kr.md</code></a></td>
+<td style="text-align: center;"><a
+href="features-es.html"><code>docs/FEATURES-es.md</code></a></td>
+<td>What makes BATHOS distinctive and how the engine works under the
+hood</td>
+</tr>
+<tr>
+<td><strong>Usage guide</strong></td>
+<td style="text-align: center;"><a
+href="usage-en.html"><code>docs/USAGE-en.md</code></a></td>
+<td style="text-align: center;"><a
+href="usage-kr.html"><code>docs/USAGE-kr.md</code></a></td>
+<td style="text-align: center;"><a
+href="usage-es.html"><code>docs/USAGE-es.md</code></a></td>
+<td>Reference: install, CLI, waves, gates, hooks, troubleshooting</td>
+</tr>
+<tr>
+<td><strong>Token &amp; quota management</strong></td>
+<td style="text-align: center;"><a
+href="quota-en.html"><code>docs/QUOTA-en.md</code></a></td>
+<td style="text-align: center;"><a
+href="quota-kr.html"><code>docs/QUOTA-kr.md</code></a></td>
+<td style="text-align: center;"><a
+href="quota-es.html"><code>docs/QUOTA-es.md</code></a></td>
+<td>Control cost, sequence waves, recover from usage limits</td>
+</tr>
+<tr>
+<td><strong>Custom module authoring</strong></td>
+<td style="text-align: center;"><a
+href="module-guide-en.html"><code>docs/MODULE-GUIDE-en.md</code></a></td>
+<td style="text-align: center;"><a
+href="module-guide-kr.html"><code>docs/MODULE-GUIDE-kr.md</code></a></td>
+<td style="text-align: center;"><a
+href="module-guide-es.html"><code>docs/MODULE-GUIDE-es.md</code></a></td>
+<td>Write your own plugin (module.yaml, trigger DSL, W4) without
+touching the core</td>
+</tr>
+<tr>
+<td><strong>Role customization</strong></td>
+<td style="text-align: center;"><a
+href="role-guide-en.html"><code>docs/ROLE-GUIDE-en.md</code></a></td>
+<td style="text-align: center;"><a
+href="role-guide-kr.html"><code>docs/ROLE-GUIDE-kr.md</code></a></td>
+<td style="text-align: center;"><a
+href="role-guide-es.html"><code>docs/ROLE-GUIDE-es.md</code></a></td>
+<td>Adapt the 17 roles via the 3-layer override (base → team →
+user)</td>
+</tr>
+<tr>
+<td><strong>Architecture</strong> (contributors)</td>
+<td style="text-align: center;"><a
+href="architecture-en.html"><code>docs/ARCHITECTURE-en.md</code></a></td>
+<td style="text-align: center;"><a
+href="architecture-kr.html"><code>docs/ARCHITECTURE-kr.md</code></a></td>
+<td style="text-align: center;"><a
+href="architecture-es.html"><code>docs/ARCHITECTURE-es.md</code></a></td>
+<td>Crate map, invariants (A9, gate, audit), exit/error codes,
+contributing</td>
+</tr>
+<tr>
+<td><strong>FAQ</strong></td>
+<td style="text-align: center;"><a
+href="faq-en.html"><code>docs/FAQ-en.md</code></a></td>
+<td style="text-align: center;"><a
+href="faq-kr.html"><code>docs/FAQ-kr.md</code></a></td>
+<td style="text-align: center;"><a
+href="faq-es.html"><code>docs/FAQ-es.md</code></a></td>
+<td>Common questions &amp; troubleshooting</td>
+</tr>
+<tr>
+<td><strong>Operating rules / principles</strong></td>
+<td style="text-align: center;"><a
+href="claude.html"><code>CLAUDE.md</code></a> · <a
+href="ethos.html"><code>ETHOS.md</code></a></td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;"></td>
+<td>Team operating rules and the gstack-derived ETHOS</td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p><strong>New here?</strong> Read <strong>Use case</strong> →
+<strong>Features</strong> → <strong>Usage guide</strong>.</p>
+</blockquote>
+<hr />
+<h2 id="why-bathos">Why BATHOS</h2>
+<p>A single long LLM conversation drifts: context is lost between
+“design” and “build,” quality checks are skipped, and the same model
+both writes and approves its own work. BATHOS replaces that with
+structure.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Plain LLM chat</th>
+<th>BATHOS</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>One conversation, growing context drift</td>
+<td><strong>16 specialist roles</strong> across a
+<strong>7-wave</strong> pipeline</td>
+</tr>
+<tr>
+<td>Context lost between design ↔︎ implementation</td>
+<td><strong>Zero-Context-Loss</strong> self-contained story files (Wave
+3)</td>
+</tr>
+<tr>
+<td>Implicit, one-size effort</td>
+<td><strong>Scale-Adaptive router</strong> — explicit Lv0–4</td>
+</tr>
+<tr>
+<td>Implementation starts whenever</td>
+<td><strong>Hard readiness gate</strong> physically blocks build on
+<code>FAIL</code></td>
+</tr>
+<tr>
+<td>The author also “verifies”</td>
+<td><strong>Independent reviewers</strong> + tamper-evident audit
+chain</td>
+</tr>
+<tr>
+<td>Advice that quietly overrides you</td>
+<td><strong>User Sovereignty</strong> — AI proposes, <em>you</em>
+decide</td>
+</tr>
+</tbody>
+</table></div>
+<p>The result: one person can drive an AI team through discovery →
+design → implementation → verification, with traceability and gates at
+every step.</p>
+<hr />
+<h2 id="how-it-works-two-planes">How it works: two planes</h2>
+<p>This is the single most important concept. BATHOS runs on <strong>two
+layers</strong>:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Plane</th>
+<th>What it is</th>
+<th>What it does</th>
+<th>Who drives it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Orchestration</strong></td>
+<td>Markdown <strong>slash commands</strong>, <strong>roles</strong>,
+and <strong>hooks</strong> under <code>.claude/</code></td>
+<td>Runs waves; spawns / reviews / shuts down teammates</td>
+<td>The <strong>lead (Paul)</strong> — your main Claude Code
+session</td>
+</tr>
+<tr>
+<td><strong>Engine</strong></td>
+<td>A single static Rust binary,
+<strong><code>bathos</code></strong></td>
+<td>Computes &amp; <em>enforces</em> state, gates, wave transitions,
+routing, story freshness, plugins</td>
+<td>Invoked automatically by hooks &amp; commands
+(<code>bathos &lt;subcommand&gt;</code>)</td>
+</tr>
+</tbody>
+</table></div>
+<p>You mostly type <strong>slash commands</strong> (e.g.
+<code>/wave1-discovery</code>). The <code>bathos</code> binary is the
+deterministic core those commands and hooks call underneath — and you
+can run it directly too.</p>
+<hr />
+<h2 id="requirements">Requirements</h2>
+<ul>
+<li><strong><a href="https://claude.com/claude-code">Claude Code</a>
+v2.1.32+</strong> with the <strong>Agent Teams</strong> experimental
+feature enabled (<code>CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1</code>;
+the bundled <code>.claude/settings.json</code> already sets it)</li>
+<li><strong>Rust toolchain</strong> (cargo 1.92+ verified) — to build
+the engine</li>
+<li><strong><code>jq</code></strong> — used by the safety hooks for JSON
+parsing</li>
+<li>A POSIX shell environment (macOS/Linux); hooks are bash</li>
+</ul>
+<hr />
+<h2 id="quick-start">Quick start</h2>
+<h3 id="1-get-the-code--build-the-engine">1. Get the code &amp; build
+the engine</h3>
+<pre class="bash"><code>git clone &lt;your-fork-url&gt; bathos &amp;&amp; cd bathos
+
+# Build the single static engine binary (~5.9 MB)
+cd core
+cargo build --release          # → core/target/release/bathos
+cargo test                     # 257 tests, all green (optional sanity check)
+cd ..
+
+# Make the engine discoverable by hooks/commands:
+export BATHOS_BIN=&quot;$(pwd)/core/target/release/bathos&quot;
+#   …or add core/target/release to your PATH</code></pre>
+<h3 id="2-use-bathos-in-a-project">2. Use BATHOS in a project</h3>
+<p><strong>Option A — use this repo as your working directory.</strong>
+The <code>.claude/</code> directory (commands, agents, hooks, settings)
+is already wired; just open Claude Code here.</p>
+<p><strong>Option B — adopt it into your own project.</strong> Copy
+<code>.claude/</code> (commands, agents, hooks,
+<code>settings.json</code>), <code>assets/</code>, and
+<code>modules/</code> into your project root, then set
+<code>BATHOS_BIN</code> as above.</p>
+<h3 id="3-drive-the-pipeline-slash-commands-in-claude-code">3. Drive the
+pipeline (slash commands, in Claude Code)</h3>
+<pre class="text"><code>/team-kickoff                       # scaffold .agent-team/ + charter + manifest
+/route        /abs/path/to/project  # analyze &quot;stakes&quot; → recommend Lv0–4 (you confirm)
+/wave1-discovery   /abs/path        # discovery + market research
+/wave2-design      /abs/path        # planning · architecture · design
+/wave3-story-gate  /abs/path        # ★ condense to story files + readiness gate
+/wave5-implement   /abs/path        # implementation
+/wave6-verify-report /abs/path      # verification · docs · report
+/team-confirm                       # final sign-off + cleanup</code></pre>
+<h3 id="try-the-engine-directly">Try the engine directly</h3>
+<pre class="bash"><code># Recommend a Scale-Adaptive level from &quot;stakes&quot; (recommend only; does not commit)
+echo &#39;{&quot;scope&quot;:&quot;feature&quot;,&quot;novelty&quot;:true,&quot;regulation_ip&quot;:false,&quot;team_size&quot;:&quot;medium&quot;}&#39; \
+  | bathos --state-dir .agent-team/_state route decide
+#   → {&quot;recommended_level&quot;:2,&quot;wave_set&quot;:[...],&quot;role_set&quot;:[...],&quot;requires_confirmation&quot;:true}</code></pre>
+<hr />
+<h2 id="the-7-wave-pipeline">The 7-wave pipeline</h2>
+<pre><code>(pre) kickoff → W0 Analysis → W1 Discovery → W2 Design
+        → W3 Story Gate ★ → W5 Implementation → W6 Verify → (post) Confirm
+                                  ↑
+                       W4 IP &amp; Research  (optional plug-in, off the critical path)</code></pre>
+<p>Mainline dependency: <strong>W0 → W1 → W2 → W3 → W5 → W6</strong>. W4
+(IP &amp; research) is an optional plug-in runnable any time after
+W2.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Wave</th>
+<th>Team (parallel)</th>
+<th>Gate</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>/team-kickoff</code></td>
+<td>(pre)</td>
+<td>lead only</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>/wave0-analysis</code></td>
+<td><strong>W0</strong> Analysis (optional)</td>
+<td>Caleb</td>
+<td>Brief Readiness</td>
+</tr>
+<tr>
+<td><code>/wave1-discovery</code></td>
+<td><strong>W1</strong> Discovery &amp; market</td>
+<td>John ∥ Caleb</td>
+<td>USP Readiness</td>
+</tr>
+<tr>
+<td><code>/wave2-design</code></td>
+<td><strong>W2</strong> Plan · architecture · design</td>
+<td>Joshua → (James, Jonnathan)</td>
+<td>Plan Readiness</td>
+</tr>
+<tr>
+<td><code>/wave3-story-gate</code></td>
+<td><strong>W3</strong> Story engineering ★</td>
+<td>Matthew + Thomas · Matthias + Timothy</td>
+<td><strong>Implementation Readiness</strong></td>
+</tr>
+<tr>
+<td><code>/wave4-ip-research</code></td>
+<td><strong>W4</strong> IP &amp; research (plug-in)</td>
+<td>Mark ∥ Nathanael</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>/wave5-implement</code></td>
+<td><strong>W5</strong> Implementation</td>
+<td>Phillip, Andrew, Stephen</td>
+<td>per-story completion</td>
+</tr>
+<tr>
+<td><code>/wave6-verify-report</code></td>
+<td><strong>W6</strong> Verify · docs · report</td>
+<td>(Thomas, Timothy, Matthias) → Hananiah → Martin</td>
+<td>Release Readiness</td>
+</tr>
+<tr>
+<td><code>/team-confirm</code></td>
+<td>(post)</td>
+<td>lead only</td>
+<td>—</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Why W3 is the heart.</strong> Wave 3 closes the design→build
+context gap: role #17 <strong>Matthew</strong> condenses the upstream
+work into a <strong>self-contained dev story file</strong> (9 sections,
+every technical claim tagged <code>[Source: …]</code>), Thomas &amp;
+Matthias review it independently, and if the verdict is
+<code>FAIL</code> the <code>gate-enforce</code> hook <strong>physically
+blocks</strong> entry into W5.</p>
+<hr />
+<h2 id="scale-adaptive-routing-lv04">Scale-adaptive routing (Lv0–4)</h2>
+<p>BATHOS activates only the waves a task actually needs. You confirm
+the level (User Sovereignty); it is recorded in
+<code>manifest.json</code>.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Lv</th>
+<th>Work type</th>
+<th>Active waves</th>
+<th style="text-align: center;">#17 Matthew</th>
+<th style="text-align: center;">W4</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>0</strong></td>
+<td>bug fix / trivial</td>
+<td>W5 (+ minimal W6)</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✗</td>
+</tr>
+<tr>
+<td><strong>1</strong></td>
+<td>small feature / local refactor</td>
+<td>light W2 + W3(slim) + W5 + light W6</td>
+<td style="text-align: center;">✓ (slim)</td>
+<td style="text-align: center;">✗</td>
+</tr>
+<tr>
+<td><strong>2</strong></td>
+<td>standard feature / module</td>
+<td>W1 + W2 + W3 + W5 + W6</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">optional</td>
+</tr>
+<tr>
+<td><strong>3</strong></td>
+<td>new product / large</td>
+<td>W0–W6 (W4 optional)</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">recommended</td>
+</tr>
+<tr>
+<td><strong>4</strong></td>
+<td>enterprise / deep-tech / regulated</td>
+<td>full W0–W6 + W4</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">required</td>
+</tr>
+</tbody>
+</table></div>
+<p>The recommendation is computed by the router from four stakes axes:
+<code>scope</code>, <code>novelty</code>, <code>regulation_ip</code>,
+<code>team_size</code>.</p>
+<hr />
+<h2 id="quality-gates">Quality gates</h2>
+<p>Every wave gate uses one vocabulary:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Verdict</th>
+<th>Meaning</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>PASS</strong></td>
+<td>criteria met, no blockers</td>
+<td>proceed to next wave</td>
+</tr>
+<tr>
+<td><strong>CONCERNS</strong></td>
+<td>conditional pass (non-blocking risk)</td>
+<td>log risk in <code>_state/</code>, proceed</td>
+</tr>
+<tr>
+<td><strong>FAIL</strong></td>
+<td>blocking defect</td>
+<td>entry blocked; remediate and re-gate</td>
+</tr>
+</tbody>
+</table></div>
+<p>Gates are <strong>facilitators, not generators</strong> — no
+evidence-free auto-PASS. The W3 gate is enforced by a hook (exit code
+<code>2</code> blocks W5). The verdict source of truth is the engine:
+<code>bathos gate show</code>.</p>
+<hr />
+<h2 id="cli-reference-bathos-engine">CLI reference (<code>bathos</code>
+engine)</h2>
+<p>Global options: <code>-s, --state-dir &lt;PATH&gt;</code> (default
+<code>./_state</code>), <code>--modules-dir &lt;PATH&gt;</code> (default
+<code>./modules</code>), <code>-h/--help</code>,
+<code>-V/--version</code>. Exit codes: <code>0</code> success ·
+<code>1</code> error · <code>2</code> gate FAIL (used by hooks to
+block).</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Subcommands</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>state</code></td>
+<td><code>validate</code>, <code>show</code></td>
+<td>Single source of truth — <code>manifest.json</code> schema
+validation &amp; inspection</td>
+</tr>
+<tr>
+<td><code>route</code></td>
+<td><code>decide</code>, <code>show</code></td>
+<td>Scale-adaptive level recommendation
+(stdin/<code>--stakes-json</code>; <code>--confirm &lt;0-4&gt;</code>
+records)</td>
+</tr>
+<tr>
+<td><code>wave</code></td>
+<td><code>init</code>, <code>activate</code>, <code>show</code></td>
+<td>7-wave state transitions (concurrency ≤ 3 enforced)</td>
+</tr>
+<tr>
+<td><code>gate</code></td>
+<td><code>verdict</code>, <code>show</code></td>
+<td>Record / read gate verdicts (PASS/CONCERNS/FAIL; FAIL → exit 2)</td>
+</tr>
+<tr>
+<td><code>story</code></td>
+<td><code>compile</code>, <code>check-stale</code></td>
+<td>Story-file completeness (D1), source-trace (D2), freshness (D3)</td>
+</tr>
+<tr>
+<td><code>plug</code></td>
+<td><code>list</code>, <code>enable</code>, <code>disable</code></td>
+<td>Toggle plugin modules (IP pack, research pack, …)</td>
+</tr>
+<tr>
+<td><code>audit</code></td>
+<td><code>append</code>, <code>verify</code></td>
+<td>Append to / <strong>verify</strong> the tamper-evident audit
+hash-chain (<code>verify</code> → exit 1 on
+<code>E-AUDIT-TAMPER</code>)</td>
+</tr>
+<tr>
+<td><code>doctor</code></td>
+<td>—</td>
+<td><strong>Install/wiring preflight</strong> — <code>BATHOS_BIN</code>,
+<code>jq</code>, Agent Teams flag, <code>settings.json</code> hooks
+block (comment-key hang), hook exec bits, manifest schema, audit
+chain</td>
+</tr>
+</tbody>
+</table></div>
+<pre class="bash"><code>bathos -s _state state validate                       # validate manifest.json
+bathos -s _state gate verdict Implementation PASS Matthew
+bathos -s _state gate show                            # latest Implementation gate (JSON)
+bathos --modules-dir modules plug list                # modules + enabled state
+bathos -s _state audit append --actor hook --action tool.write --target manifest.json</code></pre>
+<p>Full reference with examples: <strong><a
+href="usage-kr.html"><code>docs/USAGE-kr.md</code></a></strong>
+(Korean).</p>
+<hr />
+<h2 id="slash-commands">Slash commands</h2>
+<p>32 commands ship under <code>.claude/commands/</code>:</p>
+<ul>
+<li><strong>Waves:</strong> <code>wave0-analysis</code>,
+<code>wave1-discovery</code>, <code>wave2-design</code>,
+<code>wave3-story-gate</code>, <code>wave4-ip-research</code>,
+<code>wave5-implement</code>, <code>wave6-verify-report</code></li>
+<li><strong>Routing:</strong> <code>route</code></li>
+<li><strong>Team:</strong> <code>team-kickoff</code>,
+<code>team-status</code>, <code>team-confirm</code>,
+<code>team-cleanup</code></li>
+<li><strong>Plan reviews (W2 reinforcement):</strong>
+<code>autoplan</code>, <code>plan-ceo-review</code>,
+<code>plan-design-review</code>, <code>plan-eng-review</code>,
+<code>plan-devex-review</code></li>
+<li><strong>Session save/restore:</strong> <code>save-session</code>,
+<code>cold-start</code> (canonical — complete save &amp; full cold-start
+restore); <code>save</code> / <code>resume</code> (short aliases);
+<code>context-save</code> / <code>context-restore</code> (gstack
+aliases)</li>
+<li><strong>Cross-project memory:</strong> <code>project-handoff</code>
+(distill this project into <code>~/.bathos/registry/</code>),
+<code>recall</code> (pull relevant prior-project context into a new
+project)</li>
+<li><strong>Engineering ops:</strong> <code>review</code>,
+<code>investigate</code>, <code>cso</code> (OWASP + STRIDE),
+<code>retro</code>, <code>health</code>, <code>guard</code>,
+<code>unfreeze</code>, <code>context-save</code>,
+<code>context-restore</code></li>
+</ul>
+<hr />
+<h2 id="the-17-roles">The 17 roles</h2>
+<p>The lead (#0 Paul) is your main session and is never spawned. Roles
+#1–#17 are spawned per wave; concurrency is capped at 3.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Name</th>
+<th>Role</th>
+<th>Model</th>
+<th>Wave</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>Paul</td>
+<td>Lead / final confirm</td>
+<td>Opus 4.8</td>
+<td>all (main session)</td>
+</tr>
+<tr>
+<td>1</td>
+<td>John</td>
+<td>Reverse specialist</td>
+<td>Opus 4.8</td>
+<td>W1 (+W0)</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Caleb</td>
+<td>Market analysis / USP (+W0 analyst)</td>
+<td>Opus 4.8</td>
+<td>W1 (+W0)</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Joshua</td>
+<td>Service planning</td>
+<td>Opus 4.8</td>
+<td>W2 (gate)</td>
+</tr>
+<tr>
+<td>4</td>
+<td>James</td>
+<td>SW / cloud architect</td>
+<td>Opus 4.8</td>
+<td>W2</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Mark</td>
+<td>IP specialist (patents)</td>
+<td>Opus 4.8</td>
+<td>W4</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Nathanael</td>
+<td>Research writer (abstract/intro)</td>
+<td>Sonnet 4.6</td>
+<td>W4</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Jonnathan</td>
+<td>Chief designer (UX/UI)</td>
+<td>Opus 4.8</td>
+<td>W2</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Phillip</td>
+<td>Backend &amp; data lead</td>
+<td>Sonnet 4.6</td>
+<td>W5</td>
+</tr>
+<tr>
+<td>9</td>
+<td>Andrew</td>
+<td>Frontend &amp; mobile lead</td>
+<td>Sonnet 4.6</td>
+<td>W5</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Stephen</td>
+<td>AI/ML lead</td>
+<td>Sonnet 4.6</td>
+<td>W5</td>
+</tr>
+<tr>
+<td>11</td>
+<td>Timothy</td>
+<td>Dev-definition docs</td>
+<td>Sonnet 4.6</td>
+<td>W6 (+W3)</td>
+</tr>
+<tr>
+<td>12</td>
+<td>Thomas</td>
+<td>Code reviewer</td>
+<td>Sonnet 4.6</td>
+<td>W6 (+W3)</td>
+</tr>
+<tr>
+<td>13</td>
+<td>Michael</td>
+<td>Security specialist (defensive web/cyber audit &amp; hardening)</td>
+<td>Sonnet 4.6</td>
+<td>W6 (after Thomas)</td>
+</tr>
+<tr>
+<td>14</td>
+<td>Hananiah</td>
+<td>Refactoring specialist (behavior-preserving)</td>
+<td>Sonnet 4.6</td>
+<td>W6 (after Michael)</td>
+</tr>
+<tr>
+<td>15</td>
+<td>Matthias</td>
+<td>QA / validation (E2E)</td>
+<td>Sonnet 4.6</td>
+<td>W6 (+W3)</td>
+</tr>
+<tr>
+<td>16</td>
+<td>Martin</td>
+<td>Monitoring / HTML report</td>
+<td>Sonnet 4.6</td>
+<td>W6</td>
+</tr>
+<tr>
+<td><strong>17</strong></td>
+<td><strong>Matthew</strong></td>
+<td><strong>Scrum master / story engineer</strong></td>
+<td>Opus 4.8</td>
+<td><strong>W3 only (idle otherwise)</strong></td>
+</tr>
+</tbody>
+</table></div>
+<p>Role definitions live in <code>.claude/agents/_base/</code> and
+support 3-layer override (base → team → user).</p>
+<hr />
+<h2 id="plugin-modules">Plugin modules</h2>
+<p>The core stays slim; domain capabilities are opt-in plugins under
+<code>modules/</code> (the core never depends on a module — A9). Each
+declares itself in <code>module.yaml</code>:</p>
+<pre class="yaml"><code>module_id: ip                    # ip | research | game | security ...
+name: IP Pack
+wave: W4
+trigger: &quot;Lv&gt;=3 OR domain=ip&quot;    # auto-enable condition
+enabled_default: false
+provides:
+  workflows: [patent-spec-draft]
+  templates: [patent-spec]
+outputs: &quot;.agent-team/05-ip/&quot;
+evidence_trace: true</code></pre>
+<p>Bundled: <strong><code>ip-pack</code></strong> (patent specification
+drafting) and <strong><code>research-pack</code></strong> (academic
+abstract/introduction). Toggle with
+<code>bathos plug enable &lt;id&gt;</code> /
+<code>disable &lt;id&gt;</code>.</p>
+<hr />
+<h2 id="safety-hooks">Safety hooks</h2>
+<p><code>.claude/settings.json</code> binds 6 deterministic, fail-safe
+hooks to Claude Code events (<code>PreToolUse</code>,
+<code>PostToolUse</code>, <code>TaskCompleted</code>,
+<code>SubagentStop</code>, <code>TeammateIdle</code>):</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Hook</th>
+<th>Event</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>careful-guard.sh</code></td>
+<td>PreToolUse(Bash)</td>
+<td>Block destructive commands (<code>rm -rf</code>,
+<code>DROP TABLE</code>, <code>git push --force</code>,
+<code>DELETE</code>-without-<code>WHERE</code>,
+<code>TRUNCATE</code>)</td>
+</tr>
+<tr>
+<td><code>freeze-guard.sh</code></td>
+<td>PreToolUse(Write/Edit)</td>
+<td>Lock edits to owned paths</td>
+</tr>
+<tr>
+<td><code>audit-log.sh</code></td>
+<td>PostToolUse</td>
+<td>Append every tool use to the audit chain</td>
+</tr>
+<tr>
+<td><code>artifact-verify.sh</code></td>
+<td>TaskCompleted / SubagentStop</td>
+<td>Verify required artifacts / story-file completeness</td>
+</tr>
+<tr>
+<td><code>gate-enforce.sh</code></td>
+<td>TaskCompleted</td>
+<td><strong>Block W5 entry when the W3 verdict is FAIL</strong></td>
+</tr>
+<tr>
+<td><code>next-action.sh</code></td>
+<td>TeammateIdle</td>
+<td>Suggest the next action</td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p>Keep <strong>only valid hook event names</strong> inside the
+<code>settings.json</code> <code>hooks</code> block — a stray comment
+key there hangs subagent startup.</p>
+</blockquote>
+<hr />
+<h2 id="repository-layout">Repository layout</h2>
+<pre><code>bathos/
+├── core/                       # Rust workspace (the engine, 7 crates, ~9,200 LOC)
+│   ├── Cargo.toml
+│   └── crates/
+│       ├── bathos-state/       # state SSOT: manifest.json + tamper-evident audit chain
+│       ├── bathos-router/      # scale-adaptive Lv0–4 router
+│       ├── bathos-wave-engine/ # 7-wave transitions, concurrency ≤ 3
+│       ├── bathos-gate-engine/ # PASS/CONCERNS/FAIL verdicts
+│       ├── bathos-story-engine/# story compilation, staleness (zero-context-loss)
+│       ├── bathos-plug/        # plugin module manager
+│       └── bathos-cli/         # the `bathos` binary
+├── .claude/
+│   ├── agents/_base/           # 17 role definitions (00-paul … 17-matthew-story-engineer)
+│   ├── commands/               # 26 slash commands
+│   ├── hooks/                  # 6 safety/event hooks + test harness
+│   └── settings.json           # hook bindings + Agent Teams flag
+├── assets/                     # templates, workflows, checklists, glossary
+├── modules/                    # plugin modules: ip-pack, research-pack
+├── docs/USAGE-kr.md            # detailed usage guide (Korean)
+├── CLAUDE.md  ETHOS.md  VERSION  README.md</code></pre>
+<p>Team artifacts a run produces live under <code>.agent-team/</code>
+(plan, discovery, architecture, story engineering, reviews, QA, reports,
+and <code>_state/</code>). Your actual product source code stays in your
+project’s normal paths (<code>src/</code>, …).</p>
+<hr />
+<h2 id="configuration">Configuration</h2>
+<ul>
+<li><strong>Engine state dir</strong> — <code>--state-dir</code>
+(default <code>./_state</code>); the SSOT is
+<code>&lt;state-dir&gt;/manifest.json</code> (JSON-Schema-validated,
+atomic writes, audit hash-chain).</li>
+<li><strong>Modules dir</strong> — <code>--modules-dir</code> (default
+<code>./modules</code>).</li>
+<li><strong>Engine path for hooks</strong> — <code>BATHOS_BIN</code> env
+var (falls back to <code>core/target/debug/bathos</code>).</li>
+<li><strong>Role overrides</strong> — 3-layer merge: <code>base</code>
+(fixed identity/model) → <code>team</code> (project owned-paths) →
+<code>user</code> (language/facilitation). Scalars overwrite; arrays
+append.</li>
+</ul>
+<hr />
+<h2 id="project-status">Project status</h2>
+<p><strong>v0.1.0 — early but functional.</strong> BATHOS builds and
+runs end-to-end today. Honest caveats for adopters:</p>
+<ul>
+<li>It is a <strong>method package that runs on Claude Code</strong>,
+not a standalone app, and depends on the <strong>experimental Agent
+Teams</strong> feature.</li>
+<li>The engine is verified: <strong>257 Rust tests + 46 hook determinism
+checks, all green</strong>; <code>cargo clippy -D warnings</code> clean;
+release builds reproducibly.</li>
+<li>It is <strong>not yet production-hardened</strong>; APIs, schemas,
+and command names may change before 1.0.</li>
+<li>Some wave commands are <strong>orchestration prompts</strong> the
+lead runs in Claude Code (they spawn/review teammates), not fully
+autonomous engine flows.</li>
+</ul>
+<p>See <code>_state/signoff.md</code> and <code>12-report/</code> for
+the verification trail.</p>
+<hr />
+<h2 id="how-bathos-was-built-dogfooding">How BATHOS was built
+(dogfooding)</h2>
+<p>BATHOS implemented itself and then <strong>ran its own Wave 6
+independent verification on its own code</strong>. That pass
+intentionally separated <em>author</em> from <em>reviewer</em>: the
+functional QA looked green, yet an independent code review surfaced
+<strong>blocking invariant defects the author had missed</strong> (e.g.
+the Rust engine and the bash hooks were writing <em>incompatible</em>
+formats to the same audit chain, silently voiding tamper-evidence).
+Those blockers were remediated, re-gated, and the regression/backlog
+cleared — every known review defect resolved.</p>
+<p>The lesson is the product’s thesis: <strong>generation ≠
+verification.</strong> The full trail lives in <code>.agent-team/</code>
+(<code>10-review/</code>, <code>11-qa/</code>, <code>12-report/</code>,
+<code>_state/signoff.md</code>).</p>
+<hr />
+<h2 id="contributing">Contributing</h2>
+<p>Contributions are welcome. BATHOS <em>is</em> a development method,
+so please use it on itself:</p>
+<ol type="1">
+<li>Open an issue describing the change and its scale (Lv0–4).</li>
+<li>Keep the core slim — new domain capabilities belong in
+<code>modules/</code>, not the core (no reverse dependency on
+plugins).</li>
+<li>For engine changes:
+<code>cd core &amp;&amp; cargo test &amp;&amp; cargo clippy --all-targets -- -D warnings</code>
+must be green; add tests for invariants.</li>
+<li>For hook changes: run
+<code>bash .claude/hooks/_test-hooks.sh</code>; keep hooks deterministic
+and fail-safe.</li>
+<li>Respect the gate vocabulary (PASS/CONCERNS/FAIL) and the safety
+hooks (<code>careful</code>, <code>freeze</code>).</li>
+</ol>
+<p>Three operating principles (from <code>ETHOS.md</code>): <strong>User
+Sovereignty</strong> (AI proposes, you decide) · <strong>Boil the
+Ocean</strong> (finish completely if it’s only minutes more) ·
+<strong>Search Before Building</strong>.</p>
+<hr />
+<h2 id="license--attribution">License &amp; attribution</h2>
+<p>Released under the <strong>MIT License</strong> — see the full text
+below.</p>
+<pre><code>MIT License
+
+Copyright (c) 2026 BATHOS
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the &quot;Software&quot;), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.</code></pre>
+<p><strong>Lineage and acknowledgment.</strong> BATHOS is an
+independently implemented work. Its method design was re-implemented
+from first principles following a rigorous reverse analysis of
+<strong><a
+href="https://github.com/bmad-code-org/BMAD-METHOD">BMAD-METHOD</a></strong>
+(MIT © 2025 BMad Code, LLC), from which it inherits its foundational
+design vocabulary.</p>
+<p>We name this lineage by choice, not obligation. A system whose
+central tenet is that <em>generation must remain answerable to
+verification</em> would contradict itself by obscuring the prior art it
+stands on. BATHOS therefore records its debt to BMAD-METHOD plainly and
+with genuine respect — it charted the terrain that BATHOS set out to
+deepen. In accordance with the MIT License, BMAD-METHOD’s copyright and
+license notice are preserved in <a
+href="../index.html"><code>LICENSE</code></a>; the full acknowledgment lives
+in <a href="../index.html"><code>CREDITS.md</code></a>.</p>
+<p>BATHOS is a separate, independently implemented project and does
+<strong>not</strong> use the trademarks “BMAD”, “BMad Method”, “BMad
+Builder”, “BMB”, “TEA”, “CIS”, “GDS”, or “WDS” in its product name or
+marketing.</p>
+<hr />
+<div align="center">
+
+<p><strong>BATHOS</strong> · βάθος — depth over surface 한국어 문서: <a
+href="usecase-kr.html"><code>docs/USECASE-kr.md</code></a> · <a
+href="features-kr.html"><code>docs/FEATURES-kr.md</code></a> · <a
+href="usage-kr.html"><code>docs/USAGE-kr.md</code></a> · <a
+href="quota-kr.html"><code>docs/QUOTA-kr.md</code></a> · <a
+href="module-guide-kr.html"><code>docs/MODULE-GUIDE-kr.md</code></a>
+· <a href="claude.html"><code>CLAUDE.md</code></a> · <a
+href="ethos.html"><code>ETHOS.md</code></a></p>
+</div>
+
+    </article>
+
+  </main>
+<aside class="toc"><span class="cap">On this page</span><ul><li><a class="lv2" href="#table-of-contents">Table of contents</a></li><li><a class="lv2" href="#documentation">Documentation</a></li><li><a class="lv2" href="#why-bathos">Why BATHOS</a></li><li><a class="lv2" href="#how-it-works-two-planes">How it works: two planes</a></li><li><a class="lv2" href="#requirements">Requirements</a></li><li><a class="lv2" href="#quick-start">Quick start</a></li><li><a class="lv3" href="#1-get-the-code--build-the-engine">1. Get the code &amp; build the engine</a></li><li><a class="lv3" href="#2-use-bathos-in-a-project">2. Use BATHOS in a project</a></li><li><a class="lv3" href="#3-drive-the-pipeline-slash-commands-in-claude-code">3. Drive the pipeline (slash commands, in Claude Code)</a></li><li><a class="lv3" href="#try-the-engine-directly">Try the engine directly</a></li><li><a class="lv2" href="#the-7-wave-pipeline">The 7-wave pipeline</a></li><li><a class="lv2" href="#scale-adaptive-routing-lv04">Scale-adaptive routing (Lv0–4)</a></li><li><a class="lv2" href="#quality-gates">Quality gates</a></li><li><a class="lv2" href="#cli-reference-bathos-engine">CLI reference (bathos engine)</a></li><li><a class="lv2" href="#slash-commands">Slash commands</a></li><li><a class="lv2" href="#the-17-roles">The 17 roles</a></li><li><a class="lv2" href="#plugin-modules">Plugin modules</a></li><li><a class="lv2" href="#safety-hooks">Safety hooks</a></li><li><a class="lv2" href="#repository-layout">Repository layout</a></li><li><a class="lv2" href="#configuration">Configuration</a></li><li><a class="lv2" href="#project-status">Project status</a></li><li><a class="lv2" href="#how-bathos-was-built-dogfooding">How BATHOS was built (dogfooding)</a></li><li><a class="lv2" href="#contributing">Contributing</a></li><li><a class="lv2" href="#license--attribution">License &amp; attribution</a></li></ul></aside>
+</div>
+<footer class="foot"><span class="mono">βάθος · BATHOS</span> — depth over surface · MIT License · runs on Claude Code v2.1.32+</footer>
+<script src="assets/docs.js"></script>
+</body>
+</html>

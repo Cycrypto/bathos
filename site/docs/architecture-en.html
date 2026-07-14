@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="For contributors: the two planes, the Rust workspace, invariants, exit codes, router scoring, hooks, and key ADRs.">
+<title>Architecture · BATHOS docs</title>
+<link rel="stylesheet" href="assets/docs.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+  <button class="menu-btn" type="button" aria-label="Open navigation" aria-expanded="false">☰</button>
+  <div class="brand"><a href="index-en.html">βάθος · <b>BATHOS</b></a></div>
+  <span class="spacer"></span>
+  <a class="homelink" href="../index.html">← Landing</a>
+  <div class="langtog" role="group" aria-label="Language / 언어 / Idioma"><a href="architecture-en.html" aria-current="true"><span class="flag" aria-hidden="true">🇺🇸</span>EN</a><a href="architecture-kr.html"><span class="flag" aria-hidden="true">🇰🇷</span>KO</a><a href="architecture-es.html"><span class="flag" aria-hidden="true">🇪🇸</span>ES</a></div>
+</header>
+<div class="scrim" aria-hidden="true"></div>
+<div class="layout">
+  <nav class="sidebar" aria-label="Docs">
+<div class="grp"><div class="grp-t">Start</div><ul><li><a href="usage-en.html">Usage guide</a></li><li><a href="usecase-en.html">Use case</a></li></ul></div>
+<div class="grp"><div class="grp-t">Concepts</div><ul><li><a href="features-en.html">Features &amp; mechanics</a></li><li><a href="architecture-en.html" aria-current="page">Architecture</a></li></ul></div>
+<div class="grp"><div class="grp-t">Customize</div><ul><li><a href="role-guide-en.html">Role customization</a></li><li><a href="module-guide-en.html">Writing modules</a></li></ul></div>
+<div class="grp"><div class="grp-t">Operate</div><ul><li><a href="quota-en.html">Token &amp; quota</a></li><li><a href="faq-en.html">FAQ</a></li></ul></div>
+<div class="grp"><div class="grp-t">Project</div><ul><li><a href="readme.html">README (overview) <span class="nat">· EN</span></a></li><li><a href="claude.html">Operating rules (CLAUDE.md) <span class="nat">· KR</span></a></li><li><a href="ethos.html">ETHOS (principles) <span class="nat">· KR</span></a></li></ul></div>
+  </nav>
+  <main id="main" class="article">
+    <article>
+<h1 id="bathos--architecture-for-contributors">BATHOS — Architecture
+(for Contributors)</h1>
+<blockquote>
+<p>A map for contributors of how the engine is put together and what it
+guarantees. Read this before touching <code>core/</code> or the hooks —
+this document is precisely what keeps a change from silently breaking a
+guarantee.</p>
+<p><strong>See also:</strong> <a href="features-en.html">Concepts
+(FEATURES-en)</a> · <a href="usage-en.html">Usage (USAGE-en)</a> · 한국어:
+<a href="architecture-kr.html"><code>ARCHITECTURE-kr.md</code></a> ·
+Español: <a
+href="architecture-es.html"><code>ARCHITECTURE-es.md</code></a></p>
+</blockquote>
+<hr />
+<h2 id="1-the-two-execution-planes">1. The two execution planes</h2>
+<p>BATHOS splits cleanly into two execution planes. Internalizing this
+distinction is the very first thing to do before reading the code.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Plane</th>
+<th>What</th>
+<th>Where</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Orchestration</td>
+<td>Slash commands · role definitions · hooks (markdown/bash)</td>
+<td><code>.claude/</code></td>
+</tr>
+<tr>
+<td>Engine</td>
+<td>Single static Rust binary <code>bathos</code></td>
+<td><code>core/</code></td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Anything that must be trusted and reproducible</strong> lives
+in the engine (unit-tested); anything humans edit lives on the
+orchestration plane. Hooks and commands call
+<code>bathos &lt;subcommand&gt;</code> under the hood.</p>
+<h2 id="2-rust-workspace-core-7-crates">2. Rust workspace
+(<code>core/</code>, 7 crates)</h2>
+<p>The engine is a single Cargo workspace of 7 crates — one crate per
+module responsibility.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Crate</th>
+<th>Module</th>
+<th>Responsibility</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>bathos-state</code></td>
+<td>M1</td>
+<td>SSOT: <code>manifest.json</code> (schema-validated, atomic writes) +
+tamper-evident audit hash chain</td>
+</tr>
+<tr>
+<td><code>bathos-router</code></td>
+<td>M2</td>
+<td>Scale-Adaptive Lv0–4 routing (recommend/confirm)</td>
+</tr>
+<tr>
+<td><code>bathos-wave-engine</code></td>
+<td>M3</td>
+<td>7-wave state transitions; concurrency cap</td>
+</tr>
+<tr>
+<td><code>bathos-gate-engine</code></td>
+<td>M4</td>
+<td>PASS/CONCERNS/FAIL verdicts; critical→FAIL</td>
+</tr>
+<tr>
+<td><code>bathos-story-engine</code></td>
+<td>M5</td>
+<td>Story compilation (D1/D2/D3) — zero-context-loss</td>
+</tr>
+<tr>
+<td><code>bathos-plug</code></td>
+<td>M12</td>
+<td>Plug module manager (module.yaml · trigger DSL)</td>
+</tr>
+<tr>
+<td><code>bathos-cli</code></td>
+<td>bin</td>
+<td>The <code>bathos</code> binary — subcommand dispatch</td>
+</tr>
+</tbody>
+</table></div>
+<p>Dependency direction: <code>bathos-cli</code> → engine crates →
+<code>bathos-state</code>. <strong>No engine crate depends on
+<code>bathos-plug</code></strong> (invariant A9).</p>
+<h2 id="3-invariants-do-not-break">3. Invariants (do not break)</h2>
+<p>These are the guarantees holding up the structure, enforced by code,
+not convention. If you modify code related to any of them, keep the
+enforcement point that upholds that invariant working honestly.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Invariant</th>
+<th>Enforced by</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>A9</strong></td>
+<td>The core never depends on plug modules</td>
+<td>Crate dependency graph (verified via <code>cargo tree</code>)</td>
+</tr>
+<tr>
+<td>Gate FACILITATOR</td>
+<td>A verdict's <code>facilitator</code> can never be empty; no
+unsubstantiated auto-PASS</td>
+<td><code>bathos-gate-engine</code></td>
+</tr>
+<tr>
+<td><code>critical &gt; 0 → FAIL</code></td>
+<td>A single critical issue means FAIL</td>
+<td><code>bathos-gate-engine</code></td>
+</tr>
+<tr>
+<td>Concurrency ≤ 3</td>
+<td><code>MAX_CONCURRENT_ROLES = 3</code>; the 4th spawn is
+rejected</td>
+<td><code>bathos-wave-engine</code> (<code>E-CONCURRENCY</code>)</td>
+</tr>
+<tr>
+<td>Audit chain</td>
+<td><code>hash_prev[n] == hash_self[n-1]</code>, genesis anchor,
+monotonic <code>seq</code>, single writer</td>
+<td><code>bathos-state::audit</code>
+(<code>bathos audit verify</code>)</td>
+</tr>
+<tr>
+<td>Atomic writes</td>
+<td>The manifest is never left half-written</td>
+<td><code>bathos-state::store</code></td>
+</tr>
+<tr>
+<td>Story completeness (D1)</td>
+<td>6 required sections + non-empty <code>developer_context</code></td>
+<td><code>bathos-story-engine</code> (<code>E-CTX-LOSS</code>)</td>
+</tr>
+<tr>
+<td>W3 FAIL blocks W5</td>
+<td>A FAIL verdict physically blocks entry into implementation</td>
+<td><code>gate-enforce.sh</code> (exit 2)</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="4-exit-codes--error-taxonomy">4. Exit codes &amp; error
+taxonomy</h2>
+<p>Errors surface in two ways — process exit codes that hooks use for
+branching, and symbolic E-codes that give failures a name.</p>
+<ul>
+<li><strong>Exit codes:</strong> <code>0</code> success · <code>1</code>
+error · <strong><code>2</code> gate FAIL</strong> (used by hooks to
+block).</li>
+<li><strong>E-codes:</strong> <code>E-LEVEL-DRIFT</code>,
+<code>E-CONCURRENCY</code>, <code>E-CTX-LOSS</code>,
+<code>E-STALE</code>, <code>E-STATE-CORRUPT</code>,
+<code>E-AUDIT-TAMPER</code>, <code>E-PLUG-NOTFOUND</code>.</li>
+</ul>
+<h2 id="5-router-scoring-deterministic">5. Router scoring
+(deterministic)</h2>
+<p>The router turns a stakes profile into a level using pure arithmetic
+only — no heuristics, so the same input always yields the same
+recommendation.</p>
+<p><code>scope</code> (0–3: bug=0, feature=1, large/module=2,
+product/platform=3, unclear=1) + <code>novelty</code> (+1) +
+<code>regulation_ip</code> (+2) + <code>team_size</code> (0–2: solo=0,
+medium=1, large=2). Total → level: 0→Lv0, 1→Lv1, 2–3→Lv2, 4–5→Lv3,
+6+→Lv4. Recommendation and confirmation are separated (User
+Sovereignty).</p>
+<h2 id="6-hooks-claudehooks">6. Hooks (<code>.claude/hooks/</code>)</h2>
+<p>Six fail-safe hooks bound to Claude Code events by
+<code>settings.json</code>: <code>careful-guard</code> ·
+<code>freeze-guard</code> · <code>audit-log</code> ·
+<code>artifact-verify</code> · <code>gate-enforce</code> ·
+<code>next-action</code>. They call the engine via
+<code>$BATHOS_BIN</code>. Self-verification:
+<code>bash .claude/hooks/_test-hooks.sh</code> (46 determinism tests).
+<strong>Only valid event names belong in the <code>hooks</code>
+block</strong> — a stray comment key sends subagent startup into an
+infinite wait (<code>bathos doctor</code> detects this).</p>
+<h2 id="7-key-adrs">7. Key ADRs</h2>
+<ul>
+<li><strong>ADR-0006:</strong> Core engine = Rust (single static
+binary); hooks = bash; commands/roles/assets = markdown; config =
+JSON/YAML.</li>
+<li>The full set of ADRs lives in the design record
+(<code>.agent-team/04-architecture/adr/</code>).</li>
+</ul>
+<h2 id="8-engine-contribution-rules">8. Engine contribution rules</h2>
+<ol type="1">
+<li>Keep the core slim — new domain features go into
+<code>modules/</code>, never into the core (A9).</li>
+<li><code>cd core &amp;&amp; cargo test &amp;&amp; cargo clippy --all-targets -- -D warnings</code>
+must be green, and add invariant tests.</li>
+<li>Run <code>cargo fmt --all</code> before committing.</li>
+<li>When changing hooks, run
+<code>bash .claude/hooks/_test-hooks.sh</code> and preserve determinism
+and fail-safety.</li>
+<li>CI (<code>.github/workflows/ci.yml</code>): fmt · clippy(-D) · test
+· release · jq · hook harness.</li>
+</ol>
+<hr />
+<div align="center">한국어: <a href="architecture-kr.html">ARCHITECTURE-kr</a> · Español: <a href="architecture-es.html">ARCHITECTURE-es</a></div>
+
+    </article>
+<nav class="pager" aria-label="Docs"><a href="features-en.html"><span class="dir">← Previous</span><span class="ttl">Features &amp; mechanics</span></a><a class="next" href="role-guide-en.html"><span class="dir">Next →</span><span class="ttl">Role customization</span></a></nav>
+  </main>
+<aside class="toc"><span class="cap">On this page</span><ul><li><a class="lv2" href="#1-the-two-execution-planes">1. The two execution planes</a></li><li><a class="lv2" href="#2-rust-workspace-core-7-crates">2. Rust workspace (core/, 7 crates)</a></li><li><a class="lv2" href="#3-invariants-do-not-break">3. Invariants (do not break)</a></li><li><a class="lv2" href="#4-exit-codes--error-taxonomy">4. Exit codes &amp; error taxonomy</a></li><li><a class="lv2" href="#5-router-scoring-deterministic">5. Router scoring (deterministic)</a></li><li><a class="lv2" href="#6-hooks-claudehooks">6. Hooks (.claude/hooks/)</a></li><li><a class="lv2" href="#7-key-adrs">7. Key ADRs</a></li><li><a class="lv2" href="#8-engine-contribution-rules">8. Engine contribution rules</a></li></ul></aside>
+</div>
+<footer class="foot"><span class="mono">βάθος · BATHOS</span> — depth over surface · MIT License · runs on Claude Code v2.1.32+</footer>
+<script src="assets/docs.js"></script>
+</body>
+</html>

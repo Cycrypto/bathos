@@ -1,0 +1,803 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="What sets BATHOS apart and the actual mechanics beneath it — state, router, waves, gates, story engine, plugs.">
+<title>Features &amp; mechanics · BATHOS docs</title>
+<link rel="stylesheet" href="assets/docs.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+  <button class="menu-btn" type="button" aria-label="Open navigation" aria-expanded="false">☰</button>
+  <div class="brand"><a href="index-en.html">βάθος · <b>BATHOS</b></a></div>
+  <span class="spacer"></span>
+  <a class="homelink" href="../index.html">← Landing</a>
+  <div class="langtog" role="group" aria-label="Language / 언어 / Idioma"><a href="features-en.html" aria-current="true"><span class="flag" aria-hidden="true">🇺🇸</span>EN</a><a href="features-kr.html"><span class="flag" aria-hidden="true">🇰🇷</span>KO</a><a href="features-es.html"><span class="flag" aria-hidden="true">🇪🇸</span>ES</a></div>
+</header>
+<div class="scrim" aria-hidden="true"></div>
+<div class="layout">
+  <nav class="sidebar" aria-label="Docs">
+<div class="grp"><div class="grp-t">Start</div><ul><li><a href="usage-en.html">Usage guide</a></li><li><a href="usecase-en.html">Use case</a></li></ul></div>
+<div class="grp"><div class="grp-t">Concepts</div><ul><li><a href="features-en.html" aria-current="page">Features &amp; mechanics</a></li><li><a href="architecture-en.html">Architecture</a></li></ul></div>
+<div class="grp"><div class="grp-t">Customize</div><ul><li><a href="role-guide-en.html">Role customization</a></li><li><a href="module-guide-en.html">Writing modules</a></li></ul></div>
+<div class="grp"><div class="grp-t">Operate</div><ul><li><a href="quota-en.html">Token &amp; quota</a></li><li><a href="faq-en.html">FAQ</a></li></ul></div>
+<div class="grp"><div class="grp-t">Project</div><ul><li><a href="readme.html">README (overview) <span class="nat">· EN</span></a></li><li><a href="claude.html">Operating rules (CLAUDE.md) <span class="nat">· KR</span></a></li><li><a href="ethos.html">ETHOS (principles) <span class="nat">· KR</span></a></li></ul></div>
+  </nav>
+  <main id="main" class="article">
+    <article>
+<h1 id="bathos--features--how-it-works">BATHOS — Features &amp; How It
+Works</h1>
+<blockquote>
+<p><strong>βάθος</strong> (Greek) — <em>"depth; the deep."</em> An AI
+Workflow Agent method of overwhelming depth, deliberately positioned
+against surface-level AI assistance.</p>
+<p>Think of this as the "why, and how" companion to the usage guide. It
+explains <strong>what BATHOS is (features) and how it actually works
+inside (mechanics)</strong>. Everything here is written against the
+<strong>actual v0.1.0 build</strong> — every mechanism below is
+implemented and verified, and where there are limits, they are stated
+plainly rather than hidden.</p>
+<p><strong>See also:</strong> If you'd rather run it than understand it
+first, go to the <a href="usage-en.html">usage guide</a>. Operating rules
+live in <a href="claude.html"><code>../CLAUDE.md</code></a>, and the
+principles behind them in <a
+href="ethos.html"><code>../ETHOS.md</code></a>. · 한국어: <a
+href="features-kr.html"><code>FEATURES-kr.md</code></a> · Español: <a
+href="features-es.html"><code>FEATURES-es.md</code></a></p>
+</blockquote>
+<hr />
+<h2 id="0-the-one-idea-underneath-everything">0. The one idea underneath
+everything</h2>
+<p>A long single LLM conversation <strong>drifts</strong>: context leaks
+between "design" and "implementation," quality checks get skipped, and
+<em>the same model</em> both writes the work and approves it. BATHOS's
+thesis is one sentence:</p>
+<blockquote>
+<p><strong>Generation ≠ verification.</strong> A generator cannot see
+the blind spots in its own output.</p>
+</blockquote>
+<p>So BATHOS replaces one drifting conversation with
+<strong>structure</strong>: separated specialist roles, a staged
+pipeline, <em>independent</em> verifiers, and a small
+<strong>deterministic engine</strong> that enforces the key invariants
+<strong>in code</strong>, not by the model's goodwill.</p>
+<p>This is not a metaphor — it is literally how BATHOS was built. BATHOS
+implemented itself, then ran Wave 6 independent verification on its own
+code. Functional QA was green, yet the independent code review caught a
+<strong>blocking invariant defect the author had missed</strong> (the
+Rust engine and the bash hooks were writing to the same audit chain in
+<em>incompatible</em> formats → tamper-evidence silently neutralized).
+It was fixed, re-gated, and the backlog burned down — a demonstration of
+the thesis.</p>
+<hr />
+<h2 id="1-features-what-sets-bathos-apart">1. Features (what sets BATHOS
+apart)</h2>
+<p>Before diving into mechanics, here's the big picture — twelve
+features and what each actually gives you.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Feature</th>
+<th>What it gives you</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><strong>16 specialist roles × 7-wave pipeline</strong></td>
+<td>A single Claude Code session behaves like a disciplined product team
+(discovery → design → story → build → verify) instead of one
+ever-bloating conversation.</td>
+</tr>
+<tr>
+<td>2</td>
+<td><strong>Two execution planes: markdown orchestration + Rust
+engine</strong></td>
+<td>Human-facing workflows stay as editable markdown, while a single
+static binary deterministically computes and <em>enforces</em> the key
+invariants.</td>
+</tr>
+<tr>
+<td>3</td>
+<td><strong>Scale-Adaptive routing (Lv0–4)</strong></td>
+<td>Only the waves the work actually needs are run. A bug fix isn't
+shoved through full discovery, and an enterprise build isn't
+under-scoped.</td>
+</tr>
+<tr>
+<td>4</td>
+<td><strong>Zero-context-loss story files (Wave 3)</strong></td>
+<td>Self-contained dev story files with <code>[Source: …]</code> on
+every technical detail close the design→implementation context gap
+head-on.</td>
+</tr>
+<tr>
+<td>5</td>
+<td><strong>Hard quality gates (PASS / CONCERNS / FAIL)</strong></td>
+<td>A <code>FAIL</code> at the readiness gate isn't advisory — a hook
+(exit code 2) <em>physically blocks</em> entry into implementation.</td>
+</tr>
+<tr>
+<td>6</td>
+<td><strong>Independent verification + tamper-evident audit
+chain</strong></td>
+<td>Verifiers are separated from authors, and every state change is
+recorded in an append-only sha256 hash chain.</td>
+</tr>
+<tr>
+<td>7</td>
+<td><strong>User Sovereignty</strong></td>
+<td>The AI proposes; <em>the user</em> decides. Recommendations that
+would change the user's stated direction are presented as
+"recommendation + rationale + missed context" and never executed
+unilaterally.</td>
+</tr>
+<tr>
+<td>8</td>
+<td><strong>Safety hooks (careful / freeze)</strong></td>
+<td>Destructive commands are blocked and edits are locked to owned
+paths. Fail-safe design (when in doubt, block).</td>
+</tr>
+<tr>
+<td>9</td>
+<td><strong>Plug modules (slim core, opt-in domains)</strong></td>
+<td>The IP/patent and research packs are plugs; the core knows nothing
+about modules (no reverse dependency). New domains plug in without
+bloating the core.</td>
+</tr>
+<tr>
+<td>10</td>
+<td><strong>3-layer role overrides</strong></td>
+<td>Role identity is pinned in the base layer, while project and user
+layers override owned paths / language / facilitation intensity without
+forking.</td>
+</tr>
+<tr>
+<td>11</td>
+<td><strong>One-word session save/resume</strong></td>
+<td><code>/save</code> snapshots the entire session and
+<code>/resume</code> restores it in the next one. Works in natural
+language too ("save"/"continue") → multi-session work never loses
+context.</td>
+</tr>
+<tr>
+<td>12</td>
+<td><strong>Cross-project memory</strong></td>
+<td>A global registry (<code>~/.bathos/registry/</code>) lets even a
+brand-new project warm-start from earlier projects' decisions, patterns,
+and lessons — reuse what worked, never re-learn what hurt.</td>
+</tr>
+</tbody>
+</table></div>
+<hr />
+<h2 id="2-how-it-works-the-actual-mechanics">2. How it works (the actual
+mechanics)</h2>
+<h3 id="21-the-two-execution-planes">2.1 The two execution planes</h3>
+<p>This is the first core mechanism to understand.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Plane</th>
+<th>What it is</th>
+<th>Responsibility</th>
+<th>Who runs it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Orchestration</strong></td>
+<td>Markdown <strong>slash commands</strong> · <strong>role
+definitions</strong> · <strong>bash hooks</strong> under
+<code>.claude/</code></td>
+<td>Advancing waves, spawning/inspecting/shutting down teammates,
+talking to the human</td>
+<td><strong>The lead (Paul)</strong> — the main Claude Code session</td>
+</tr>
+<tr>
+<td><strong>Engine</strong></td>
+<td>Single static Rust binary <strong><code>bathos</code></strong>
+(~5.6MB, 7 crates)</td>
+<td>Computing and <em>enforcing</em> state · routing · wave transitions
+· gates · story freshness · plugs · the audit chain</td>
+<td>Hooks/commands invoke <code>bathos &lt;subcommand&gt;</code> (direct
+use also possible)</td>
+</tr>
+</tbody>
+</table></div>
+<p>The human types slash commands. The <code>bathos</code> binary is the
+deterministic core underneath that commands and hooks call. The split is
+the point: <strong>whatever must be trusted and reproducible</strong>
+(did the gate really pass? are active roles ≤ 3? is the audit chain
+intact?) lives in the engine, guaranteed by unit tests, so a persuasive
+model cannot "talk its way around" it.</p>
+<h3 id="22-state-model--single-source-of-truth-bathos-state">2.2 State
+model — single source of truth (<code>bathos-state</code>)</h3>
+<p>If the engine is the trustworthy half, this is where that trust is
+anchored. All project state is inlined in a single JSON file,
+<code>&lt;state-dir&gt;/manifest.json</code> (default
+<code>./_state</code>), validated by JSON Schema. Key fields:</p>
+<ul>
+<li><code>project_id</code> (<code>bathos-&lt;uuid&gt;</code>),
+<code>codename</code>, <code>current_level</code> (0–4),
+<code>status</code> (active|paused|done), <code>lang</code>,
+<code>created</code></li>
+<li>1:N arrays: <code>routing[]</code> (level decisions),
+<code>waves[]</code>, <code>roles[]</code>, <code>tasks[]</code>,
+<code>gates[]</code>, <code>risks[]</code>, <code>modules[]</code>,
+<code>artifacts[]</code></li>
+</ul>
+<p>Two invariants make the state trustworthy:</p>
+<ol type="1">
+<li><strong>Atomic writes</strong> — the manifest is never left
+half-written.</li>
+<li><strong>Tamper-evident audit chain</strong>
+(<code>audit-log.jsonl</code>) — every change appends an entry to an
+append-only <strong>sha256 hash chain</strong>:
+<ul>
+<li>Each entry stores <code>hash_prev</code> (the previous entry's
+<code>hash_self</code>) and <code>hash_self</code> (the sha256 of itself
+serialized with <code>hash_self</code> empty — avoiding circular
+hashing).</li>
+<li>Invariants: <code>seq</code> strictly increasing;
+<code>hash_prev[n] == hash_self[n-1]</code>; the first entry's
+<code>hash_prev == "genesis"</code>.</li>
+<li>A single writer (<code>bathos audit append</code>) serializes all
+hooks behind a blocking file lock, so concurrent appends cannot corrupt
+the chain. <em>(This is exactly the invariant the dogfooding review
+caught — Rust and bash had been writing incompatible formats, now
+unified.)</em></li>
+</ul></li>
+</ol>
+<p>A broken chain is detected as <code>E-AUDIT-TAMPER</code>; a schema
+violation as <code>E-STATE-CORRUPT</code>.</p>
+<h3 id="23-the-scale-adaptive-router-bathos-router">2.3 The
+Scale-Adaptive router (<code>bathos-router</code>)</h3>
+<p>The router converts four "stakes" axes into a recommended level. The
+scoring is fully deterministic:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Axis</th>
+<th>Input</th>
+<th>Score</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>scope</code></td>
+<td>bug/fix/hotfix/trivial/small</td>
+<td>0</td>
+</tr>
+<tr>
+<td></td>
+<td>feature/medium <em>(or unclear)</em></td>
+<td>1</td>
+</tr>
+<tr>
+<td></td>
+<td>large/big/module/component</td>
+<td>2</td>
+</tr>
+<tr>
+<td></td>
+<td>enterprise/platform/product</td>
+<td>3</td>
+</tr>
+<tr>
+<td><code>novelty</code></td>
+<td>true</td>
+<td>+1</td>
+</tr>
+<tr>
+<td><code>regulation_ip</code></td>
+<td>true</td>
+<td>+2 <em>(a strong upward signal)</em></td>
+</tr>
+<tr>
+<td><code>team_size</code></td>
+<td>solo/single/small</td>
+<td>0</td>
+</tr>
+<tr>
+<td></td>
+<td>medium/mid</td>
+<td>1</td>
+</tr>
+<tr>
+<td></td>
+<td>large/big/enterprise</td>
+<td>2</td>
+</tr>
+</tbody>
+</table></div>
+<p>Total → level mapping: <strong>0 → Lv0 · 1 → Lv1 · 2–3 → Lv2 · 4–5 →
+Lv3 · 6+ → Lv4.</strong></p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Lv</th>
+<th>Work type</th>
+<th>Waves run</th>
+<th style="text-align: center;">#17</th>
+<th style="text-align: center;">W4</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>Bug fix · trivial</td>
+<td>W5 (+ultra-light W6)</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✗</td>
+</tr>
+<tr>
+<td>1</td>
+<td>Small feature · local refactor</td>
+<td>light W2 + W3 (abridged) + W5 + light W6</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✗</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Standard feature/module</td>
+<td>W1 + W2 + W3 + W5 + W6</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">optional</td>
+</tr>
+<tr>
+<td>3</td>
+<td>New product · large</td>
+<td>W0–W6 (W4 optional)</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">recommended</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Enterprise · deep-tech · regulated</td>
+<td>full W0–W6 + W4</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">required</td>
+</tr>
+</tbody>
+</table></div>
+<p>The key is <strong>the separation of recommendation and
+confirmation</strong> (User Sovereignty): <code>route decide</code> only
+recommends (<code>requires_confirmation: true</code>), and the level is
+recorded only when the user passes <code>--confirm &lt;0–4&gt;</code>.
+If the confirmed level differs from the recommendation, the engine
+records a <code>modify</code> verdict and recomputes the wave/role sets.
+If the level changes later, <code>E-LEVEL-DRIFT</code> catches it and
+asks the user again.</p>
+<h3 id="24-the-wave-engine-bathos-wave-engine">2.4 The wave engine
+(<code>bathos-wave-engine</code>)</h3>
+<p>The pipeline is a 7-wave state machine: <strong>W0 → W1 → W2 → W3 →
+W5 → W6</strong>, with <strong>W4 (IP · Research)</strong> as an
+optional plug that can run any time after W2.</p>
+<pre><code>(pre) kickoff → W0 analysis → W1 discovery → W2 design
+        → W3 story gate ★ → W5 implementation → W6 verification → (post) confirm
+                                  ↑
+                       W4 IP &amp; Research  (optional plug)</code></pre>
+<p>Each wave goes through state transitions (e.g.
+<code>active → gated → …</code>). Two hard rules:</p>
+<ul>
+<li><strong>Concurrency ≤ 3.</strong>
+<code>MAX_CONCURRENT_ROLES = 3</code>; <code>spawn_role()</code> rejects
+a 4th active role in a wave with <code>E-CONCURRENCY</code>. (Token cost
+is linear in active teammates, so waves run only the people they
+need.)</li>
+<li><strong>Wave ends → its teammates shut down → next wave.</strong>
+Handoffs happen exclusively through <code>.agent-team/</code> disk
+artifacts; teammates never inherit the lead's conversation history.</li>
+</ul>
+<h3 id="25-the-gate-engine-bathos-gate-engine">2.5 The gate engine
+(<code>bathos-gate-engine</code>)</h3>
+<p>Every wave gate uses one vocabulary and one deterministic rule:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Verdict</th>
+<th>Rule</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>PASS</strong></td>
+<td>No issues</td>
+<td>Enter the next wave</td>
+</tr>
+<tr>
+<td><strong>CONCERNS</strong></td>
+<td>Only non-blocking issues</td>
+<td>Log risks to <code>_state/</code> and proceed</td>
+</tr>
+<tr>
+<td><strong>FAIL</strong></td>
+<td><code>issues_critical &gt; 0</code></td>
+<td>Entry blocked; fix and re-gate</td>
+</tr>
+</tbody>
+</table></div>
+<p>Issue levels are <code>critical | enhancement | optimization</code>,
+and <strong>a single <code>critical</code> issue means FAIL.</strong>
+The gate is a <strong>FACILITATOR, not a generator</strong> — a
+verdict's <code>facilitator</code> (who decided) can never be empty, so
+an unsubstantiated auto-PASS is impossible. The engine also counts
+<em>consecutive</em> FAILs in the gate history
+(<code>take_while(Fail)</code>) to track re-gate cycles. The source of
+truth for the latest verdict is <code>bathos gate show</code>.</p>
+<h3 id="26-the-story-engine--zero-context-loss-bathos-story-engine">2.6
+The story engine — zero-context-loss
+(<code>bathos-story-engine</code>)</h3>
+<p>Wave 3 is the heart: it condenses the upstream design (W2) into
+<strong>self-contained dev story files</strong> so an implementer can
+start from the story alone. The engine enforces three dimensions:</p>
+<ul>
+<li><strong>D1 completeness</strong> — 6 required sections must exist:
+<code>story_requirements</code>, <code>developer_context</code>,
+<code>architecture_compliance</code>,
+<code>library_framework_requirements</code>,
+<code>file_structure_requirements</code>,
+<code>testing_requirements</code>. Additionally,
+<code>developer_context</code> must be non-empty. Missing or blank
+sections fail compilation with <code>E-CTX-LOSS</code>. <em>(The
+markdown template carries more sections — story, acceptance criteria,
+tasks, Dev Notes, Dev Agent Record, etc. — but these 6 are the
+machine-enforced minimum.)</em></li>
+<li><strong>D2 traceability</strong> — technical claims carry a
+<code>[Source:</code> marker linking each detail back to an upstream
+artifact.</li>
+<li><strong>D3 freshness (staleness)</strong> —
+<code>story check-stale</code> compares stored sha256 hashes to the
+current upstream files; if upstream changed, the story is
+<code>E-STALE</code> and must be recompiled. This blocks silent design
+drift between W2 and W5.</li>
+</ul>
+<h3 id="27-the-plug-manager-bathos-plug">2.7 The plug manager
+(<code>bathos-plug</code>)</h3>
+<p>Domain features are opt-in plugs under <code>modules/</code>, and
+<strong>the core knows nothing about modules</strong> (invariant A9 —
+proven by the dependency graph). Each module declares itself via
+<code>module.yaml</code>:</p>
+<pre class="yaml"><code>module_id: ip                    # ip | research | game | security ...
+name: IP Pack
+wave: W4
+trigger: &quot;Lv&gt;=3 OR domain=ip&quot;    # auto-trigger condition
+enabled_default: false
+provides:
+  workflows: [patent-spec-draft]
+  templates: [patent-spec]
+outputs: &quot;.agent-team/05-ip/&quot;
+evidence_trace: true</code></pre>
+<p>The trigger DSL combines
+<code>Lv&gt;=N</code>/<code>Lv&gt;N</code>/<code>Lv&lt;=N</code>/<code>Lv&lt;N</code>/<code>Lv=N</code>
+(N=0–4) and <code>domain=X</code> with <code>OR</code>, treating
+unparseable tokens conservatively as <code>false</code>. Toggles
+(<code>plug enable</code>/<code>disable</code>) are persisted in
+<code>manifest.modules[]</code>. A missing module is
+<code>E-PLUG-NOTFOUND</code>. Bundled by default:
+<strong>ip-pack</strong> (patent application specification) ·
+<strong>research-pack</strong> (academic Abstract/Introduction).</p>
+<h3
+id="28-safety-hooks--where-enforcement-meets-claude-code-claudesettingsjson">2.8
+Safety hooks — where enforcement meets Claude Code
+(<code>.claude/settings.json</code>)</h3>
+<p>Six deterministic, fail-safe hooks bind to Claude Code events. This
+is where the engine's guarantees take <em>effect</em> in a live
+session:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Hook</th>
+<th>Event</th>
+<th>Role</th>
+<th>Blocks (exit 2) when</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>careful-guard.sh</code></td>
+<td>PreToolUse(Bash)</td>
+<td>Blocks destructive commands</td>
+<td><code>rm -rf</code>, <code>DROP TABLE</code>,
+<code>git push --force</code>, <code>DELETE</code> without WHERE,
+<code>TRUNCATE</code></td>
+</tr>
+<tr>
+<td><code>freeze-guard.sh</code></td>
+<td>PreToolUse(Write/Edit)</td>
+<td>Locks edits to owned paths</td>
+<td>Edit outside <code>BATHOS_OWNED_PATHS</code></td>
+</tr>
+<tr>
+<td><code>audit-log.sh</code></td>
+<td>PostToolUse</td>
+<td>Appends every tool use to the audit chain</td>
+<td>(non-blocking)</td>
+</tr>
+<tr>
+<td><code>artifact-verify.sh</code></td>
+<td>TaskCompleted / SubagentStop</td>
+<td>Verifies artifact and story-file completeness</td>
+<td>Missing artifacts for QA/W3 tasks; incomplete story file at #17
+shutdown</td>
+</tr>
+<tr>
+<td><code>gate-enforce.sh</code></td>
+<td>TaskCompleted</td>
+<td><strong>Blocks W5 entry when the W3 verdict is FAIL</strong></td>
+<td>W5-entry task + latest Implementation verdict = FAIL</td>
+</tr>
+<tr>
+<td><code>next-action.sh</code></td>
+<td>TeammateIdle</td>
+<td>Suggests the next action</td>
+<td>(non-blocking)</td>
+</tr>
+</tbody>
+</table></div>
+<p>The <code>gate-enforce</code> flow: detect a W5-entry task → query
+the latest Implementation verdict via <code>bathos gate show</code> →
+<code>FAIL</code> ⇒ exit 2 (block);
+<code>PASS</code>/<code>CONCERNS</code> ⇒ exit 0 (allow). If the binary
+or gate is absent, it fails safe (warn and pass). The
+<code>artifact-verify</code> hook detects the #17 (Matthew) role across
+multiple payload field names
+(<code>.role // .agent_type // .subagent_type // .agentType</code> + a
+grep fallback), so story-file verification isn't silently skipped if the
+runtime field name changes.</p>
+<blockquote>
+<p>Operational note: the <code>hooks</code> block in
+<code>settings.json</code> must contain <strong>valid hook event names
+only</strong> — a comment key causes an infinite wait at subagent
+startup.</p>
+</blockquote>
+<h3 id="29-cli-surface--exit-code-convention">2.9 CLI surface &amp;
+exit-code convention</h3>
+<p>You'll rarely call the binary by hand — hooks and commands do it for
+you — but the full CLI surface is catalogued here for when you need
+it.</p>
+<p>Global options: <code>-s, --state-dir &lt;PATH&gt;</code> (default
+<code>./_state</code>), <code>--modules-dir &lt;PATH&gt;</code> (default
+<code>./modules</code>), <code>-h/--help</code>,
+<code>-V/--version</code>. <strong>Exit codes:</strong> <code>0</code>
+success · <code>1</code> error · <strong><code>2</code> gate
+FAIL</strong> (used by hooks to block).</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Subcommands</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>state</code></td>
+<td><code>validate</code>, <code>show</code></td>
+<td>Validate/inspect manifest.json against the schema</td>
+</tr>
+<tr>
+<td><code>route</code></td>
+<td><code>decide</code>, <code>show</code></td>
+<td>Scale-Adaptive level recommendation/confirmation</td>
+</tr>
+<tr>
+<td><code>wave</code></td>
+<td><code>init</code>, <code>activate</code>, <code>show</code></td>
+<td>7-wave transitions (concurrency ≤ 3)</td>
+</tr>
+<tr>
+<td><code>gate</code></td>
+<td><code>verdict</code>, <code>show</code></td>
+<td>Record/inspect gate verdicts (FAIL → exit 2)</td>
+</tr>
+<tr>
+<td><code>story</code></td>
+<td><code>compile</code>, <code>check-stale</code></td>
+<td>Completeness (D1) · source tracing (D2) · freshness (D3)</td>
+</tr>
+<tr>
+<td><code>plug</code></td>
+<td><code>list</code>, <code>enable</code>, <code>disable</code></td>
+<td>Toggle plug modules</td>
+</tr>
+<tr>
+<td><code>audit</code></td>
+<td><code>append</code>, <code>verify</code></td>
+<td>Append to / <strong>verify</strong> the tamper-evident audit chain
+(<code>verify</code> → <code>E-AUDIT-TAMPER</code>, exit 1 on
+tampering)</td>
+</tr>
+<tr>
+<td><code>doctor</code></td>
+<td>—</td>
+<td>Install/wiring preflight diagnostics (see §2.12)</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="210-error-taxonomy-e-codes">2.10 Error taxonomy (E-codes)</h3>
+<p>The engine names its failure modes so hooks and humans can react
+deterministically: <code>E-LEVEL-DRIFT</code> (mid-flight level change),
+<code>E-CONCURRENCY</code> (active roles &gt; 3),
+<code>E-CTX-LOSS</code> (incomplete story file), <code>E-STALE</code>
+(story stale vs. upstream), <code>E-STATE-CORRUPT</code> (manifest
+schema violation), <code>E-AUDIT-TAMPER</code> (broken audit chain),
+<code>E-PLUG-NOTFOUND</code> (missing module).</p>
+<h3 id="211-session-saveresume">2.11 Session save/resume</h3>
+<p>Real builds span multiple Claude Code sessions, and teammates
+<strong>do not inherit</strong> the lead's conversation history — so
+BATHOS makes handoff explicit and lossless with two one-word
+commands:</p>
+<ul>
+<li><strong><code>/save</code></strong> — captures the <em>entire</em>
+session into a single authoritative snapshot,
+<code>_state/SESSION-SNAPSHOT.md</code> (+ a dated copy). It
+automatically aggregates engine state
+(<code>bathos state/wave/gate/route show</code>), the product code's git
+status, confirmed decisions (including User Sovereignty choices), the
+in-progress wave and active roles, remaining work, and <strong>the exact
+next command to run</strong>. It takes no arguments (the current
+project's <code>_state</code> is the default) and asks no follow-up
+questions.</li>
+<li><strong><code>/resume</code></strong> — reads that snapshot
+(cross-checking <code>manifest.json</code> and <code>wave-log.md</code>)
+and restores <em>where you were and what to do next</em> (read-only).
+In-process teammates can't be revived, so it tells you to respawn them
+via the relevant <code>/waveN-…</code> command — lossless thanks to disk
+artifacts.</li>
+</ul>
+<p>Both are <strong>natural-language friendly</strong>: the lead treats
+phrases like "save/checkpoint" as <code>/save</code> and
+"continue/resume" as <code>/resume</code> (a <code>CLAUDE.md</code>
+rule). The two are BATHOS-native simple aliases of the longer gstack
+<code>/context-save</code> · <code>/context-restore</code>, sharing the
+same <code>_state</code> and the same single source of truth.</p>
+<h3 id="212-preflight-diagnostics--integrity-verification">2.12
+Preflight diagnostics &amp; integrity verification</h3>
+<p>Two commands turn the pitfall checks that were once only documented
+warnings, and the tamper-evidence promise, into <em>actually runnable
+verification</em>:</p>
+<ul>
+<li><strong><code>bathos audit verify</code></strong> — verifies the
+audit hash chain end to end
+(<code>hash_prev[n] == hash_self[n-1]</code>, genesis anchor, monotonic
+<code>seq</code>). Intact → exit 0; broken/tampered → prints
+<code>E-AUDIT-TAMPER</code> with the offending <code>seq</code> and
+exits 1. It makes "tamper-evident" <em>provable</em>, not just
+claimed.</li>
+<li><strong><code>bathos doctor</code></strong> — an install/wiring
+preflight that checks, in one pass, exactly the places adopters trip
+over: <code>BATHOS_BIN</code> set, <code>jq</code> present, the Agent
+Teams flag, <strong>comment keys in the <code>settings.json</code>
+<code>hooks</code> block</strong> (a single <code>_note</code> sends
+subagent startup into an infinite wait — now detected
+deterministically), hook files present + executable,
+<code>assets/</code> · <code>modules/</code> present,
+<code>manifest.json</code> schema validity, audit-chain integrity.
+Prints a ✓//✗ checklist and exits 1 on any hard error. Recommended right
+after <code>install.sh</code>.</li>
+</ul>
+<h3 id="213-cross-project-memory--handoff">2.13 Cross-project memory
+&amp; handoff</h3>
+<p>Session save/restore is limited to <em>within</em> a project. But
+knowledge worth keeping — architecture decisions, design token systems,
+operational lessons learned the expensive way — should cross project
+<em>boundaries</em>. BATHOS accumulates it in a <strong>global
+registry</strong>, <code>~/.bathos/registry/</code>:</p>
+<ul>
+<li><code>INDEX.md</code> — a one-line index of projects worked on.</li>
+<li><code>&lt;slug&gt;.md</code> — a distilled <strong>project
+card</strong> for each project: domain, USP framing, key architecture
+decisions/ADRs, design-system highlights, reusable patterns, lessons
+&amp; incidents, current status, plus a pointer back to that project's
+<code>.agent-team/</code>.</li>
+</ul>
+<p><strong>How it's applied.</strong> <code>/project-handoff</code>
+distills the current project into a card, and <code>/save-session</code>
+performs this upsert <strong>automatically</strong> — the registry grows
+with every save, no extra effort. In <em>another</em> project, in
+<em>another</em> session, <code>/recall</code> (and
+<code>/cold-start</code>, which also consults the registry) pulls in the
+relevant earlier cards.</p>
+<p><strong>The benefit.</strong> A brand-new project starts
+<em>warm</em>, not cold: decisions and patterns that already worked are
+reused, and lessons already learned (e.g. the "teammate hang = quota"
+operational lesson, the <code>settings.json</code> comment-key trap)
+come pre-warned — you never have to rediscover the same pitfall. Recall
+is a suggestion (User Sovereignty): it presents reusable context, but
+the user decides this project's direction.</p>
+<hr />
+<h2 id="3-end-to-end-execution-flow">3. End-to-end execution flow</h2>
+<p>Putting it all together, one full run reads top to bottom like this —
+each arrow is a command you run yourself in the lead session:</p>
+<pre><code>/team-kickoff        → initialize the .agent-team/ skeleton + charter + manifest (create the SSOT)
+/route &lt;abs-path&gt;    → stakes → recommended Lv0–4 → user confirms → current_level recorded
+/wave1-discovery     → John ∥ Caleb            → USP Readiness gate
+/wave2-design        → Joshua → (James, Jonnathan) → Plan Readiness gate
+/wave3-story-gate ★  → Matthew condenses story files; Thomas · Matthias review independently
+                       → Implementation Readiness gate (PASS/CONCERNS/FAIL)
+                       → a FAIL physically blocks W5 via the gate-enforce hook
+/wave5-implement     → Phillip, Andrew, Stephen (concurrency ≤ 3, owned-path isolation)
+/wave6-verify-report → (Thomas, Timothy, Matthias) → Martin → Release Readiness gate
+/team-confirm        → final sign-off + cleanup</code></pre>
+<p>Throughout, roles read only their input paths and edit only their
+owned paths, handoffs happen only via disk, the engine records every
+transition and verdict, and the audit chain captures every tool use.</p>
+<hr />
+<h2 id="4-design-principles-ethos">4. Design principles (ETHOS)</h2>
+<p>BATHOS adopts and strengthens Garry Tan's <strong>gstack</strong>
+ETHOS. Three principles govern every role:</p>
+<ol type="1">
+<li><strong>User Sovereignty (supreme)</strong> — the AI proposes,
+<em>the user</em> decides. Recommendations that change the user's stated
+direction are presented as "recommendation + rationale + missed context"
+and <em>asked about</em>; never executed unilaterally.</li>
+<li><strong>Boil the Ocean</strong> — if the complete implementation
+costs only a few more minutes, choose complete; don't defer tests and
+edge cases.</li>
+<li><strong>Search Before Building</strong> — in unfamiliar territory,
+search first to map the terrain, then challenge conventional wisdom from
+first principles.</li>
+</ol>
+<p>These aren't decoration: the gate's "facilitator, not generator" rule
+and the independent-verifier separation are User Sovereignty and
+"generation ≠ verification" expressed as enforced mechanisms.</p>
+<hr />
+<h2 id="5-project-status--honest-limits-v010">5. Project status &amp;
+honest limits (v0.1.0)</h2>
+<p><strong>Early but functional — it builds and runs end-to-end
+today.</strong></p>
+<ul>
+<li>BATHOS is a <strong>method package running on Claude Code
+v2.1.32+</strong>, not a standalone app, and it depends on the
+<strong>experimental Agent Teams feature</strong>.</li>
+<li><strong>The engine is verified:</strong> <strong>257 Rust tests + 46
+hook determinism tests, all green</strong>;
+<code>cargo clippy -D warnings</code> clean; reproducible release
+build.</li>
+<li><strong>Fully independent certification (dogfooding):</strong>
+BATHOS applied Wave 6 to itself. <strong>ThomasCert (independent code
+review, PASS) + MatthiasCert (independent QA/E2E, PASS)</strong> ⇒
+<strong>Release Readiness = PASS</strong>. Known Blocking/High/Medium
+defects: <strong>0 open</strong>. Verification trail:
+<code>.agent-team/</code> (<code>10-review/</code> · <code>11-qa/</code>
+· <code>12-report/w6-final-certification.html</code> ·
+<code>_state/signoff.md</code>).</li>
+<li>Some wave commands are <strong>orchestration prompts the lead runs
+in Claude Code</strong> (spawning/inspecting teammates), not fully
+automated engine flows.</li>
+<li><strong>Not production-hardened yet</strong> — APIs, schemas, and
+command names may change before 1.0.</li>
+</ul>
+<hr />
+<h2 id="6-license--notices">6. License &amp; notices</h2>
+<p>Distributed under the <strong>MIT License</strong>. BATHOS is an
+independently implemented work, re-implemented from first principles
+after a careful reverse analysis of <a
+href="https://github.com/bmad-code-org/BMAD-METHOD">BMAD-METHOD</a> (MIT
+© 2025 BMad Code, LLC) — with sincere respect for the prior work that
+first charted the terrain BATHOS set out to explore more deeply. The
+trademarks "BMAD", "BMad Method", etc. are <strong>not used</strong> in
+the product name or marketing. Full text: <a
+href="readme.html"><code>../README.md</code></a>.</p>
+<hr />
+<div align="center">
+
+<p><strong>BATHOS</strong> · βάθος — depth, not surface 한국어: <a
+href="features-kr.html"><code>FEATURES-kr.md</code></a> · Español: <a
+href="features-es.html"><code>FEATURES-es.md</code></a></p>
+</div>
+
+    </article>
+<nav class="pager" aria-label="Docs"><a href="usecase-en.html"><span class="dir">← Previous</span><span class="ttl">Use case</span></a><a class="next" href="architecture-en.html"><span class="dir">Next →</span><span class="ttl">Architecture</span></a></nav>
+  </main>
+<aside class="toc"><span class="cap">On this page</span><ul><li><a class="lv2" href="#0-the-one-idea-underneath-everything">0. The one idea underneath everything</a></li><li><a class="lv2" href="#1-features-what-sets-bathos-apart">1. Features (what sets BATHOS apart)</a></li><li><a class="lv2" href="#2-how-it-works-the-actual-mechanics">2. How it works (the actual mechanics)</a></li><li><a class="lv3" href="#21-the-two-execution-planes">2.1 The two execution planes</a></li><li><a class="lv3" href="#22-state-model--single-source-of-truth-bathos-state">2.2 State model — single source of truth (bathos-state)</a></li><li><a class="lv3" href="#23-the-scale-adaptive-router-bathos-router">2.3 The Scale-Adaptive router (bathos-router)</a></li><li><a class="lv3" href="#24-the-wave-engine-bathos-wave-engine">2.4 The wave engine (bathos-wave-engine)</a></li><li><a class="lv3" href="#25-the-gate-engine-bathos-gate-engine">2.5 The gate engine (bathos-gate-engine)</a></li><li><a class="lv3" href="#26-the-story-engine--zero-context-loss-bathos-story-engine">2.6 The story engine — zero-context-loss (bathos-story-engine)</a></li><li><a class="lv3" href="#27-the-plug-manager-bathos-plug">2.7 The plug manager (bathos-plug)</a></li><li><a class="lv3" href="#28-safety-hooks--where-enforcement-meets-claude-code-claudesettingsjson">2.8 Safety hooks — where enforcement meets Claude Code (.claude/settings.json)</a></li><li><a class="lv3" href="#29-cli-surface--exit-code-convention">2.9 CLI surface &amp; exit-code convention</a></li><li><a class="lv3" href="#210-error-taxonomy-e-codes">2.10 Error taxonomy (E-codes)</a></li><li><a class="lv3" href="#211-session-saveresume">2.11 Session save/resume</a></li><li><a class="lv3" href="#212-preflight-diagnostics--integrity-verification">2.12 Preflight diagnostics &amp; integrity verification</a></li><li><a class="lv3" href="#213-cross-project-memory--handoff">2.13 Cross-project memory &amp; handoff</a></li><li><a class="lv2" href="#3-end-to-end-execution-flow">3. End-to-end execution flow</a></li><li><a class="lv2" href="#4-design-principles-ethos">4. Design principles (ETHOS)</a></li><li><a class="lv2" href="#5-project-status--honest-limits-v010">5. Project status &amp; honest limits (v0.1.0)</a></li><li><a class="lv2" href="#6-license--notices">6. License &amp; notices</a></li></ul></aside>
+</div>
+<footer class="foot"><span class="mono">βάθος · BATHOS</span> — depth over surface · MIT License · runs on Claude Code v2.1.32+</footer>
+<script src="assets/docs.js"></script>
+</body>
+</html>

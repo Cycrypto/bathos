@@ -1,0 +1,574 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="BATHOS — an AI Workflow Agent method of overwhelming depth: 17 roles x 7 waves x scale-adaptive, backed by a Rust engine. Runs on Claude Code.">
+<title>BATHOS — βάθος · depth over surface</title>
+<style>
+  :root{
+    --abyss:#06171b; --deep:#0a262c; --panel:#0e333a; --raised:#12414a;
+    --teal:#1fc8d4; --brand:#0e9aa1;
+    --foam:#eaf6f4; --mist:#a9cbc9; --muted:#6f9895; --line:#1b4952;
+    --pass:#4ade80; --warn:#f6c667; --fail:#fc8181;
+    --sans:"Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,system-ui,"Apple SD Gothic Neo","Malgun Gothic",Roboto,"Segoe UI",sans-serif;
+    --mono:ui-monospace,"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;
+    --measure:66ch;
+  }
+  *{box-sizing:border-box}
+  body{margin:0}
+  .wrap{
+    font-family:var(--sans); color:var(--foam);
+    background:
+      radial-gradient(1200px 700px at 78% -8%, #12525c33, transparent 60%),
+      linear-gradient(180deg,#0a2a31 0%, #082026 34%, #06171b 72%, #041013 100%);
+    min-height:100vh; overflow-x:hidden; line-height:1.6; -webkit-font-smoothing:antialiased;
+  }
+  .shell{max-width:1080px; margin:0 auto; padding:0 24px}
+  a{color:var(--teal); text-decoration:none}
+  a:hover{text-decoration:underline}
+  code,.mono{font-family:var(--mono)}
+  h1,h2,h3{text-wrap:balance; margin:0}
+  .eyebrow{font-family:var(--mono); font-size:.72rem; letter-spacing:.28em; text-transform:uppercase; color:var(--brand)}
+
+  /* i18n toggle */
+  .wrap[data-lang="en"] .ko, .wrap[data-lang="en"] .es{display:none}
+  .wrap[data-lang="ko"] .en, .wrap[data-lang="ko"] .es{display:none}
+  .wrap[data-lang="es"] .en, .wrap[data-lang="es"] .ko{display:none}
+  .langtog{display:inline-flex; border:1px solid var(--line); border-radius:999px; overflow:hidden; font-family:var(--mono); font-size:.72rem}
+  .langtog button{background:transparent; color:var(--mist); border:0; padding:6px 13px; cursor:pointer; font-family:inherit; display:inline-flex; align-items:center; gap:6px}
+  .langtog button:hover{color:var(--foam)}
+  .langtog .flag{font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif; font-size:.9rem; line-height:1}
+  .wrap[data-lang="en"] .langtog button[data-setlang="en"],
+  .wrap[data-lang="ko"] .langtog button[data-setlang="ko"],
+  .wrap[data-lang="es"] .langtog button[data-setlang="es"]{background:var(--teal); color:#03181c; font-weight:700}
+
+  .nav{display:flex; align-items:center; justify-content:space-between; padding:20px 0; border-bottom:1px solid var(--line); gap:16px; flex-wrap:wrap}
+  .brand{font-family:var(--mono); font-weight:700; letter-spacing:.04em; font-size:1.05rem}
+  .brand b{color:var(--teal)}
+  .nav .right{display:flex; align-items:center; gap:22px}
+  .nav .links{display:flex; gap:22px; font-size:.82rem; font-family:var(--mono)}
+  .nav .links a{color:var(--mist)}
+  @media(max-width:720px){.nav .links{display:none}}
+  .docslink{font-family:var(--mono); font-size:.78rem; color:var(--foam); border:1px solid var(--line); border-radius:8px; padding:7px 13px; white-space:nowrap}
+  .docslink:hover{border-color:var(--teal); color:var(--teal); text-decoration:none}
+
+  .hero{padding:96px 0 80px; position:relative}
+  .greek{font-family:var(--mono); font-size:clamp(3.4rem,11vw,7rem); color:var(--teal);
+    letter-spacing:-.01em; line-height:.9; text-shadow:0 0 34px #1fc8d455; animation:rise .9s ease-out both}
+  .hero h1{font-size:clamp(1.05rem,2.1vw,1.55rem); font-weight:800; letter-spacing:-.01em; margin:16px 0 0; white-space:nowrap;
+    animation:rise .9s .06s ease-out both}
+  @media(max-width:760px){.hero h1{white-space:normal; font-size:clamp(1.25rem,5.4vw,1.8rem)}}
+  .hero .lede{font-size:clamp(1.05rem,2vw,1.32rem); color:var(--mist); max-width:var(--measure); margin:22px 0 0;
+    animation:rise .9s .12s ease-out both}
+  .hero .thesis{display:inline-flex; gap:10px; align-items:baseline; margin-top:26px; padding:10px 16px;
+    border:1px solid var(--line); border-radius:999px; background:#0a2a3155; font-family:var(--mono); font-size:.86rem;
+    animation:rise .9s .18s ease-out both}
+  .hero .thesis b{color:var(--foam)}
+  .strike{color:var(--muted); text-decoration:line-through}
+  .cta{display:flex; gap:14px; margin-top:34px; flex-wrap:wrap; animation:rise .9s .24s ease-out both}
+  .btn{font-family:var(--mono); font-size:.9rem; padding:12px 20px; border-radius:8px; font-weight:600; border:1px solid transparent; cursor:pointer}
+  .btn.p{background:var(--teal); color:#03181c}
+  .btn.p:hover{background:#57dfe8; text-decoration:none}
+  .btn.s{border-color:var(--line); color:var(--foam); background:#0a2a3140}
+  .btn.s:hover{border-color:var(--teal); text-decoration:none}
+
+  /* right-side depth index — the table of contents rendered as a surface→depth gauge */
+  .side-index{position:fixed; top:96px; right:max(16px, calc((100vw - 1080px) / 2 + 16px)); z-index:40; display:none;
+    font-family:var(--mono); font-size:.72rem; -webkit-user-select:none; user-select:none;
+    padding:13px 16px 15px; border:1px solid var(--line); border-radius:12px;
+    background:#0a262cd9; backdrop-filter:blur(7px); -webkit-backdrop-filter:blur(7px); box-shadow:0 8px 30px #04101340}
+  .side-index .cap{display:block; font-size:.6rem; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); opacity:.55}
+  .side-index .cap.bot{color:var(--teal); opacity:.7}
+  .side-index ol{list-style:none; margin:10px 0; padding:0; position:relative; display:grid; gap:1px}
+  .side-index ol::before{content:""; position:absolute; left:4px; top:9px; bottom:9px; width:1px; background:var(--line)}
+  .side-index li{position:relative}
+  .side-index a{display:block; position:relative; padding:5px 0 5px 20px; color:var(--muted); white-space:nowrap; line-height:1.2}
+  .side-index a::before{content:""; position:absolute; left:0; top:50%; transform:translateY(-50%); width:9px; height:9px; border-radius:50%; border:1px solid var(--line); background:var(--abyss); transition:background .2s,border-color .2s,box-shadow .2s}
+  .side-index a:hover{color:var(--foam); text-decoration:none}
+  .side-index a[aria-current="true"]{color:var(--teal)}
+  .side-index a[aria-current="true"]::before{background:var(--teal); border-color:var(--teal); box-shadow:0 0 10px #1fc8d4aa; animation:dotpop .5s cubic-bezier(.34,1.56,.64,1)}
+  @keyframes dotpop{0%{transform:translateY(-50%) scale(1)} 45%{transform:translateY(-50%) scale(1.9)} 100%{transform:translateY(-50%) scale(1)}}
+  @media(min-width:1160px){ .side-index{display:block} .nav .links{display:none} }
+
+  section{padding:60px 0; border-top:1px solid var(--line); scroll-margin-top:20px}
+  .sec-head{display:flex; align-items:baseline; gap:16px; margin-bottom:30px; flex-wrap:wrap}
+  .sec-head h2{font-size:clamp(1.5rem,3vw,2.05rem); font-weight:800; letter-spacing:-.02em}
+  .sec-head p{color:var(--mist); max-width:var(--measure); margin:0}
+
+  .planes{display:grid; grid-template-columns:1fr 1fr; gap:18px}
+  @media(max-width:720px){.planes{grid-template-columns:1fr}}
+  .plane{border:1px solid var(--line); border-radius:14px; padding:24px; background:linear-gradient(180deg,#0e333a,#0a262c)}
+  .plane h3{font-size:1.15rem; margin-bottom:6px}
+  .plane .k{font-family:var(--mono); font-size:.72rem; letter-spacing:.14em; text-transform:uppercase; color:var(--brand)}
+  .plane p{color:var(--mist); font-size:.95rem; margin:12px 0 0}
+  .plane .who{margin-top:14px; font-family:var(--mono); font-size:.8rem; color:var(--foam)}
+
+  .waves{display:flex; align-items:stretch; gap:0; flex-wrap:wrap}
+  .wv{flex:1 1 120px; min-width:110px; border:1px solid var(--line); border-radius:12px; padding:16px 14px; margin:6px;
+     background:linear-gradient(180deg,#10404880,#0a262c); position:relative}
+  .wv .id{font-family:var(--mono); font-weight:700; color:var(--teal); font-size:.95rem}
+  .wv .nm{font-size:.86rem; margin-top:4px; color:var(--foam)}
+  .wv .role{font-family:var(--mono); font-size:.68rem; color:var(--muted); margin-top:8px}
+  .wv.heart .id::after{content:" ★"; color:var(--teal)}
+  .wv.plug{border-style:dashed; opacity:.9}
+  .flow-note{font-family:var(--mono); font-size:.78rem; color:var(--mist); margin-top:18px}
+
+  .lv{display:grid; grid-template-columns:repeat(5,1fr); gap:10px}
+  @media(max-width:720px){.lv{grid-template-columns:1fr 1fr}}
+  .lvc{border:1px solid var(--line); border-radius:10px; padding:16px; background:#0a262c}
+  .lvc .n{font-family:var(--mono); font-size:1.6rem; font-weight:700; color:var(--teal)}
+  .lvc .t{font-size:.82rem; color:var(--foam); margin-top:4px}
+  .lvc .w{font-family:var(--mono); font-size:.68rem; color:var(--muted); margin-top:8px}
+
+  .feats{display:grid; grid-template-columns:repeat(3,1fr); gap:16px}
+  @media(max-width:820px){.feats{grid-template-columns:1fr 1fr}}
+  @media(max-width:560px){.feats{grid-template-columns:1fr}}
+  .ft{border:1px solid var(--line); border-radius:12px; padding:20px; background:#0b2b3199}
+  .ft .h{font-weight:700; font-size:1rem}
+  .ft .d{color:var(--mist); font-size:.88rem; margin-top:8px}
+  .ft .tag{font-family:var(--mono); font-size:.62rem; color:var(--brand); letter-spacing:.12em; text-transform:uppercase}
+  .dgrid{display:grid; grid-template-columns:repeat(4,1fr); gap:16px}
+  @media(max-width:820px){.dgrid{grid-template-columns:1fr 1fr}}
+  @media(max-width:560px){.dgrid{grid-template-columns:1fr}}
+
+  .gates{display:grid; grid-template-columns:repeat(3,1fr); gap:14px}
+  @media(max-width:640px){.gates{grid-template-columns:1fr}}
+  .gate{border:1px solid var(--line); border-left-width:4px; border-radius:10px; padding:18px; background:#0a262c}
+  .gate.pass{border-left-color:var(--pass)} .gate.warn{border-left-color:var(--warn)} .gate.fail{border-left-color:var(--fail)}
+  .gate .v{font-family:var(--mono); font-weight:700; letter-spacing:.06em}
+  .gate.pass .v{color:var(--pass)} .gate.warn .v{color:var(--warn)} .gate.fail .v{color:var(--fail)}
+  .gate .d{color:var(--mist); font-size:.86rem; margin-top:6px}
+
+  .metrics{display:grid; grid-template-columns:repeat(4,1fr); gap:14px}
+  @media(max-width:640px){.metrics{grid-template-columns:1fr 1fr}}
+  .metric{border:1px solid var(--line); border-radius:12px; padding:20px; text-align:center; background:linear-gradient(180deg,#0e333a,#081f24)}
+  .metric .num{font-family:var(--mono); font-size:2rem; font-weight:700; color:var(--teal); font-variant-numeric:tabular-nums}
+  .metric .lab{font-size:.78rem; color:var(--mist); margin-top:4px}
+
+  .term{border:1px solid var(--line); border-radius:12px; overflow:hidden; background:#04141880; margin-top:8px}
+  .term .bar{display:flex; gap:7px; padding:11px 14px; border-bottom:1px solid var(--line); background:#0a262c}
+  .term .bar i{width:11px; height:11px; border-radius:50%; display:block}
+  .term .bar i:nth-child(1){background:#e06c62} .term .bar i:nth-child(2){background:#e6b04d} .term .bar i:nth-child(3){background:#5fbf7a}
+  .term pre{margin:0; padding:18px; overflow-x:auto; font-family:var(--mono); font-size:.82rem; line-height:1.75; color:var(--foam)}
+  .term .c{color:var(--muted)} .term .g{color:var(--teal)} .term .o{color:var(--mist)}
+
+  .status{border:1px solid var(--line); border-radius:14px; padding:26px; background:#0a262c}
+  .status ul{margin:14px 0 0; padding-left:20px; color:var(--mist)} .status li{margin:7px 0}
+  .status b{color:var(--foam)}
+
+  footer{border-top:1px solid var(--line); padding:40px 0 60px; color:var(--muted); font-size:.84rem}
+  footer .mono{color:var(--mist)}
+  .pill{display:inline-block; font-family:var(--mono); font-size:.66rem; padding:3px 9px; border:1px solid var(--line); border-radius:999px; color:var(--mist); letter-spacing:.08em}
+
+  @keyframes rise{from{opacity:0; transform:translateY(16px)} to{opacity:1; transform:none}}
+  @media(prefers-reduced-motion:reduce){*{animation:none!important}}
+  :focus-visible{outline:2px solid var(--teal); outline-offset:2px}
+</style>
+
+</head>
+<body>
+<div class="wrap" id="wrap" data-lang="ko">
+
+<nav class="side-index" aria-label="On this page / 목차 / En esta página">
+  <span class="cap top"><span class="en">0m · surface</span><span class="ko">0m · 표면</span><span class="es">0m · superficie</span></span>
+  <ol>
+    <li><a href="#how"><span class="en">How</span><span class="ko">작동</span><span class="es">Cómo</span></a></li>
+    <li><a href="#waves"><span class="en">Waves</span><span class="ko">웨이브</span><span class="es">Waves</span></a></li>
+    <li><a href="#features"><span class="en">Features</span><span class="ko">기능</span><span class="es">Características</span></a></li>
+    <li><a href="#design"><span class="en">Design</span><span class="ko">디자인</span><span class="es">Diseño</span></a></li>
+    <li><a href="#memory"><span class="en">Memory</span><span class="ko">메모리</span><span class="es">Memoria</span></a></li>
+    <li><a href="#status"><span class="en">Status</span><span class="ko">상태</span><span class="es">Estado</span></a></li>
+    <li><a href="#start"><span class="en">Start</span><span class="ko">시작</span><span class="es">Empezar</span></a></li>
+  </ol>
+  <span class="cap bot"><span class="en">βάθος · depth</span><span class="ko">βάθος · 심연</span><span class="es">βάθος · profundidad</span></span>
+</nav>
+
+<div class="shell">
+
+  <nav class="nav">
+    <div class="brand">βάθος · <b>BATHOS</b></div>
+    <div class="right">
+      <div class="links">
+        <a href="#how"><span class="en">How</span><span class="ko">작동</span><span class="es">Cómo</span></a>
+        <a href="#waves"><span class="en">Waves</span><span class="ko">웨이브</span><span class="es">Waves</span></a>
+        <a href="#features"><span class="en">Features</span><span class="ko">기능</span><span class="es">Características</span></a>
+        <a href="#design"><span class="en">Design</span><span class="ko">디자인</span><span class="es">Diseño</span></a>
+        <a href="#memory"><span class="en">Memory</span><span class="ko">메모리</span><span class="es">Memoria</span></a>
+        <a href="#status"><span class="en">Status</span><span class="ko">상태</span><span class="es">Estado</span></a>
+        <a href="#start"><span class="en">Start</span><span class="ko">시작</span><span class="es">Empezar</span></a>
+      </div>
+      <a class="docslink en" href="lectures/usecase-lecture.html">Lectures&nbsp;→</a><a class="docslink ko" href="lectures/usecase-lecture.html">강의&nbsp;→</a><a class="docslink es" href="lectures/usecase-lecture.html">Clases&nbsp;→</a>
+      <a class="docslink en" href="docs/index-en.html">Docs&nbsp;→</a><a class="docslink ko" href="docs/index.html">문서&nbsp;→</a><a class="docslink es" href="docs/index-es.html">Docs&nbsp;→</a>
+      <div class="langtog" role="group" aria-label="Language / 언어 / Idioma">
+        <button type="button" data-setlang="en" aria-pressed="false"><span class="flag" aria-hidden="true">🇺🇸</span>EN</button>
+        <button type="button" data-setlang="ko" aria-pressed="true"><span class="flag" aria-hidden="true">🇰🇷</span>KO</button>
+        <button type="button" data-setlang="es" aria-pressed="false"><span class="flag" aria-hidden="true">🇪🇸</span>ES</button>
+      </div>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="greek">βάθος</div>
+    <h1 class="en">Turn one Claude Code session into a disciplined, exceptional product team.</h1>
+    <h1 class="ko">하나의 Claude Code 세션을 절제되고 탁월한 제품 팀으로.</h1>
+    <h1 class="es">Convierte una sola sesión de Claude Code en un equipo de producto disciplinado y excepcional.</h1>
+    <p class="lede en">BATHOS is an AI Workflow Agent method of overwhelming depth — 16 specialist roles, a 7-wave delivery pipeline, scale-adaptive routing, and hard quality gates, backed by a small Rust engine that makes the critical invariants deterministic instead of vibes.</p>
+    <p class="lede ko">BATHOS는 압도적 깊이의 AI Workflow Agent 메서드입니다 — 17개 전문 역할, 7웨이브 딜리버리 파이프라인, Scale-Adaptive 라우팅, 하드 품질 게이트, 그리고 핵심 불변식을 vibes가 아니라 결정적으로 만드는 작은 Rust 엔진.</p>
+    <p class="lede es">BATHOS es un método de AI Workflow Agent de profundidad abrumadora — 17 roles especialistas, un pipeline de entrega de 7 waves, enrutamiento scale-adaptive y gates de calidad estrictos, respaldado por un pequeño motor en Rust que vuelve deterministas los invariantes críticos en lugar de dejarlos al instinto.</p>
+    <div class="thesis">
+      <span class="strike">generation</span> <b>≠</b>
+      <span class="en">verification</span><span class="ko">verification &nbsp;·&nbsp; 생성 ≠ 검증</span><span class="es">verificación &nbsp;·&nbsp; generación ≠ verificación</span>
+    </div>
+    <div class="cta">
+      <a class="btn p" href="#start"><span class="en">Get started</span><span class="ko">시작하기</span><span class="es">Empezar</span></a>
+      <a class="btn s" href="#how"><span class="en">How it works</span><span class="ko">작동 원리</span><span class="es">Cómo funciona</span></a>
+    </div>
+  </header>
+
+  <section id="how">
+    <div class="sec-head">
+      <span class="eyebrow en">01 · two planes</span><span class="eyebrow ko">01 · 두 실행면</span><span class="eyebrow es">01 · dos planos</span>
+      <h2 class="en">A method on top, a deterministic engine underneath.</h2>
+      <h2 class="ko">상부는 메서드, 하부는 엔진을 통한 Harnessing.</h2>
+      <h2 class="es">Un método arriba, un motor determinista debajo.</h2>
+      <p class="en">In practice you mostly type slash commands. Beneath them sits the <code>bathos</code> binary — the deterministic core those commands and hooks invoke, and where trust actually lives: unit-tested, and impossible to talk your way past.</p>
+      <p class="ko">당신이 손으로 치는 건 대개 슬래시 커맨드입니다. 그 아래에 <code>bathos</code> 바이너리가 있습니다 — 커맨드와 훅이 불러 쓰는 결정적 코어이자, 신뢰가 실제로 사는 곳입니다. 단위 테스트로 검증되고, 말로는 우회할 수 없습니다.</p>
+      <p class="es">En la práctica, lo que tecleas son sobre todo slash commands. Bajo ellos está el binario <code>bathos</code> — el núcleo determinista que esos comandos y hooks invocan, y donde reside de verdad la confianza: verificado con tests unitarios e imposible de sortear con labia.</p>
+    </div>
+    <div class="planes">
+      <div class="plane">
+        <div class="k en">Orchestration plane</div><div class="k ko">오케스트레이션 면</div><div class="k es">Plano de orquestación</div>
+        <h3 class="en">Markdown commands · roles · hooks</h3><h3 class="ko">마크다운 커맨드 · 역할 · 훅</h3><h3 class="es">Comandos Markdown · roles · hooks</h3>
+        <p class="en">Slash commands run the waves — spawning, reviewing, and shutting down specialist teammates, and talking to you along the way. All of it editable and legible, under <code>.claude/</code>.</p>
+        <p class="ko">슬래시 커맨드가 웨이브를 진행하고, 전문 팀원을 스폰·검수·종료하며, 그 과정에서 당신과 대화합니다. 그 전부가 편집 가능하고 읽기 쉬운 <code>.claude/</code> 아래에 있습니다.</p>
+        <p class="es">Los slash commands ejecutan las waves — generan, revisan y cierran a los compañeros de equipo especialistas, y dialogan contigo por el camino. Todo ello editable y legible, bajo <code>.claude/</code>.</p>
+        <div class="who en">driver → the lead (Paul), your main session</div>
+        <div class="who ko">실행 → 리드(Paul), 당신의 메인 세션</div>
+        <div class="who es">al mando → el líder (Paul), tu sesión principal</div>
+      </div>
+      <div class="plane">
+        <div class="k en">Engine plane</div><div class="k ko">엔진 면</div><div class="k es">Plano del motor</div>
+        <h3 class="en">A single static Rust binary</h3><h3 class="ko">단일 정적 Rust 바이너리</h3><h3 class="es">Un único binario estático en Rust</h3>
+        <p class="en">Computes &amp; <em>enforces</em> state, routing, wave transitions, gates, story freshness, plugins, and a tamper-evident audit chain. ~5.6&nbsp;MB, 7 crates.</p>
+        <p class="ko">상태·라우팅·웨이브 전이·게이트·스토리 신선도·플러그·tamper-evident 감사 체인을 계산하고 <em>강제</em>합니다. ~5.6&nbsp;MB, 7 크레이트.</p>
+        <p class="es">Calcula y <em>hace cumplir</em> el estado, el enrutamiento, las transiciones de wave, los gates, la vigencia de las story files, los plugins y una cadena de auditoría a prueba de manipulaciones. ~5,6&nbsp;MB, 7 crates.</p>
+        <div class="who en">invoked as → bathos &lt;subcommand&gt;</div>
+        <div class="who ko">호출 → bathos &lt;subcommand&gt;</div>
+        <div class="who es">se invoca como → bathos &lt;subcommand&gt;</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="waves">
+    <div class="sec-head">
+      <span class="eyebrow en">02 · the descent</span><span class="eyebrow ko">02 · 하강</span><span class="eyebrow es">02 · el descenso</span>
+      <h2 class="en">Seven waves, from discovery to release.</h2>
+      <h2 class="ko">디스커버리에서 릴리스까지, 7개 웨이브.</h2>
+      <h2 class="es">Siete waves, del descubrimiento al release.</h2>
+      <p class="en">Mainline: W0 → W1 → W2 → W3 → W5 → W6. W4 (IP &amp; research) is an optional plug-in off the critical path. Each wave shuts its teammates down before the next (≤ 3 active).</p>
+      <p class="ko">본류: W0 → W1 → W2 → W3 → W5 → W6. W4(IP·연구)는 본류 밖 선택 플러그. 각 웨이브는 다음 전에 팀원을 종료합니다(동시 ≤ 3).</p>
+      <p class="es">Línea principal: W0 → W1 → W2 → W3 → W5 → W6. W4 (IP e investigación) es un plug-in opcional fuera de la ruta crítica. Cada wave cierra a sus compañeros de equipo antes de la siguiente (≤ 3 activos).</p>
+    </div>
+    <div class="waves">
+      <div class="wv"><div class="id">W0</div><div class="nm en">Analysis</div><div class="nm ko">분석</div><div class="nm es">Análisis</div><div class="role">Caleb</div></div>
+      <div class="wv"><div class="id">W1</div><div class="nm en">Discovery &amp; market</div><div class="nm ko">디스커버리·시장</div><div class="nm es">Descubrimiento y mercado</div><div class="role">John · Caleb</div></div>
+      <div class="wv"><div class="id">W2</div><div class="nm en">Plan · arch · design</div><div class="nm ko">기획·설계·디자인</div><div class="nm es">Plan · arquitectura · diseño</div><div class="role">Joshua → James · Jonnathan</div></div>
+      <div class="wv heart"><div class="id">W3</div><div class="nm en">Story gate</div><div class="nm ko">스토리 게이트</div><div class="nm es">Story gate</div><div class="role">Matthew + Thomas · Matthias</div></div>
+      <div class="wv"><div class="id">W5</div><div class="nm en">Implementation</div><div class="nm ko">구현</div><div class="nm es">Implementación</div><div class="role">Phillip · Andrew · Stephen</div></div>
+      <div class="wv"><div class="id">W6</div><div class="nm en">Verify · report</div><div class="nm ko">검증·리포트</div><div class="nm es">Verificar · reporte</div><div class="role">Thomas · Timothy · Matthias → Michael → Martin</div></div>
+      <div class="wv plug"><div class="id">W4</div><div class="nm en">IP &amp; research <span class="pill">plug-in</span></div><div class="nm ko">IP·연구 <span class="pill">플러그</span></div><div class="nm es">IP e investigación <span class="pill">plug-in</span></div><div class="role">Mark · Nathanael</div></div>
+    </div>
+    <p class="flow-note en">★ W3 is the heart. Between design and build there's always a gap where detail leaks out — and W3 closes it head-on: self-contained story files, every claim tagged <code>[Source:]</code>, reviewed independently. A <b style="color:var(--fail)">FAIL</b> physically blocks W5 through a hook (exit code 2).</p>
+    <p class="flow-note ko">★ W3가 심장입니다. 설계와 구현 사이엔 늘 세부가 새어 나가는 틈이 있고, W3는 그 틈을 정면으로 막습니다 — 자족 스토리파일에 모든 주장마다 <code>[Source:]</code>를 달아 독립적으로 리뷰합니다. <b style="color:var(--fail)">FAIL</b>이면 훅이 W5 진입을 물리적으로 차단합니다(exit code 2).</p>
+    <p class="flow-note es">★ W3 es el corazón. Entre el diseño y la construcción siempre hay una grieta por la que se escapa el detalle — y W3 la cierra de frente: story files autocontenidas, cada afirmación etiquetada con <code>[Source:]</code>, revisadas de forma independiente. Un <b style="color:var(--fail)">FAIL</b> bloquea físicamente la W5 mediante un hook (exit code 2).</p>
+  </section>
+
+  <section id="levels">
+    <div class="sec-head">
+      <span class="eyebrow">03 · scale-adaptive</span>
+      <h2 class="en">Run only the waves the task needs.</h2>
+      <h2 class="ko">작업이 필요한 웨이브만 실행.</h2>
+      <h2 class="es">Ejecuta solo las waves que la tarea necesita.</h2>
+      <p class="en">The router recommends a level from four stakes axes; <em>you</em> confirm (User Sovereignty). A bug fix isn't dragged through full discovery; an enterprise build isn't under-scoped.</p>
+      <p class="ko">라우터가 4개 stakes 축으로 레벨을 추천하고, <em>당신이</em> 확정합니다(User Sovereignty). 버그 수정을 풀 디스커버리에 끌고 가지 않고, 엔터프라이즈 빌드를 과소 스코핑하지 않습니다.</p>
+      <p class="es">El router recomienda un nivel a partir de cuatro ejes de stakes; <em>tú</em> lo confirmas (User Sovereignty). Un arreglo de bug no se arrastra por un descubrimiento completo; una build empresarial no se queda corta de alcance.</p>
+    </div>
+    <div class="lv">
+      <div class="lvc"><div class="n">0</div><div class="t en">Bug fix / trivial</div><div class="t ko">버그 수정</div><div class="t es">Arreglo de bug / trivial</div><div class="w">W5 (+min W6)</div></div>
+      <div class="lvc"><div class="n">1</div><div class="t en">Small feature</div><div class="t ko">소기능</div><div class="t es">Función pequeña</div><div class="w">W2·W3·W5·W6 (slim)</div></div>
+      <div class="lvc"><div class="n">2</div><div class="t en">Standard module</div><div class="t ko">표준 모듈</div><div class="t es">Módulo estándar</div><div class="w">W1–W3·W5·W6</div></div>
+      <div class="lvc"><div class="n">3</div><div class="t en">New product</div><div class="t ko">신규 제품</div><div class="t es">Producto nuevo</div><div class="w">W0–W6</div></div>
+      <div class="lvc"><div class="n">4</div><div class="t en">Enterprise / regulated</div><div class="t ko">엔터프라이즈·규제</div><div class="t es">Empresarial / regulado</div><div class="w">W0–W6 + W4</div></div>
+    </div>
+  </section>
+
+  <section id="gates">
+    <div class="sec-head">
+      <span class="eyebrow en">04 · quality gates</span><span class="eyebrow ko">04 · 품질 게이트</span><span class="eyebrow es">04 · gates de calidad</span>
+      <h2 class="en">One vocabulary. No evidence-free auto-pass.</h2>
+      <h2 class="ko">단일 용어. 근거 없는 자동 PASS 없음.</h2>
+      <h2 class="es">Un solo vocabulario. Ningún auto-PASS sin evidencia.</h2>
+      <p class="en">Gates are facilitators, not generators — the verdict's decider can never be empty. The engine is the source of truth (<code>bathos gate show</code>).</p>
+      <p class="ko">게이트는 FACILITATOR이지 generator가 아닙니다 — 판정 주체는 비어 있을 수 없습니다. 진실 원천은 엔진(<code>bathos gate show</code>).</p>
+      <p class="es">Los gates son facilitadores, no generadores — quien emite el veredicto nunca puede quedar vacío. La fuente de verdad es el motor (<code>bathos gate show</code>).</p>
+    </div>
+    <div class="gates">
+      <div class="gate pass"><div class="v">PASS</div><div class="d en">Criteria met, no blockers → proceed to the next wave.</div><div class="d ko">기준 충족, 블로커 없음 → 다음 웨이브 진입.</div><div class="d es">Criterios cumplidos, sin bloqueantes → avanzar a la siguiente wave.</div></div>
+      <div class="gate warn"><div class="v">CONCERNS</div><div class="d en">Conditional pass — log the non-blocking risk in <code>_state/</code> and proceed.</div><div class="d ko">조건부 통과 — 비차단 리스크를 <code>_state/</code>에 로그 후 진행.</div><div class="d es">Aprobación condicional — registra el riesgo no bloqueante en <code>_state/</code> y avanza.</div></div>
+      <div class="gate fail"><div class="v">FAIL</div><div class="d en">Blocking defect → entry blocked; remediate and re-gate. A hook enforces it.</div><div class="d ko">차단 결함 → 진입 차단; 보완 후 재게이트. 훅이 강제.</div><div class="d es">Defecto bloqueante → entrada bloqueada; remedia y vuelve a pasar el gate. Un hook lo hace cumplir.</div></div>
+    </div>
+  </section>
+
+  <section id="features">
+    <div class="sec-head">
+      <span class="eyebrow en">05 · depth in practice</span><span class="eyebrow ko">05 · 실전의 깊이</span><span class="eyebrow es">05 · la profundidad en la práctica</span>
+      <h2 class="en">What you get.</h2><h2 class="ko">무엇을 얻나.</h2><h2 class="es">Lo que obtienes.</h2>
+    </div>
+    <div class="feats">
+      <div class="ft"><div class="tag en">context</div><div class="tag ko">컨텍스트</div><div class="tag es">contexto</div>
+        <div class="h en">Zero-context-loss stories</div><div class="h ko">Zero-Context-Loss 스토리</div><div class="h es">Story files sin pérdida de contexto</div>
+        <div class="d en">W3 condenses design into self-contained dev story files; six required sections, every detail traced to source.</div>
+        <div class="d ko">W3가 설계를 자족 dev 스토리파일로 응축; 필수 6섹션, 모든 세부를 출처로 추적.</div>
+        <div class="d es">W3 condensa el diseño en dev story files autocontenidas; seis secciones obligatorias, cada detalle trazado hasta su fuente.</div></div>
+      <div class="ft"><div class="tag en">trust</div><div class="tag ko">신뢰</div><div class="tag es">confianza</div>
+        <div class="h en">Tamper-evident audit chain</div><div class="h ko">Tamper-evident 감사 체인</div><div class="h es">Cadena de auditoría a prueba de manipulaciones</div>
+        <div class="d en">Every state change appends to a sha256 hash-chain. Prove it any time: <code>bathos audit verify</code>.</div>
+        <div class="d ko">모든 상태 변경이 sha256 해시체인에 append. 언제든 증명: <code>bathos audit verify</code>.</div>
+        <div class="d es">Cada cambio de estado se añade a una cadena de hash sha256. Compruébalo cuando quieras: <code>bathos audit verify</code>.</div></div>
+      <div class="ft"><div class="tag en">safety</div><div class="tag ko">안전</div><div class="tag es">seguridad</div>
+        <div class="h en">Fail-safe hooks</div><div class="h ko">Fail-safe 훅</div><div class="h es">Hooks fail-safe</div>
+        <div class="d en">Destructive commands blocked; edits locked to owned paths. Block when in doubt.</div>
+        <div class="d ko">파괴적 명령 차단; 편집을 소유 경로로 잠금. 의심 시 차단.</div>
+        <div class="d es">Comandos destructivos bloqueados; ediciones limitadas a las rutas propias. Ante la duda, bloquear.</div></div>
+      <div class="ft"><div class="tag en">sovereignty</div><div class="tag ko">주권</div><div class="tag es">soberanía</div>
+        <div class="h en">AI proposes, you decide</div><div class="h ko">AI는 제안, 당신이 결정</div><div class="h es">La IA propone, tú decides</div>
+        <div class="d en">Direction-changing advice is surfaced as recommendation + rationale + missed context — never silently executed.</div>
+        <div class="d ko">방향을 바꾸는 권고는 추천 + 근거 + 놓친 맥락으로 제시 — 절대 먼저 실행하지 않음.</div>
+        <div class="d es">Toda recomendación que cambie el rumbo se presenta como recomendación + justificación + contexto omitido — nunca se ejecuta en silencio.</div></div>
+      <div class="ft"><div class="tag en">continuity</div><div class="tag ko">연속성</div><div class="tag es">continuidad</div>
+        <div class="h en">Save &amp; cold-start</div><div class="h ko">저장 &amp; 콜드스타트</div><div class="h es">Guardar y cold-start</div>
+        <div class="d en"><code>/save-session</code> persists everything; <code>/cold-start</code> restores a fresh session completely. A usage limit becomes a pause, not a loss.</div>
+        <div class="d ko"><code>/save-session</code>이 모든 것을 영속; <code>/cold-start</code>가 새 세션을 완전 복원. 사용량 한도가 손실이 아니라 일시정지가 됩니다.</div>
+        <div class="d es"><code>/save-session</code> lo persiste todo; <code>/cold-start</code> restaura por completo una sesión nueva. Un límite de uso se convierte en una pausa, no en una pérdida.</div></div>
+      <div class="ft"><div class="tag en">preflight</div><div class="tag ko">프리플라이트</div><div class="tag es">preflight</div>
+        <div class="h en">Doctor</div><div class="h ko">Doctor</div><div class="h es">Doctor</div>
+        <div class="d en"><code>bathos doctor</code> catches the footguns — the comment-key hook hang, missing jq, unset BATHOS_BIN — before they bite.</div>
+        <div class="d ko"><code>bathos doctor</code>가 함정을 사전 차단 — 주석키 훅 무한대기, jq 부재, BATHOS_BIN 미설정.</div>
+        <div class="d es"><code>bathos doctor</code> detecta las trampas — el bloqueo por clave de comentario en los hooks, la falta de jq, BATHOS_BIN sin definir — antes de que muerdan.</div></div>
+      <div class="ft"><div class="tag en">extensible</div><div class="tag ko">확장성</div><div class="tag es">extensible</div>
+        <div class="h en">Plugin modules</div><div class="h ko">플러그 모듈</div><div class="h es">Módulos de plugin</div>
+        <div class="d en">Slim core; domain packs (IP, research, your own) plug into W4. The core never depends on a module.</div>
+        <div class="d ko">슬림 코어; 도메인 팩(IP·연구·자체)이 W4에 플러그. 코어는 모듈을 의존하지 않음.</div>
+        <div class="d es">Núcleo esbelto; los packs de dominio (IP, investigación, el tuyo propio) se conectan a W4. El núcleo nunca depende de un módulo.</div></div>
+      <div class="ft"><div class="tag en">17 roles</div><div class="tag ko">17 역할</div><div class="tag es">17 roles</div>
+        <div class="h en">A real team</div><div class="h ko">진짜 팀</div><div class="h es">Un equipo de verdad</div>
+        <div class="d en">Lead + 16 specialists — analyst, planner, architect, designer, engineers, reviewer, refactoring specialist, QA, story engineer — spawned per wave.</div>
+        <div class="d ko">리드 + 15 전문가 — 분석가·기획자·아키텍트·디자이너·엔지니어·리뷰어·QA·스토리 엔지니어 — 웨이브별 스폰.</div>
+        <div class="d es">Líder + 15 especialistas — analista, planificador, arquitecto, diseñador, ingenieros, revisor, QA, story engineer — generados por wave.</div></div>
+      <div class="ft"><div class="tag en">routing</div><div class="tag ko">라우팅</div><div class="tag es">enrutamiento</div>
+        <div class="h en">Explicit effort</div><div class="h ko">명시적 노력</div><div class="h es">Esfuerzo explícito</div>
+        <div class="d en">Scale-Adaptive Lv0–4 turns the whole pipeline up or down. Token cost scales with what you actually run.</div>
+        <div class="d ko">Scale-Adaptive Lv0–4가 파이프라인 전체를 올리고 내림. 토큰 비용은 실제 실행분에 비례.</div>
+        <div class="d es">Scale-Adaptive Lv0–4 sube o baja todo el pipeline. El coste en tokens escala con lo que realmente ejecutas.</div></div>
+    </div>
+  </section>
+
+  <section id="design">
+    <div class="sec-head">
+      <span class="eyebrow en">06 · design</span><span class="eyebrow ko">06 · 디자인</span><span class="eyebrow es">06 · diseño</span>
+      <h2 class="en">Design that ships — top-tier, verified on canvas.</h2>
+      <h2 class="ko">출시되는 디자인 — 탑티어, 캔버스에서 검증.</h2>
+      <h2 class="es">Diseño que se entrega — de primer nivel, verificado en el lienzo.</h2>
+      <p class="en">The design role (Jonnathan, principal-level) doesn't stop at specs. It builds a token-first design system, verifies the visuals on the Claude Design canvas, and scores itself against an 11-dimension rubric — because generation ≠ verification applies to pixels too.</p>
+      <p class="ko">디자인 역할(Jonnathan, Principal 급)은 명세로 끝내지 않습니다. 토큰 우선 디자인 시스템을 세우고, Claude Design 캔버스에서 시각을 검증하며, 11차원 루브릭으로 스스로 채점합니다 — 생성 ≠ 검증은 픽셀에도 적용되니까요.</p>
+      <p class="es">El rol de diseño (Jonnathan, de nivel principal) no se detiene en las especificaciones. Construye un sistema de diseño token-first, verifica el resultado visual en el lienzo de Claude Design y se autoevalúa con una rúbrica de 11 dimensiones — porque generación ≠ verificación también rige para los píxeles.</p>
+    </div>
+    <div class="dgrid">
+      <div class="ft"><div class="tag en">system</div><div class="tag ko">시스템</div><div class="tag es">sistema</div>
+        <div class="h en">Token-first</div><div class="h ko">토큰 우선</div><div class="h es">Token-first</div>
+        <div class="d en">Color, type, spacing, motion as tokens — Linear/Stripe-level consistency, no hardcoded values.</div>
+        <div class="d ko">색·타입·간격·모션을 토큰으로 — Linear/Stripe급 일관성, 하드코딩 0.</div>
+        <div class="d es">Color, tipografía, espaciado y movimiento como tokens — consistencia al nivel de Linear/Stripe, sin valores hardcodeados.</div></div>
+      <div class="ft"><div class="tag en">canvas</div><div class="tag ko">캔버스</div><div class="tag es">lienzo</div>
+        <div class="h en">Claude Design</div><div class="h ko">Claude Design</div><div class="h es">Claude Design</div>
+        <div class="d en">Screens built and visually checked on the Pencil canvas — overflow, contrast, alignment, and missing states caught by eye.</div>
+        <div class="d ko">Pencil 캔버스에서 화면을 만들고 눈으로 검증 — overflow·대비·정렬·상태누락 색출.</div>
+        <div class="d es">Pantallas construidas y revisadas visualmente en el lienzo de Pencil — overflow, contraste, alineación y estados omitidos detectados a simple vista.</div></div>
+      <div class="ft"><div class="tag en">rubric</div><div class="tag ko">루브릭</div><div class="tag es">rúbrica</div>
+        <div class="h en">11-dimension 0–10</div><div class="h ko">11차원 0–10</div><div class="h es">11 dimensiones, 0–10</div>
+        <div class="d en">Every design self-scored across 11 dimensions, each with "what a 10 looks like" — and pushed there.</div>
+        <div class="d ko">모든 디자인을 11차원으로 자가 채점, 각 "10점의 모습"까지 끌어올림.</div>
+        <div class="d es">Cada diseño se autoevalúa en 11 dimensiones, cada una con "qué aspecto tiene un 10" — y se lleva hasta ahí.</div></div>
+      <div class="ft"><div class="tag en">a11y</div><div class="tag ko">접근성</div><div class="tag es">a11y</div>
+        <div class="h en">WCAG 2.2 AA</div><div class="h ko">WCAG 2.2 AA</div><div class="h es">WCAG 2.2 AA</div>
+        <div class="d en">Contrast, keyboard, focus, targets — accessibility is a gate, not an afterthought, so the handoff to build leaves no open questions.</div>
+        <div class="d ko">대비·키보드·포커스·타깃 — 접근성은 뒤늦게 챙기는 것이 아니라 게이트입니다. 구현팀이 되물을 것 없는 핸드오프.</div>
+        <div class="d es">Contraste, teclado, foco, áreas de toque — la accesibilidad es un gate, no una ocurrencia tardía, de modo que el handoff a construcción no deja preguntas abiertas.</div></div>
+    </div>
+  </section>
+
+  <section id="memory">
+    <div class="sec-head">
+      <span class="eyebrow en">07 · cross-project memory</span><span class="eyebrow ko">07 · 크로스-프로젝트 메모리</span><span class="eyebrow es">07 · memoria entre proyectos</span>
+      <h2 class="en">Memory that crosses projects.</h2>
+      <h2 class="ko">프로젝트를 가로지르는 메모리.</h2>
+      <h2 class="es">Memoria que cruza proyectos.</h2>
+      <p class="en">Within a project, <code>/save-session</code> and <code>/cold-start</code> make a limit a pause, not a loss. Across projects, a global registry at <code>~/.bathos/registry/</code> lets a brand-new project start <em>warm</em> — reusing what earlier projects decided and learned.</p>
+      <p class="ko">한 프로젝트 안에서는 <code>/save-session</code>·<code>/cold-start</code>가 사용량 한도를 손실이 아닌 일시정지로 바꿉니다. 프로젝트를 가로지를 때는 전역 레지스트리 <code>~/.bathos/registry/</code>가 있어, 완전히 새 프로젝트도 이전 프로젝트가 내린 결정과 배운 것을 재사용하며 <em>warm</em>하게 시작합니다.</p>
+      <p class="es">Dentro de un proyecto, <code>/save-session</code> y <code>/cold-start</code> convierten un límite en una pausa, no en una pérdida. Entre proyectos, un registro global en <code>~/.bathos/registry/</code> permite que un proyecto totalmente nuevo arranque <em>en caliente</em> — reutilizando lo que proyectos anteriores decidieron y aprendieron.</p>
+    </div>
+    <div class="dgrid">
+      <div class="ft"><div class="tag en">capture</div><div class="tag ko">축적</div><div class="tag es">captura</div>
+        <div class="h en">Auto-captured</div><div class="h ko">자동 축적</div><div class="h es">Captura automática</div>
+        <div class="d en"><code>/save-session</code> distills the project into a card in the registry on every save — zero extra effort.</div>
+        <div class="d ko"><code>/save-session</code>이 저장할 때마다 프로젝트를 카드로 증류해 레지스트리에 — 추가 노력 0.</div>
+        <div class="d es"><code>/save-session</code> destila el proyecto en una ficha del registro en cada guardado — sin esfuerzo adicional.</div></div>
+      <div class="ft"><div class="tag en">recall</div><div class="tag ko">회상</div><div class="tag es">recuerdo</div>
+        <div class="h en">Warm cold-start</div><div class="h ko">warm 콜드스타트</div><div class="h es">Cold-start en caliente</div>
+        <div class="d en">A new project runs <code>/recall</code> (or <code>/cold-start</code>) to pull relevant prior cards. Different project, different session — still informed.</div>
+        <div class="d ko">새 프로젝트가 <code>/recall</code>(또는 <code>/cold-start</code>)로 관련 이전 카드를 끌어옵니다. 다른 프로젝트·다른 세션이어도 컨텍스트 유지.</div>
+        <div class="d es">Un proyecto nuevo ejecuta <code>/recall</code> (o <code>/cold-start</code>) para traer las fichas previas relevantes. Otro proyecto, otra sesión — igualmente informado.</div></div>
+      <div class="ft"><div class="tag en">reuse</div><div class="tag ko">재사용</div><div class="tag es">reutilización</div>
+        <div class="h en">Decisions &amp; patterns</div><div class="h ko">결정 &amp; 패턴</div><div class="h es">Decisiones y patrones</div>
+        <div class="d en">Reuse architecture decisions, design tokens, and role overrides that already worked — instead of rebuilding from scratch.</div>
+        <div class="d ko">이미 통한 아키텍처 결정·디자인 토큰·역할 오버라이드를 재사용 — 처음부터 다시 만들지 않고.</div>
+        <div class="d es">Reutiliza decisiones de arquitectura, design tokens y overrides de rol que ya funcionaron — en lugar de rehacerlo todo desde cero.</div></div>
+      <div class="ft"><div class="tag en">lessons</div><div class="tag ko">교훈</div><div class="tag es">lecciones</div>
+        <div class="h en">Don't relearn</div><div class="h ko">다시 안 배움</div><div class="h es">No reaprender</div>
+        <div class="d en">Warned about lessons already learned (the "hang = quota" reality, config footguns) instead of rediscovering them the hard way.</div>
+        <div class="d ko">이미 배운 교훈("hang = quota"의 실체, 설정 함정)을 미리 일러줍니다 — 같은 고생을 되풀이하지 않도록.</div>
+        <div class="d es">Te avisa de lecciones ya aprendidas (la realidad de "hang = cuota", las trampas de configuración) en vez de redescubrirlas por las malas.</div></div>
+    </div>
+  </section>
+
+  <section id="status">
+    <div class="sec-head">
+      <span class="eyebrow en">08 · honest status</span><span class="eyebrow ko">08 · 정직한 상태</span><span class="eyebrow es">08 · estado honesto</span>
+      <h2 class="en">v0.1.0 — early, but dogfood-verified.</h2>
+      <h2 class="ko">v0.1.0 — 초기, 그러나 dogfooding 검증.</h2>
+      <h2 class="es">v0.1.0 — temprano, pero verificado con dogfooding.</h2>
+      <p class="en">BATHOS implemented itself, then ran its own Wave 6 independent verification on its own code. The lesson is the product's thesis.</p>
+      <p class="ko">BATHOS는 자기 자신을 구현한 뒤, 자기 코드에 Wave 6 독립 검증을 돌렸습니다. 그 교훈이 곧 제품의 명제입니다.</p>
+      <p class="es">BATHOS se implementó a sí mismo y luego ejecutó su propia verificación independiente de la Wave 6 sobre su propio código. La lección es la tesis del producto.</p>
+    </div>
+    <div class="metrics" style="margin-bottom:20px">
+      <div class="metric"><div class="num">260</div><div class="lab en">Rust tests, green</div><div class="lab ko">Rust 테스트, 그린</div><div class="lab es">tests de Rust, en verde</div></div>
+      <div class="metric"><div class="num">46</div><div class="lab en">hook determinism checks</div><div class="lab ko">훅 결정성 체크</div><div class="lab es">checks de determinismo de hooks</div></div>
+      <div class="metric"><div class="num">0</div><div class="lab en">clippy warnings</div><div class="lab ko">clippy 경고</div><div class="lab es">avisos de clippy</div></div>
+      <div class="metric"><div class="num">PASS</div><div class="lab en">Release Readiness (independent)</div><div class="lab ko">Release Readiness (독립)</div><div class="lab es">Release Readiness (independiente)</div></div>
+    </div>
+    <div class="status">
+      <ul class="en">
+        <li><b>Fully independently certified.</b> ThomasCert (code review) + MatthiasCert (QA/E2E) both PASS. Known Blocking/High/Medium defects: 0 open.</li>
+        <li><b>The dogfooding catch.</b> Functional QA looked green, yet an independent review found a blocking invariant defect the author missed — the Rust engine and bash hooks writing incompatible formats to the same audit chain, silently voiding tamper-evidence. Remediated, re-gated, cleared.</li>
+        <li><b>Honest limits.</b> A method package on Claude Code v2.1.32+ (needs the experimental Agent Teams feature), not a standalone app. Not yet production-hardened — APIs may change before 1.0.</li>
+      </ul>
+      <ul class="ko">
+        <li><b>완전 독립 인증.</b> ThomasCert(코드 리뷰) + MatthiasCert(QA/E2E) 모두 PASS. 알려진 Blocking/High/Medium 결함: 0 open.</li>
+        <li><b>dogfooding이 잡아낸 것.</b> 기능 QA는 그린이었지만 독립 리뷰가 저자가 놓친 차단성 불변식 결함을 발견 — Rust 엔진과 bash 훅이 같은 감사 체인에 비호환 형식으로 기록해 tamper-evidence가 조용히 무력화. 보완·재게이트·해소.</li>
+        <li><b>정직한 한계.</b> Claude Code v2.1.32+ 위 메서드 패키지(실험 기능 Agent Teams 필요), 독립 실행 앱 아님. 아직 production-hardened 아님 — 1.0 전 API 변경 가능.</li>
+      </ul>
+      <ul class="es">
+        <li><b>Certificado de forma totalmente independiente.</b> ThomasCert (revisión de código) + MatthiasCert (QA/E2E), ambos PASS. Defectos Blocking/High/Medium conocidos: 0 abiertos.</li>
+        <li><b>Lo que atrapó el dogfooding.</b> El QA funcional se veía en verde, pero una revisión independiente encontró un defecto de invariante bloqueante que el autor había pasado por alto — el motor en Rust y los hooks en bash escribían formatos incompatibles en la misma cadena de auditoría, anulando en silencio la evidencia de manipulación. Remediado, re-gateado, resuelto.</li>
+        <li><b>Límites honestos.</b> Un paquete de método sobre Claude Code v2.1.32+ (requiere la función experimental Agent Teams), no una app independiente. Aún no endurecido para producción — las APIs pueden cambiar antes de la 1.0.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="start">
+    <div class="sec-head">
+      <span class="eyebrow en">09 · get started</span><span class="eyebrow ko">09 · 시작하기</span><span class="eyebrow es">09 · empezar</span>
+      <h2 class="en">Build the engine, adopt into your project.</h2>
+      <h2 class="ko">엔진을 빌드하고, 내 프로젝트에 채택.</h2>
+      <h2 class="es">Compila el motor, adóptalo en tu proyecto.</h2>
+      <p class="en">BATHOS rides on Claude Code. Install the method assets into your repo, point at the engine, and drive the pipeline with slash commands.</p>
+      <p class="ko">BATHOS는 Claude Code 위에서 돕니다. 메서드 자산을 레포에 설치하고, 엔진을 가리킨 뒤, 슬래시 커맨드로 파이프라인을 진행하세요.</p>
+      <p class="es">BATHOS funciona sobre Claude Code. Instala los recursos del método en tu repo, apunta al motor y dirige el pipeline con slash commands.</p>
+    </div>
+    <div class="term">
+      <div class="bar"><i></i><i></i><i></i></div>
+<pre><span class="c"># build the engine + copy the method into YOUR project</span>
+$ ./install.sh <span class="g">--into</span> /abs/path/to/your-project
+$ <span class="g">export</span> BATHOS_BIN=<span class="o">"$PWD/core/target/release/bathos"</span>
+$ bathos doctor            <span class="c"># preflight: ✓ everything wired</span>
+
+<span class="c"># then, inside Claude Code opened in your project:</span>
+<span class="g">/team-kickoff</span>                       <span class="c"># scaffold .agent-team + manifest</span>
+<span class="g">/route</span>          /abs/path            <span class="c"># stakes → Lv0–4 (you confirm)</span>
+<span class="g">/wave1-discovery</span> … <span class="g">/wave6-verify-report</span>   <span class="c"># the pipeline</span>
+<span class="g">/save-session</span>                      <span class="c"># stop anytime → /cold-start next session</span></pre>
+    </div>
+  </section>
+
+  <footer>
+    <div class="brand" style="font-size:1.4rem; margin-bottom:8px">βάθος · <b style="color:var(--teal)">BATHOS</b></div>
+    <div class="mono en">depth over surface · MIT License · runs on Claude Code v2.1.32+</div>
+    <div class="mono ko">표층이 아닌 깊이 · MIT License · Claude Code v2.1.32+ 에서 동작</div>
+    <div class="mono es">la profundidad sobre la superficie · MIT License · funciona sobre Claude Code v2.1.32+</div>
+    <p class="en" style="max-width:var(--measure); margin-top:14px">BATHOS is an independently implemented work, re-implemented from first principles after a rigorous reverse analysis of BMAD-METHOD (MIT © 2025 BMad Code, LLC) — the prior art that charted the terrain BATHOS set out to deepen, acknowledged here with genuine respect. Per the MIT License its notice is preserved in LICENSE; no BMAD trademarks are used. <a href="docs/index-en.html">Docs</a>: USAGE · USECASE · FEATURES · ARCHITECTURE · ROLE-GUIDE · MODULE-GUIDE · QUOTA · FAQ (English · 한국어 · Español).</p>
+    <p class="ko" style="max-width:var(--measure); margin-top:14px">BATHOS는 독립적으로 구현된 저작물로, BMAD-METHOD(MIT © 2025 BMad Code, LLC)를 정밀 역분석한 뒤 제1원리에서 재구현했다 — BATHOS가 더 깊이 파고들고자 한 지형을 앞서 그려낸 선행 작업에 진심 어린 경의를 표한다. MIT 라이선스에 따라 그 고지는 LICENSE에 보존하며, BMAD 상표는 사용하지 않는다. <a href="docs/index.html">문서</a>: USAGE · USECASE · FEATURES · ARCHITECTURE · ROLE-GUIDE · MODULE-GUIDE · QUOTA · FAQ (English · 한국어 · Español).</p>
+    <p class="es" style="max-width:var(--measure); margin-top:14px">BATHOS es una obra de implementación independiente, reescrita desde primeros principios tras un riguroso análisis inverso de BMAD-METHOD (MIT © 2025 BMad Code, LLC) — el trabajo previo que trazó el terreno que BATHOS se propuso profundizar, reconocido aquí con genuino respeto. Conforme a la Licencia MIT, su aviso se conserva en LICENSE; no se usan marcas de BMAD. <a href="docs/index-es.html">Docs</a>: USAGE · USECASE · FEATURES · ARCHITECTURE · ROLE-GUIDE · MODULE-GUIDE · QUOTA · FAQ (English · 한국어 · Español).</p>
+  </footer>
+
+</div>
+</div>
+
+<script>
+  (function(){
+    var wrap = document.getElementById('wrap');
+    var btns = document.querySelectorAll('.langtog button[data-setlang]');
+    btns.forEach(function(b){
+      b.addEventListener('click', function(){
+        var lang = b.getAttribute('data-setlang');
+        wrap.setAttribute('data-lang', lang);
+        btns.forEach(function(x){ x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
+      });
+    });
+  })();
+
+  // scroll-spy: highlight the current section in the right-side depth index
+  (function(){
+    var ids = ['how','waves','features','design','memory','status','start'];
+    var links = {};
+    ids.forEach(function(id){ links[id] = document.querySelector('.side-index a[href="#'+id+'"]'); });
+    var secs = ids.map(function(id){ return document.getElementById(id); }).filter(Boolean);
+    if(!('IntersectionObserver' in window) || !secs.length) return;
+    function setCurrent(id){ ids.forEach(function(x){ if(links[x]) links[x].setAttribute('aria-current', x === id ? 'true' : 'false'); }); }
+    var obs = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){ if(e.isIntersecting) setCurrent(e.target.id); });
+    }, {rootMargin:'-40% 0px -60% 0px', threshold:0});
+    secs.forEach(function(s){ obs.observe(s); });
+    setCurrent('how');
+  })();
+
+  // in-page navigation with a bounce (easeOutBack overshoot) so movement is felt
+  (function(){
+    var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    function easeOutBack(t){ var c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2); }
+    document.querySelectorAll('a[href^="#"]').forEach(function(a){
+      var href = a.getAttribute('href');
+      if(!href || href.length < 2) return;
+      a.addEventListener('click', function(ev){
+        var target = document.getElementById(href.slice(1));
+        if(!target) return;
+        ev.preventDefault();
+        var startY = window.pageYOffset;
+        var maxY = document.documentElement.scrollHeight - window.innerHeight;
+        var endY = Math.min(maxY, Math.max(0, target.getBoundingClientRect().top + startY - 16));
+        if(reduce || Math.abs(endY - startY) < 4){ window.scrollTo(0, endY); history.replaceState(null, '', href); return; }
+        var dist = endY - startY, dur = Math.min(950, Math.max(480, Math.abs(dist) * 0.55)), t0 = null;
+        function step(ts){
+          if(t0 === null) t0 = ts;
+          var p = Math.min(1, (ts - t0) / dur);
+          window.scrollTo(0, startY + dist * easeOutBack(p));
+          if(p < 1) requestAnimationFrame(step); else history.replaceState(null, '', href);
+        }
+        requestAnimationFrame(step);
+      });
+    });
+  })();
+</script>
+</body>
+</html>
