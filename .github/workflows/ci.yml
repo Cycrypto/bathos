@@ -77,3 +77,69 @@ jobs:
         env:
           BATHOS_BIN: ${{ github.workspace }}/core/target/release/bathos
         run: bash .claude/hooks/_test-hooks.sh
+
+  windows:
+    name: Windows (engine build · test · PowerShell hook lint)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            core/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('core/Cargo.lock', 'core/**/Cargo.toml') }}
+          restore-keys: ${{ runner.os }}-cargo-
+
+      - name: Test (Windows)
+        working-directory: core
+        run: cargo test --all
+
+      - name: Release build (bathos.exe)
+        working-directory: core
+        run: cargo build --release
+
+      - name: Upload bathos.exe
+        uses: actions/upload-artifact@v4
+        with:
+          name: bathos-${{ runner.os }}
+          path: core/target/release/bathos.exe
+          if-no-files-found: error
+
+      - name: PowerShell hook syntax lint (parse every .ps1)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $total = 0
+          Get-ChildItem -Path . -Recurse -Filter *.ps1 |
+            Where-Object { $_.FullName -notmatch '[\\/]core[\\/]target[\\/]' } |
+            ForEach-Object {
+              $tokens = $null; $perr = $null
+              [System.Management.Automation.Language.Parser]::ParseFile($_.FullName, [ref]$tokens, [ref]$perr) | Out-Null
+              if ($perr -and $perr.Count -gt 0) {
+                Write-Host "PARSE ERROR  $($_.FullName)" -ForegroundColor Red
+                $perr | ForEach-Object { Write-Host "    $($_.Extent.StartLineNumber): $($_.Message)" }
+                $total += $perr.Count
+              } else {
+                Write-Host "ok  $($_.Name)"
+              }
+            }
+          if ($total -gt 0) { throw "$total PowerShell parse error(s) found" }
+          Write-Host "All .ps1 files parsed clean."
+
+      - name: Run PowerShell hook harness (if present)
+        shell: pwsh
+        env:
+          BATHOS_BIN: ${{ github.workspace }}/core/target/release/bathos.exe
+        run: |
+          if (Test-Path .claude/hooks/_test-hooks.ps1) {
+            & .claude/hooks/_test-hooks.ps1
+          } else {
+            Write-Host "_test-hooks.ps1 not present yet - skipping harness (parse lint already ran)."
+          }

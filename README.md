@@ -97,9 +97,11 @@ You mostly type **slash commands** (e.g. `/wave1-discovery`). The `bathos` binar
 
 - **[Claude Code](https://claude.com/claude-code) v2.1.32+** with the **Agent Teams** experimental feature enabled
   (`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`; the bundled `.claude/settings.json` already sets it)
-- **Rust toolchain** (cargo 1.92+ verified) — to build the engine
-- **`jq`** — used by the safety hooks for JSON parsing
-- A POSIX shell environment (macOS/Linux); hooks are bash
+- **Rust toolchain** (cargo 1.92+ verified) — to build the engine (cross-platform: builds `bathos` on macOS/Linux, `bathos.exe` on Windows)
+- **`jq`** — used by the **bash** safety hooks for JSON parsing (macOS/Linux only; the Windows PowerShell hooks use native `ConvertFrom-Json` and need no `jq`)
+- **A shell for the hooks:**
+  - **macOS / Linux** — a POSIX shell; hooks are bash (`.claude/hooks/*.sh`)
+  - **Windows** — Windows PowerShell **5.1+** (built into Windows, no install) or PowerShell 7+; hooks are PowerShell (`.claude/hooks/*.ps1`) and are wired automatically at install time (see *Windows* under Quick start)
 
 ---
 
@@ -120,6 +122,27 @@ cd ..
 export BATHOS_BIN="$(pwd)/core/target/release/bathos"
 #   …or add core/target/release to your PATH
 ```
+
+#### On Windows (PowerShell 5.1+ / PowerShell 7+)
+
+The engine and hooks are fully ported to PowerShell — same features, same gates. Use the PowerShell installer, which builds `bathos.exe` and (when installing into a target project) auto-wires the PowerShell hooks:
+
+```powershell
+git clone <your-fork-url> bathos; cd bathos
+
+# Build the engine + print setup steps
+.\install.ps1
+
+# …or build AND adopt into a target project (auto-wires .ps1 hooks on Windows):
+.\install.ps1 -Into C:\path\to\your\project      # add -Force to overwrite an existing .claude\
+#   -NoWindowsHooks keeps the bash-wired settings.json (e.g. if you run hooks via Git Bash/WSL)
+
+# Make the engine discoverable by hooks/commands:
+$env:BATHOS_BIN = "$PWD\core\target\release\bathos.exe"
+#   …or add core\target\release to your PATH
+```
+
+**How the cross-platform wiring works:** the committed `.claude/settings.json` points hooks at the bash `.sh` scripts (macOS/Linux). On Windows, `install.ps1 -Into <dir>` copies `.claude/settings.windows.json` (every hook → `.ps1`, each with `"shell": "powershell"`) over the target's `.claude/settings.json`, so the target runs the PowerShell hooks. Claude Code spawns those hooks with `-ExecutionPolicy Bypass` at process scope, so no machine policy change is needed. Both hook trees (`*.sh` and `*.ps1`) ship in `.claude/hooks/`.
 
 ### 2. Use BATHOS in a project
 
