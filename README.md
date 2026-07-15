@@ -144,6 +144,8 @@ $env:BATHOS_BIN = "$PWD\core\target\release\bathos.exe"
 
 **How the cross-platform wiring works:** the committed `.claude/settings.json` points hooks at the bash `.sh` scripts (macOS/Linux). On Windows, `install.ps1 -Into <dir>` copies `.claude/settings.windows.json` (every hook → `.ps1`, each with `"shell": "powershell"`) over the target's `.claude/settings.json`, so the target runs the PowerShell hooks. Claude Code spawns those hooks with `-ExecutionPolicy Bypass` at process scope, so no machine policy change is needed. Both hook trees (`*.sh` and `*.ps1`) ship in `.claude/hooks/`.
 
+**➜ Full Windows install guide (Korean):** [`docs/windows-install-kr.md`](docs/windows-install-kr.md) — prerequisites, `install.ps1` flags, install-time OS dispatch, `BATHOS_BIN`/PATH, verification, troubleshooting, and bash-vs-PowerShell behavior notes.
+
 ### 2. Use BATHOS in a project
 
 **Option A — use this repo as your working directory.** The `.claude/` directory (commands, agents, hooks, settings) is already wired; just open Claude Code here.
@@ -452,6 +454,6 @@ BATHOS is a separate, independently implemented project and does **not** use the
 <div align="center">
 
 **BATHOS** · βάθος — depth over surface
-한국어 문서: [`docs/USECASE-kr.md`](docs/USECASE-kr.md) · [`docs/FEATURES-kr.md`](docs/FEATURES-kr.md) · [`docs/USAGE-kr.md`](docs/USAGE-kr.md) · [`docs/QUOTA-kr.md`](docs/QUOTA-kr.md) · [`docs/MODULE-GUIDE-kr.md`](docs/MODULE-GUIDE-kr.md) · [`CLAUDE.md`](CLAUDE.md) · [`ETHOS.md`](ETHOS.md)
+한국어 문서: [`docs/USECASE-kr.md`](docs/USECASE-kr.md) · [`docs/FEATURES-kr.md`](docs/FEATURES-kr.md) · [`docs/USAGE-kr.md`](docs/USAGE-kr.md) · [`docs/windows-install-kr.md`](docs/windows-install-kr.md) · [`docs/QUOTA-kr.md`](docs/QUOTA-kr.md) · [`docs/MODULE-GUIDE-kr.md`](docs/MODULE-GUIDE-kr.md) · [`CLAUDE.md`](CLAUDE.md) · [`ETHOS.md`](ETHOS.md)
 
 </div>
