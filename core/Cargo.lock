@@ -193,6 +193,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "chrono",
+ "getrandom 0.2.17",
  "hex",
  "jsonschema",
  "serde",

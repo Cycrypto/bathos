@@ -27,3 +27,6 @@ uuid         = { version = "1", features = ["v4"] }
 chrono       = { version = "0.4", features = ["serde"] }
 jsonschema   = { version = "0.18", default-features = false }
 hex          = "0.4"
+# 크로스플랫폼 OS CSPRNG (unix=/dev/urandom, Windows=BCryptGenRandom, macOS=getentropy).
+# 감사 키 생성이 Windows에서도 동작하도록 직접 의존성으로 승격(원래 uuid v4 경유 트랜지티브).
+getrandom    = "0.2"
