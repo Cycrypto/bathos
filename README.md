@@ -52,6 +52,7 @@ BATHOS turns a **single Claude Code session into a disciplined product team** �
 | **Use case** — build a new service step by step | [`docs/USECASE-en.md`](docs/USECASE-en.md) | [`docs/USECASE-kr.md`](docs/USECASE-kr.md) | [`docs/USECASE-es.md`](docs/USECASE-es.md) | Start here: a hands-on walkthrough (adopt into your own project, build "ReadShelf" end-to-end) |
 | **Features & operating principles** | [`docs/FEATURES-en.md`](docs/FEATURES-en.md) | [`docs/FEATURES-kr.md`](docs/FEATURES-kr.md) | [`docs/FEATURES-es.md`](docs/FEATURES-es.md) | What makes BATHOS distinctive and how the engine works under the hood |
 | **Usage guide** | [`docs/USAGE-en.md`](docs/USAGE-en.md) | [`docs/USAGE-kr.md`](docs/USAGE-kr.md) | [`docs/USAGE-es.md`](docs/USAGE-es.md) | Reference: install, CLI, waves, gates, hooks, troubleshooting |
+| **Install guides** — per platform | *(see USAGE-en §1)* | [`macOS/Linux`](docs/macos-linux-install-kr.md) · [`Windows (PowerShell)`](docs/windows-install-kr.md) · [`Windows (WSL)`](docs/wsl-install-kr.md) | *(see USAGE-es §1)* | Platform-specific setup: prerequisites, engine build, `install.sh`/`install.ps1`, verification, troubleshooting |
 | **Token & quota management** | [`docs/QUOTA-en.md`](docs/QUOTA-en.md) | [`docs/QUOTA-kr.md`](docs/QUOTA-kr.md) | [`docs/QUOTA-es.md`](docs/QUOTA-es.md) | Control cost, sequence waves, recover from usage limits |
 | **Custom module authoring** | [`docs/MODULE-GUIDE-en.md`](docs/MODULE-GUIDE-en.md) | [`docs/MODULE-GUIDE-kr.md`](docs/MODULE-GUIDE-kr.md) | [`docs/MODULE-GUIDE-es.md`](docs/MODULE-GUIDE-es.md) | Write your own plugin (module.yaml, trigger DSL, W4) without touching the core |
 | **Role customization** | [`docs/ROLE-GUIDE-en.md`](docs/ROLE-GUIDE-en.md) | [`docs/ROLE-GUIDE-kr.md`](docs/ROLE-GUIDE-kr.md) | [`docs/ROLE-GUIDE-es.md`](docs/ROLE-GUIDE-es.md) | Adapt the 17 roles via the 3-layer override (base → team → user) |
@@ -109,7 +110,7 @@ You mostly type **slash commands** (e.g. `/wave1-discovery`). The `bathos` binar
 
 ### 1. Get the code & build the engine
 
-Dedicated install guides per platform: **macOS / Linux → [`docs/macos-linux-install-kr.md`](docs/macos-linux-install-kr.md)** · **Windows → [`docs/windows-install-kr.md`](docs/windows-install-kr.md)** (both Korean). The quick paths for each are below.
+Dedicated install guides per platform: **macOS / Linux → [`docs/macos-linux-install-kr.md`](docs/macos-linux-install-kr.md)** · **Windows (native PowerShell) → [`docs/windows-install-kr.md`](docs/windows-install-kr.md)** · **Windows (WSL) → [`docs/wsl-install-kr.md`](docs/wsl-install-kr.md)** (Korean). The quick paths for each are below.
 
 #### On macOS / Linux
 
@@ -151,6 +152,23 @@ $env:BATHOS_BIN = "$PWD\core\target\release\bathos.exe"
 **How the cross-platform wiring works:** the committed `.claude/settings.json` points hooks at the bash `.sh` scripts (macOS/Linux). On Windows, `install.ps1 -Into <dir>` copies `.claude/settings.windows.json` (every hook → `.ps1`, each with `"shell": "powershell"`) over the target's `.claude/settings.json`, so the target runs the PowerShell hooks. Claude Code spawns those hooks with `-ExecutionPolicy Bypass` at process scope, so no machine policy change is needed. Both hook trees (`*.sh` and `*.ps1`) ship in `.claude/hooks/`.
 
 **➜ Full Windows install guide (Korean):** [`docs/windows-install-kr.md`](docs/windows-install-kr.md) — prerequisites, `install.ps1` flags, install-time OS dispatch, `BATHOS_BIN`/PATH, verification, troubleshooting, and bash-vs-PowerShell behavior notes.
+
+#### On Windows via WSL (Windows Subsystem for Linux)
+
+WSL is a Linux environment, so BATHOS runs there as the **bash version** — the Linux `bathos` binary and the `.sh` hooks (not the `.ps1` PowerShell port). Work entirely **inside WSL** (Claude Code, Rust, and the clone all in WSL):
+
+```bash
+# Inside your WSL distro (e.g. Ubuntu), in the WSL filesystem (~/…, not /mnt/c):
+git clone <your-fork-url> bathos && cd bathos
+
+./scripts/wsl-setup.sh          # WSL preflight: normalize .sh to LF, chmod +x, check jq/cargo/claude
+cd core && cargo build --release && cd ..   # → core/target/release/bathos (ELF)
+export BATHOS_BIN="$PWD/core/target/release/bathos"
+```
+
+The one WSL gotcha is line endings: a repo cloned on Windows with `core.autocrlf=true` gives `.sh` files CRLF, which breaks the shebang under WSL (`bad interpreter: …bash^M`). The committed **`.gitattributes` forces `.sh` to LF**, and `scripts/wsl-setup.sh` repairs an already-CRLF tree. Then follow the macOS/Linux path above (bash hooks, `install.sh`).
+
+**➜ Full WSL install guide (Korean):** [`docs/wsl-install-kr.md`](docs/wsl-install-kr.md) — WSL prerequisites, the CRLF/line-ending fix, building the Linux engine, `install.sh`, verification, and WSL-specific troubleshooting.
 
 ### 2. Use BATHOS in a project
 
@@ -460,6 +478,6 @@ BATHOS is a separate, independently implemented project and does **not** use the
 <div align="center">
 
 **BATHOS** · βάθος — depth over surface
-한국어 문서: [`docs/USECASE-kr.md`](docs/USECASE-kr.md) · [`docs/FEATURES-kr.md`](docs/FEATURES-kr.md) · [`docs/USAGE-kr.md`](docs/USAGE-kr.md) · [`docs/macos-linux-install-kr.md`](docs/macos-linux-install-kr.md) · [`docs/windows-install-kr.md`](docs/windows-install-kr.md) · [`docs/QUOTA-kr.md`](docs/QUOTA-kr.md) · [`docs/MODULE-GUIDE-kr.md`](docs/MODULE-GUIDE-kr.md) · [`CLAUDE.md`](CLAUDE.md) · [`ETHOS.md`](ETHOS.md)
+한국어 문서: [`docs/USECASE-kr.md`](docs/USECASE-kr.md) · [`docs/FEATURES-kr.md`](docs/FEATURES-kr.md) · [`docs/USAGE-kr.md`](docs/USAGE-kr.md) · [`docs/macos-linux-install-kr.md`](docs/macos-linux-install-kr.md) · [`docs/windows-install-kr.md`](docs/windows-install-kr.md) · [`docs/wsl-install-kr.md`](docs/wsl-install-kr.md) · [`docs/QUOTA-kr.md`](docs/QUOTA-kr.md) · [`docs/MODULE-GUIDE-kr.md`](docs/MODULE-GUIDE-kr.md) · [`CLAUDE.md`](CLAUDE.md) · [`ETHOS.md`](ETHOS.md)
 
 </div>
