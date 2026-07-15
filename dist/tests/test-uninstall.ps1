@@ -1,4 +1,4 @@
-<#
+﻿<#
 =============================================================================
 BATHOS Dynamis — dist/tests/test-uninstall.ps1  (Windows PowerShell 포트)
 원본: dist/tests/test-uninstall.sh

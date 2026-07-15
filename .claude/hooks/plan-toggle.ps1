@@ -1,4 +1,4 @@
-# =============================================================================
+﻿# =============================================================================
 # BATHOS Dynamis A4 — plan-toggle.ps1   (Windows PowerShell 포트, SS5 · CF-A4, LD-4 승격)
 # 원본: .claude/hooks/plan-toggle.sh
 # UserPromptSubmit: "/bathos plan <on|off>" 파싱 → session-flags.json 갱신

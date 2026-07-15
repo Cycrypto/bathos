@@ -1,4 +1,4 @@
-<#
+﻿<#
 =============================================================================
 BATHOS Dynamis — check-rule-copies.ps1  (Windows PowerShell 포트)
 원본: scripts/check-rule-copies.sh

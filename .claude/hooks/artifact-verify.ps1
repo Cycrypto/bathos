@@ -1,4 +1,4 @@
-# =============================================================================
+﻿# =============================================================================
 # BATHOS M6 — artifact-verify.ps1   (Windows PowerShell 포트)
 # 원본: .claude/hooks/artifact-verify.sh
 # TaskCompleted / SubagentStop: 산출물 존재 및 게이트 기준 충족 검증

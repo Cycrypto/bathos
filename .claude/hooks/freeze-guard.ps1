@@ -1,4 +1,4 @@
-# =============================================================================
+﻿# =============================================================================
 # BATHOS M6 — freeze-guard.ps1   (Windows PowerShell 포트)
 # 원본: .claude/hooks/freeze-guard.sh  [Dynamis A1 — 위험 경로 fingerprint 게이트]
 # PreToolUse(Write/Edit/MultiEdit): owned_paths 밖 편집 + 위험경로 미승인 변경 차단

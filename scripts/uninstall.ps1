@@ -1,4 +1,4 @@
-<#
+﻿<#
 =============================================================================
 BATHOS Dynamis — scripts/uninstall.ps1  (Windows PowerShell 포트)
 원본: scripts/uninstall.sh

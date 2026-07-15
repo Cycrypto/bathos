@@ -1,4 +1,4 @@
-# =============================================================================
+﻿# =============================================================================
 # BATHOS Dynamis A2 — scope-inject.ps1   (Windows PowerShell 포트)
 # 원본: .claude/hooks/scope-inject.sh
 # PreToolUse(Read/Edit/Write/MultiEdit): 상위 디렉터리 스코프 규칙 자동 부착(advisory)

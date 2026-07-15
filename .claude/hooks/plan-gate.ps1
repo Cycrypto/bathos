@@ -1,4 +1,4 @@
-# =============================================================================
+﻿# =============================================================================
 # BATHOS Dynamis A4 — plan-gate.ps1   (Windows PowerShell 포트, SS5 · CF-A4, LD-4 승격)
 # 원본: .claude/hooks/plan-gate.sh
 # PreToolUse(Write/Edit/MultiEdit/Bash): plan_mode=on일 때 변경 도구 deny 게이팅

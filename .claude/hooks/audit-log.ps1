@@ -1,4 +1,4 @@
-# =============================================================================
+﻿# =============================================================================
 # BATHOS M6 — audit-log.ps1   (Windows PowerShell 포트)  [Dynamis A3 — 서킷브레이커 카운터 갱신 포함]
 # 원본: .claude/hooks/audit-log.sh
 # PostToolUse: 모든 도구 사용을 _state/audit-log.jsonl에 append(엔진 CLI 경유) +

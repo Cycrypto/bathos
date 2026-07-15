@@ -1,4 +1,4 @@
-<#
+﻿<#
 =============================================================================
 BATHOS Dynamis — dist/lib/host-detect.ps1  (Windows PowerShell 포트)
 원본: dist/lib/host-detect.sh

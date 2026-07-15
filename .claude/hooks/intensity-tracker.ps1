@@ -1,4 +1,4 @@
-# =============================================================================
+﻿# =============================================================================
 # BATHOS Dynamis A5 — intensity-tracker.ps1   (Windows PowerShell 포트, SS4 · CF-A5, Could)
 # 원본: .claude/hooks/intensity-tracker.sh
 # UserPromptSubmit: "/bathos intensity <lite|full|ultra|off>" 파싱·상태 갱신
