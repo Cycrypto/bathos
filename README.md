@@ -109,6 +109,10 @@ You mostly type **slash commands** (e.g. `/wave1-discovery`). The `bathos` binar
 
 ### 1. Get the code & build the engine
 
+Dedicated install guides per platform: **macOS / Linux → [`docs/macos-linux-install-kr.md`](docs/macos-linux-install-kr.md)** · **Windows → [`docs/windows-install-kr.md`](docs/windows-install-kr.md)** (both Korean). The quick paths for each are below.
+
+#### On macOS / Linux
+
 ```bash
 git clone <your-fork-url> bathos && cd bathos
 
@@ -122,6 +126,8 @@ cd ..
 export BATHOS_BIN="$(pwd)/core/target/release/bathos"
 #   …or add core/target/release to your PATH
 ```
+
+**➜ Full macOS/Linux install guide (Korean):** [`docs/macos-linux-install-kr.md`](docs/macos-linux-install-kr.md) — prerequisites (incl. `jq`), `install.sh` flags, `BATHOS_BIN`/PATH, verification, troubleshooting.
 
 #### On Windows (PowerShell 5.1+ / PowerShell 7+)
 
@@ -454,6 +460,6 @@ BATHOS is a separate, independently implemented project and does **not** use the
 <div align="center">
 
 **BATHOS** · βάθος — depth over surface
-한국어 문서: [`docs/USECASE-kr.md`](docs/USECASE-kr.md) · [`docs/FEATURES-kr.md`](docs/FEATURES-kr.md) · [`docs/USAGE-kr.md`](docs/USAGE-kr.md) · [`docs/windows-install-kr.md`](docs/windows-install-kr.md) · [`docs/QUOTA-kr.md`](docs/QUOTA-kr.md) · [`docs/MODULE-GUIDE-kr.md`](docs/MODULE-GUIDE-kr.md) · [`CLAUDE.md`](CLAUDE.md) · [`ETHOS.md`](ETHOS.md)
+한국어 문서: [`docs/USECASE-kr.md`](docs/USECASE-kr.md) · [`docs/FEATURES-kr.md`](docs/FEATURES-kr.md) · [`docs/USAGE-kr.md`](docs/USAGE-kr.md) · [`docs/macos-linux-install-kr.md`](docs/macos-linux-install-kr.md) · [`docs/windows-install-kr.md`](docs/windows-install-kr.md) · [`docs/QUOTA-kr.md`](docs/QUOTA-kr.md) · [`docs/MODULE-GUIDE-kr.md`](docs/MODULE-GUIDE-kr.md) · [`CLAUDE.md`](CLAUDE.md) · [`ETHOS.md`](ETHOS.md)
 
 </div>
