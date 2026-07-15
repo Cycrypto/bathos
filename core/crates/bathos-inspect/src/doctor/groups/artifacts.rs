@@ -62,9 +62,14 @@ fn project_root(agent_team_path: &Path) -> PathBuf {
 }
 
 /// Returns `false` if `path` (a string taken verbatim from manifest.json) can escape the
-/// project root (M-1 defense). It filters two things:
-/// 1. **Absolute path** — if the argument is absolute, `Path::join` completely ignores `self`
-///    (root) and returns the argument as-is (Rust standard behavior, empirically confirmed).
+/// project root (M-1 defense). It filters:
+/// 1. **Absolute / rooted / drive-prefixed path** — if the argument is absolute (`C:\x`), has a
+///    root (a leading `/`), or carries a Windows prefix (`C:x`), `Path::join` ignores or
+///    partially replaces `self` (root), letting the argument escape. Note this must be
+///    cross-platform: on Windows `Path::is_absolute("/etc/passwd")` is *false* (no drive
+///    letter), yet joining such a leading-separator path still jumps to the drive root — so we
+///    also reject a leading `/` or `\` and any `RootDir`/`Prefix` component, not just
+///    `is_absolute()`.
 /// 2. **Contains a `..` (parent-directory) component** — since `artifacts[].path` is by
 ///    contract "a path relative to the project root" (state-audit-contract-kr.md §1.2), the
 ///    mere presence of a parent reference is already a contract violation. It does not
@@ -76,11 +81,20 @@ fn project_root(agent_team_path: &Path) -> PathBuf {
 ///
 /// [Source: pilot/.agent-team/10-review/findings.md M-1]
 fn path_stays_within_root(path: &str) -> bool {
-    let p = Path::new(path);
-    if p.is_absolute() {
+    // Leading separator (either style) escapes to the drive/filesystem root on at least one OS.
+    if path.starts_with('/') || path.starts_with('\\') {
         return false;
     }
-    !p.components().any(|c| matches!(c, Component::ParentDir))
+    let p = Path::new(path);
+    if p.is_absolute() || p.has_root() {
+        return false;
+    }
+    !p.components().any(|c| {
+        matches!(
+            c,
+            Component::ParentDir | Component::RootDir | Component::Prefix(_)
+        )
+    })
 }
 
 fn check_artifact_paths(pv: &ProjectView, agent_team_path: &Path, findings: &mut Vec<Finding>) {

@@ -126,11 +126,16 @@ fn resolve_audit_key(log_path: &Path) -> StateResult<Vec<u8>> {
     Ok(key.to_vec())
 }
 
-/// Reads 32 cryptographically-random bytes from the OS CSPRNG (`/dev/urandom`).
+/// Reads 32 cryptographically-random bytes from the OS CSPRNG.
+///
+/// Uses the `getrandom` crate so the source is the platform-native CSPRNG on every
+/// target: `/dev/urandom` (Linux), `getentropy` (macOS/BSD), `BCryptGenRandom`
+/// (Windows). The previous implementation opened `/dev/urandom` directly, which is
+/// unix-only and made first-use audit-key generation fail on Windows.
 fn os_random_32() -> std::io::Result<[u8; 32]> {
-    let mut f = std::fs::File::open("/dev/urandom")?;
     let mut buf = [0u8; 32];
-    f.read_exact(&mut buf)?;
+    getrandom::getrandom(&mut buf)
+        .map_err(|e| std::io::Error::other(format!("getrandom failed: {e}")))?;
     Ok(buf)
 }
 
