@@ -3,6 +3,7 @@
 > **BATHOS**(그리스어 βάθος = '깊이·심연') — 표층 지식과 대비되는 압도적 깊이의 AI Workflow Agent. BMAD-METHOD v6 리버스 흡수로 14역할·5웨이브 → 17역할·7웨이브 진화.
 > 운영 규칙 상세는 `CLAUDE.md`, 운영 철학은 `ETHOS.md`(gstack 적응), 출처는 `CREDITS.md`. 모든 팀원은 스폰 시 ETHOS를 숙지합니다. "BMAD/BMad" 상표 사용 금지.
 > **전체 슬래시 커맨드(35개) 카테고리별 레퍼런스: [`docs/COMMANDS-kr.md`](docs/COMMANDS-kr.md).** 아래는 핵심 요약.
+> **멀티 런타임(Codex·GLM) 포터빌리티:** 판단·계획 [`docs/PORTABILITY-kr.md`] · GLM 백엔드 [`docs/glm-backend-kr.md`] · Codex 어댑터 [`docs/codex-adapter-kr.md`]. 요약 — GLM=모델 스왑(쉬움, `scripts/glm-env.sh`), Codex=런타임 포팅(어려움, `scripts/to-codex.sh` 변환 스캐폴드). `bathos` 엔진은 런타임 독립.
 
 ## 역할(서브에이전트) — `.claude/agents/`
 Paul(0·리드/CEO렌즈) · John(1·리버스) · Caleb(2·시장분석 +W0 Analyst 겸임) · Joshua(3·기획) · James(4·아키텍트) · Mark(5·IP) · Nathanael(6·논문) · Jonnathan(7·디자인) · Phillip(8·백엔드) · Andrew(9·프론트) · Stephen(10·ML) · Timothy(11·문서) · Thomas(12·리뷰) · **Michael(13·보안, 방어적 웹·사이버 보안 감사·하드닝, 신규)** · Hananiah(14·리팩토링, 동작보존) · Matthias(15·QA) · Martin(16·리포트) · **Matthew(17·Story Engineer, 스토리파일+W3 게이트)**.
