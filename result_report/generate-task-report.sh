@@ -57,7 +57,12 @@ md2html(){
 }
 
 # ── 서술형 콘텐츠 로드 ────────────────────────────────────────────────────────
-START_RAW="$(extract START | sed '/^[[:space:]]*$/d' | head -1)"
+# 작업 시작 시각 우선순위: (1) SessionStart 훅이 남긴 마커(정확·자동) →
+#                          (2) .session-content.md 의 START 구획(수동/폴백) → (3) 미기재
+MARKER="$PROJ/.agent-team/_state/session-start.marker"
+START_RAW=""
+[ -s "$MARKER" ] && START_RAW="$(sed '/^[[:space:]]*$/d' "$MARKER" | head -1)"
+[ -z "$START_RAW" ] && START_RAW="$(extract START | sed '/^[[:space:]]*$/d' | head -1)"
 [ -z "$START_RAW" ] && START_RAW="(미기재)"
 SUMMARY_HTML="$(extract SUMMARY | md2html)"
 [ -z "$SUMMARY_HTML" ] && SUMMARY_HTML="<p>(핵심 사항 미기재 — result_report/.session-content.md의 SUMMARY 구획을 채우세요)</p>"

@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BATHOS 작업 리포트 — session_no01 (소급)</title>
+<style>
+  :root{--abyss:#081215;--surface:#0f2226;--line:#1c3a40;--teal:#18b6c0;--teal-brand:#0e9aa1;--teal-soft:#7fd6dc;--ink:#e9f3f4;--muted:#8fabb0;--dim:#5f7c81;--amber:#e0a94f;
+    --mono:ui-monospace,'SFMono-Regular','JetBrains Mono',Menlo,Consolas,monospace;
+    --sans:'Pretendard','Pretendard Variable',-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sans KR',system-ui,sans-serif;}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:var(--sans);color:var(--ink);line-height:1.65;
+    background:radial-gradient(1000px 560px at 82% -10%,rgba(14,154,161,.16),transparent 60%),var(--abyss);-webkit-font-smoothing:antialiased}
+  .wrap{max-width:920px;margin:0 auto;padding:52px 26px 72px}
+  .eyebrow{font-family:var(--mono);font-size:.76rem;letter-spacing:.16em;text-transform:uppercase;color:var(--teal)}
+  h1{font-size:clamp(1.8rem,4vw,2.6rem);margin:12px 0 8px;font-weight:800;letter-spacing:-.01em}
+  .meta{font-family:var(--mono);color:var(--muted);font-size:.88rem}
+  .meta b{color:var(--teal-soft)}
+  .badge{display:inline-block;font-family:var(--mono);font-size:.72rem;color:var(--amber);border:1px solid rgba(224,169,79,.45);border-radius:999px;padding:2px 10px;margin-left:8px}
+  h2{font-size:1.2rem;margin:38px 0 4px;font-weight:800}
+  h2 .n{font-family:var(--mono);color:var(--teal);margin-right:.5em;font-size:.88em}
+  .rule{height:1px;background:linear-gradient(90deg,var(--teal-brand),transparent);margin:9px 0 14px;opacity:.6}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 20px;color:var(--ink)}
+  .card.state{border-left:3px solid var(--teal-brand)}
+  pre{font-family:var(--mono);font-size:.82rem;line-height:1.7;color:#cfe9ec;white-space:pre-wrap;word-break:break-word;margin:0;overflow-x:auto}
+  .times{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:4px}
+  @media(max-width:640px){.times{grid-template-columns:1fr}}
+  .tcard{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+  .tcard .lbl{font-family:var(--mono);font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--teal)}
+  .tcard .val{font-family:var(--mono);font-size:1.02rem;color:#fff;margin-top:6px;font-weight:700}
+  .tcard .val.dim{color:var(--dim);font-weight:500;font-size:.86rem}
+  .subh{font-family:var(--mono);font-size:.78rem;color:var(--teal-soft);margin:14px 0 6px;letter-spacing:.04em}
+  .note{font-family:var(--mono);font-size:.78rem;color:var(--amber);margin:0 0 14px}
+  footer{margin-top:46px;padding-top:16px;border-top:1px solid var(--line);color:var(--dim);font-family:var(--mono);font-size:.8rem;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">BATHOS Dynamis · 세션 작업 리포트</div>
+  <h1>작업 리포트 · session_no01<span class="badge">소급 백필 · RETROACTIVE</span></h1>
+  <div class="meta">프로젝트 <b>bathos-dynamis</b> · 세션 순번 <b>#1</b> · 원본 <b>2026-07-09-taskreport-1.html</b></div>
+  <p class="note">※ 이 리포트는 과거 세션 아카이브에서 소급 생성됨 — 원본에 기록된 사실만 포함(시작 시각·소요 시간은 당시 미기록).</p>
+
+  <h2><span class="n">1–3</span>작업 시각 &amp; 총 소요</h2>
+  <div class="rule"></div>
+  <div class="times">
+    <div class="tcard"><div class="lbl">작업 시작</div><div class="val dim">(소급 — 당시 미기록)</div></div>
+    <div class="tcard"><div class="lbl">작업 종료</div><div class="val">2026-07-09 17:21:09 KST</div></div>
+    <div class="tcard"><div class="lbl">총 작업 시간</div><div class="val dim">(소급 — 산출 불가)</div></div>
+  </div>
+
+  <h2><span class="n">4</span>작업 핵심 사항 <span style="font-size:.7em;color:var(--dim)">(원본 '현재 상태')</span></h2>
+  <div class="rule"></div>
+  <div class="card state"><pre>
+open-swe·ponytail 패턴을 흡수한 BATHOS Dynamis의 **전 파이프라인(W2 설계 → W3 스토리·게이트 → W4 구현 → W5 리뷰) + 최종 조립 + humanize(산문)** 가 모두 끝났다. 제품은 완결형 스탠드얼론 트리(**VERSION 0.2.0**, 341파일 시딩). 2026-07-09 세션에서 이월돼 있던 humanize를 종결했고, 이어서 **모델 표기 정정(Sonnet 4.6 → Sonnet 5)**과 **강의안 3부작(시리즈)**을 추가했다. **활성 팀원 0, 재스폰 필요 팀원 없음.**
+
+### 2차 세션 추가분 (2026-07-09)
+- **모델 표기 정정:** 역할 사용 모델 표시 텍스트 `Sonnet 4.6` → `Sonnet 5`로 3개 트리 일괄 치환(dynamis + sibling `bathos/` + repo-root `.claude/agents/`). 이력 주석 `(was Sonnet 4.6)` 보존, **Opus 4.8은 그대로**(User 지시). 프론트매터 `model:` 필드는 이미 `claude-sonnet-5`/별칭 `sonnet`이라 미변경(표시 텍스트만). 스테일 `* 2.md` 제외.
+- **강의안 시리즈 3부작:** `site/lectures/{usecase,features,usage}-lecture.html` — 자체완결 슬라이드 덱(한/영 토글, 키보드/닷/스와이프 내비, 진행바, print). 헤더 시리즈 내비로 상호연결(① 사례 14 · ② 원리 14 · ③ 사용 19 슬라이드). USAGE-kr/en·FEATURES-kr/en·USECASE-kr/en 기반. BATHOS 아이덴티티(심연+틸+Pretendard, 흑백 기호). 헤드리스 렌더 검증 완료.
+- **사이트 링크:** `site/index.html` 상단 nav에 강의 링크(en/ko/es 3언어, 시리즈 시작점 ①로) + **문서 허브 3언어 전부** `site/docs/{index,index-en,index-es}.html`에 "강의(슬라이드)" 카드 그룹 3장 추가.
+- **세션 리포트(HTML):** `.agent-team/12-report/session-report-2026-07-09.html` — 이번 세션 전체(타임라인·산출물·검증·상태)를 BATHOS 아이덴티티로 정리. 헤드리스 렌더 검증.
+- **Artifact 발행(시리즈 허브 1개):** 3덱을 한 URL에 담아 내부 전환(숫자키 1/2/3·한영 토글). 소스 `site/lectures/series-hub-artifact.html`(Artifact 규정상 body-only로 조립, 기존 3파일에서 슬라이드 배열 추출·병합). **URL:** https://claude.ai/code/artifact/32e2142e-f0af-4e22-a985-31e186143f04 (기본 비공개; 재발행은 같은 파일 경로로 하면 URL 유지).
+
+- 제품/작업 상태: 파이프라인 완료 · 조립 완료(v0.2.0) · humanize 산문 완료 · 운영 파일 윤문 제외(판정)
+- 현재 레벨(Lv): **Lv3** · 진행 중 웨이브: **없음(전 단계 종결)**
+
+**미완 / 다음 작업 (우선순위):**
+1. (선택) `/team-confirm` — 최종 사인오프 + cleanup.
+2. (선택) 열린 CONCERNS R1~R3 해소 추적 — `/bathos-debt` 또는 `_state/risk-log.md`.
+3. (선택) 개별 운영 파일에 실제 AI-tell 발견 시 예외 윤문(가역적).
+
+**▶ 다음에 실행할 커맨드:** `/team-confirm`  (신규 작업이면 먼저 `/route`로 레벨 재확인)</pre></div>
+
+  <h2><span class="n">5</span>중요 이슈</h2>
+  <div class="rule"></div>
+  <div class="card"><pre>(소급 백필 — 당시 별도 이슈 로그 없음. 상세는 원본 리포트 2026-07-09-taskreport-1.html 참조.)</pre></div>
+
+  <h2><span class="n">6</span>git commit / push / PR / merge 히스토리 <span style="font-size:.7em;color:var(--dim)">(원본 기록 기준)</span></h2>
+  <div class="rule"></div>
+  <div class="card"><pre>git repo 아님(파일 직접 저장)</pre></div>
+
+  <footer>
+    <span>BATHOS · βάθος — 표층이 아닌 깊이 · 소급 백필</span>
+    <span>task_report_20260709_172109_session_no01.html</span>
+  </footer>
+</div>
+</body>
+</html>

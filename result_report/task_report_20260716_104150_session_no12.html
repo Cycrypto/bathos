@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>BATHOS 작업 리포트 — session_no01</title>
+<title>BATHOS 작업 리포트 — session_no12</title>
 <style>
   :root{--abyss:#081215;--surface:#0f2226;--line:#1c3a40;--teal:#18b6c0;--teal-brand:#0e9aa1;--teal-soft:#7fd6dc;--ink:#e9f3f4;--muted:#8fabb0;--dim:#5f7c81;--grn:#4fbf9a;
     --mono:ui-monospace,'SFMono-Regular','JetBrains Mono',Menlo,Consolas,monospace;
@@ -36,15 +36,15 @@
 <body>
 <div class="wrap">
   <div class="eyebrow">BATHOS Dynamis · 세션 작업 리포트</div>
-  <h1>작업 리포트 · session_no01</h1>
-  <div class="meta">생성 <b>2026-07-16 10:20:53 KST</b> · 프로젝트 <b>bathos-dynamis</b> · 세션 순번 <b>#1</b></div>
+  <h1>작업 리포트 · session_no12</h1>
+  <div class="meta">생성 <b>2026-07-16 10:41:50 KST</b> · 프로젝트 <b>bathos-dynamis</b> · 세션 순번 <b>#12</b></div>
 
   <h2><span class="n">1–3</span>작업 시각 &amp; 총 소요</h2>
   <div class="rule"></div>
   <div class="times">
     <div class="tcard"><div class="lbl">작업 시작</div><div class="val">2026-07-16 10:07:16 KST</div></div>
-    <div class="tcard"><div class="lbl">작업 종료</div><div class="val">2026-07-16 10:20:53 KST</div></div>
-    <div class="tcard"><div class="lbl">총 작업 시간</div><div class="val">0시간 13분 37초</div></div>
+    <div class="tcard"><div class="lbl">작업 종료</div><div class="val">2026-07-16 10:41:50 KST</div></div>
+    <div class="tcard"><div class="lbl">총 작업 시간</div><div class="val">0시간 34분 34초</div></div>
   </div>
 
   <h2><span class="n">4</span>작업 핵심 사항</h2>
@@ -57,7 +57,9 @@
 <li>파일명 규약 `task_report_YYYYMMDD_HHMMSS_session_noNN.html`, <b>session_no는 기존 리포트 최대 순번 +1로 자동 incremental</b>(첫 세션=01).</li>
 <li>필수 6항목 포함: 작업 시작/종료 시각·총 소요·핵심 사항·중요 이슈·git commit/push/PR/merge 히스토리(자동 수집).</li>
 <li>서술형 항목은 `.session-content.md`에서 로드, git 히스토리는 저장소에서 자동 수집. BATHOS teal 리포트 스타일 준수.</li>
-<li><b>이번 세션 리포트(session_no01) 생성.</b></li>
+<li><b>소급 백필(backfill):</b> `.agent-team/12-report/`의 과거 taskreport 아카이브 11건을 시간순으로 `session_no01~11`로 소급 생성(`backfill-from-archive.sh`). 원본에 기록된 사실만 이관(종료 시각·현재상태·당시 git 라인), 시작시각/소요시간은 "당시 미기록"으로 명시. → 이번 세션은 <b>session_no12</b>.</li>
+<li><b>세션 시작 마커 훅 추가:</b> `SessionStart` 훅(`.claude/hooks/session-start.sh`) 신설 — 세션 시작 시각을 `_state/session-start.marker`에 기록(startup/clear=갱신, resume/compact=보존). `generate-task-report.sh`가 이 마커를 시작시각 최우선 소스로 사용. `settings.json`에 SessionStart 등록. freeze-guard 지문 2건 승인(Paul/hooks).</li>
+<li><b>이번 세션 리포트(session_no12) 생성.</b></li>
 </ul></div>
 
   <h2><span class="n">5</span>중요 이슈</h2>
@@ -66,7 +68,7 @@
 <li><b>스냅샷 드리프트:</b> landing-web에서 `/save` 없이 종료된 세션이 있어 s7 스냅샷이 최신 상태를 반영하지 못함 → 다음 `/save-session` 시 정본화 필요.</li>
 <li><b>push/PR/merge 보류:</b> 아웃바운드 반영(원격 push·PR·merge)은 명시 요청이 없어 <b>로컬 커밋까지만</b> 수행, User 승인 대기.</li>
 <li><b>세션 시작 시각 근거:</b> 정확한 세션-start 로그가 디스크에 없어 `session-flags.json`의 활동 마커(2026-07-16T01:07:16Z = 10:07:16 KST)를 시작 시각으로 사용(추정, 날조 아님).</li>
-<li><b>session_no 채번 정책:</b> result_report/가 신설(빈 디렉토리)이라 이번 세션을 01로 시작. 과거 세션 소급 채번(backfill)이 필요하면 별도 지시 필요.</li>
+<li><b>session_no 채번 정책:</b> 과거 아카이브 11건을 01~11로 소급 백필 완료 → 이번 세션 = 12. 이후 세션은 generate-task-report.sh가 자동으로 13, 14…로 이어받음. (아카이브 = `*-taskreport-*.html` 11건, `w6-report`·구형 `session-report-*`는 세션 리포트가 아니라 제외.)</li>
 <li><b>엔진 잔여 CONCERNS(불변):</b> R1 plan-mode 신호원 · R2 fingerprint diff 정규화 · R3 audit finding 라벨 소급.</li>
 </ul></div>
 
@@ -76,7 +78,8 @@
     <div class="subh">현재 브랜치 · 동기화</div>
     <pre>feat/task-report   ·   feat/task-report</pre>
     <div class="subh" style="margin-top:14px">최근 커밋 (commit, 최신 15)</div>
-    <pre>7259660 (HEAD -&gt; feat/task-report, origin/develop, develop) Merge PR #5: WSL development support into develop
+    <pre>6ad0457 (HEAD -&gt; feat/task-report) feat(report): add per-session task-report generator + result_report/
+7259660 (origin/develop, develop) Merge PR #5: WSL development support into develop
 593ec79 feat(wsl): support development under WSL (line-ending guard + preflight + guide)
 1c9a067 docs: document both macOS/Linux and Windows install guides in README
 2cb80b6 Merge PR #2: Windows PowerShell port into develop
@@ -89,8 +92,7 @@ babcbc7 feat(windows): PowerShell 5.1+ port with feature parity (hooks, installe
 57a602e Merge PR #4: ci align push triggers to develop/prod
 c840135 ci: align push triggers to develop/prod branch policy
 f28a245 Merge PR #1: chore(repo) stop tracking site/
-db6f6f1 Merge PR #2: style(core) apply cargo fmt --all
-ccf58fe style(core): apply cargo fmt --all</pre>
+db6f6f1 Merge PR #2: style(core) apply cargo fmt --all</pre>
     <div class="subh" style="margin-top:14px">merge 히스토리 (최신 10)</div>
     <pre>7259660 Merge PR #5: WSL development support into develop
 2cb80b6 Merge PR #2: Windows PowerShell port into develop
@@ -115,7 +117,7 @@ prod → origin/prod []</pre>
 
   <footer>
     <span>BATHOS · βάθος — 표층이 아닌 깊이</span>
-    <span>task_report_20260716_102053_session_no01.html</span>
+    <span>task_report_20260716_104150_session_no12.html</span>
   </footer>
 </div>
 </body>
