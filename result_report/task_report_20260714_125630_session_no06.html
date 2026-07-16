@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BATHOS 작업 리포트 — session_no06 (소급)</title>
+<style>
+  :root{--abyss:#081215;--surface:#0f2226;--line:#1c3a40;--teal:#18b6c0;--teal-brand:#0e9aa1;--teal-soft:#7fd6dc;--ink:#e9f3f4;--muted:#8fabb0;--dim:#5f7c81;--amber:#e0a94f;
+    --mono:ui-monospace,'SFMono-Regular','JetBrains Mono',Menlo,Consolas,monospace;
+    --sans:'Pretendard','Pretendard Variable',-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sans KR',system-ui,sans-serif;}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:var(--sans);color:var(--ink);line-height:1.65;
+    background:radial-gradient(1000px 560px at 82% -10%,rgba(14,154,161,.16),transparent 60%),var(--abyss);-webkit-font-smoothing:antialiased}
+  .wrap{max-width:920px;margin:0 auto;padding:52px 26px 72px}
+  .eyebrow{font-family:var(--mono);font-size:.76rem;letter-spacing:.16em;text-transform:uppercase;color:var(--teal)}
+  h1{font-size:clamp(1.8rem,4vw,2.6rem);margin:12px 0 8px;font-weight:800;letter-spacing:-.01em}
+  .meta{font-family:var(--mono);color:var(--muted);font-size:.88rem}
+  .meta b{color:var(--teal-soft)}
+  .badge{display:inline-block;font-family:var(--mono);font-size:.72rem;color:var(--amber);border:1px solid rgba(224,169,79,.45);border-radius:999px;padding:2px 10px;margin-left:8px}
+  h2{font-size:1.2rem;margin:38px 0 4px;font-weight:800}
+  h2 .n{font-family:var(--mono);color:var(--teal);margin-right:.5em;font-size:.88em}
+  .rule{height:1px;background:linear-gradient(90deg,var(--teal-brand),transparent);margin:9px 0 14px;opacity:.6}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 20px;color:var(--ink)}
+  .card.state{border-left:3px solid var(--teal-brand)}
+  pre{font-family:var(--mono);font-size:.82rem;line-height:1.7;color:#cfe9ec;white-space:pre-wrap;word-break:break-word;margin:0;overflow-x:auto}
+  .times{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:4px}
+  @media(max-width:640px){.times{grid-template-columns:1fr}}
+  .tcard{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+  .tcard .lbl{font-family:var(--mono);font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--teal)}
+  .tcard .val{font-family:var(--mono);font-size:1.02rem;color:#fff;margin-top:6px;font-weight:700}
+  .tcard .val.dim{color:var(--dim);font-weight:500;font-size:.86rem}
+  .subh{font-family:var(--mono);font-size:.78rem;color:var(--teal-soft);margin:14px 0 6px;letter-spacing:.04em}
+  .note{font-family:var(--mono);font-size:.78rem;color:var(--amber);margin:0 0 14px}
+  footer{margin-top:46px;padding-top:16px;border-top:1px solid var(--line);color:var(--dim);font-family:var(--mono);font-size:.8rem;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">BATHOS Dynamis · 세션 작업 리포트</div>
+  <h1>작업 리포트 · session_no06<span class="badge">소급 백필 · RETROACTIVE</span></h1>
+  <div class="meta">프로젝트 <b>bathos-dynamis</b> · 세션 순번 <b>#6</b> · 원본 <b>2026-07-14-taskreport-2.html</b></div>
+  <p class="note">※ 이 리포트는 과거 세션 아카이브에서 소급 생성됨 — 원본에 기록된 사실만 포함(시작 시각·소요 시간은 당시 미기록).</p>
+
+  <h2><span class="n">1–3</span>작업 시각 &amp; 총 소요</h2>
+  <div class="rule"></div>
+  <div class="times">
+    <div class="tcard"><div class="lbl">작업 시작</div><div class="val dim">(소급 — 당시 미기록)</div></div>
+    <div class="tcard"><div class="lbl">작업 종료</div><div class="val">2026-07-14 12:56:30 KST</div></div>
+    <div class="tcard"><div class="lbl">총 작업 시간</div><div class="val dim">(소급 — 산출 불가)</div></div>
+  </div>
+
+  <h2><span class="n">4</span>작업 핵심 사항 <span style="font-size:.7em;color:var(--dim)">(원본 '현재 상태')</span></h2>
+  <div class="rule"></div>
+  <div class="card state"><pre>
+**배포·저장소·SEO 인프라 세션.** 엔진(bathos-dynamis 코드/게이트) 불변. 이번 세션 성과:
+
+1. **랜딩 `https://bathos.cc` LIVE** — Cloud Run(`bathos-landing`, asia-northeast3, GCP `project-ce7730fb-e740-4c03-bad`) + 글로벌 HTTPS LB(IP `8.233.119.207`) + 관리형 cert ACTIVE(apex+www) + Namecheap DNS. GitHub Secrets(GCP_PROJECT_ID·GCP_SA_KEY=전용 SA `bathos-deployer`).
+2. **bathos-dynamis → GitHub `taxideftis/bathos`(PUBLIC)** — 브랜치 `develop`(기본)·`prod` 둘 다 `ff45986`. CI(Rust build/test/clippy/fmt+drift-guard) 초록.
+3. **브랜치 정책** = `feat/* → PR → develop → PR → prod` (두 저장소 공통).
+4. **Committer** = 전 커밋 `taxideftis &lt;renew.inspirit@gmail.com&gt;`, **Claude 트레일러/신원 노출 금지**(기억: `no-claude-commit-trailer`). git config 두 저장소 설정 완료. **Contributor**: 각 저장소 **초기(root) 커밋 author만 `themindful &lt;55673858+themindful@users.noreply.github.com&gt;`**(committer는 taxideftis 유지)로 재귀속 → Contributors에 taxideftis + themindful. GitHub 그래프는 비동기 재계산이라 반영에 수 분~수 시간 지연(커밋 데이터는 확정).
+5. **랜딩 SEO+GEO** prod 반영 — bathos.cc에 robots.txt·sitemap.xml(4로케일+hreflang)·manifest·**llms.txt**(GEO)·JSON-LD(WebSite/Organization/SoftwareApplication)·canonical·hreflang(x-default 포함) 라이브. `metadataBase` localhost→bathos.cc 버그 수정 확인.
+
+- 활성 팀원: **없음**. 작업트리: 두 저장소 모두 **clean**, 둘 다 `develop` 체크아웃.
+- **▶ 다음 실행 커맨드:** (재개 시) `/cold-start` → 이후 새 작업은 **`feat/&lt;작업&gt;` 브랜치**(develop 기준)에서 시작 → PR→develop→PR→prod.
+
+- 엔진 레벨: **Lv3** · 웨이브 W2/W3/W5/W6 **done** · 게이트 Plan PASS·Impl CONCERNS(10/0)·Release CONCERNS · 감사 **OK(keyed HMAC, 2248 entries)**.</pre></div>
+
+  <h2><span class="n">5</span>중요 이슈</h2>
+  <div class="rule"></div>
+  <div class="card"><pre>(소급 백필 — 당시 별도 이슈 로그 없음. 상세는 원본 리포트 2026-07-14-taskreport-2.html 참조.)</pre></div>
+
+  <h2><span class="n">6</span>git commit / push / PR / merge 히스토리 <span style="font-size:.7em;color:var(--dim)">(원본 기록 기준)</span></h2>
+  <div class="rule"></div>
+  <div class="card"><pre>0 changed · ff45986 Merge PR #1: chore(repo) stop tracking site/</pre></div>
+
+  <footer>
+    <span>BATHOS · βάθος — 표층이 아닌 깊이 · 소급 백필</span>
+    <span>task_report_20260714_125630_session_no06.html</span>
+  </footer>
+</div>
+</body>
+</html>
