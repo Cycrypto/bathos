@@ -29,7 +29,7 @@ pub mod story;
 
 pub mod doctor;
 
-pub use cli::{CommonArgs, InspectCommand, LangArg};
+pub use cli::{CommonArgs, InspectCommand, LangArg, VmFormat};
 pub use context::{resolve_ctx, InspectCtx};
 pub use loader::{load_project, LoadError, LoadOpts, ProjectView};
 
@@ -54,6 +54,8 @@ pub fn run(cmd: InspectCommand, ctx: InspectCtx) -> i32 {
             story::run_story(&ctx, key.as_deref(), lint, stale)
         }
         InspectCommand::Doctor => doctor::run_doctor_cli(&ctx),
+
+        InspectCommand::Vm { wave, format } => dashboard::run_vm(&ctx, wave.as_deref(), format),
     }
 }
 

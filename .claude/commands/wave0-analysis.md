@@ -10,10 +10,26 @@ model: opus
 
 ---
 
+## 모델 선택 (스폰 전 필수 — User Sovereignty)
+
+1. `./core/target/release/bathos -s $1/.agent-team/_state model detect` 실행(session_backend 기록).
+2. `bathos model show --wave W0`로 역할별 유효 runtime/model 표를 사용자에게 제시하고 묻는다:
+   "이번 웨이브 역할별 모델입니다. 변경할 역할이 있습니까? (풀: fable5·sonnet5·haiku / GLM / Codex — 기본값 유지 가능)"
+3. 변경분만 `bathos model set <slug> --runtime <r> [--model <m>]`으로 기록.
+4. `bathos model validate --wave W0` — exit 2면 스폰 금지: 출력된 해소 선택지를
+   사용자에게 제시하고 재결정 받는다(자동 우회 금지).
+5. 스폰 분기: runtime=claude → 팀원 스폰 시 resolve된 model 지정 ·
+   runtime=codex → 해당 역할은 팀원으로 스폰하지 않고 `codex-adapter/run-role.sh` 위임 ·
+   runtime=glm → validate가 PASS를 준 경우에만(=전 배치 GLM 세션) 통상 스폰.
+
 ## 수행
 
 **"Caleb"**(caleb-market-analyst, W0 Analyst 겸임) 1명 스폰(필요 시 John 보조).
 스폰 시 반드시: **"ETHOS.md를 먼저 읽고 그 원칙에 따라 작업하라"** 지시.
+
+> 🖥️ **패널 관측**: 별도 터미널에서 `bathos panes`(tmux/TUI 중 선택) — 패널 입력은
+> `_state/panes/inbox/`로 들어오며 게이트 체크포인트에서 반영된다(자동 기동 안 함 —
+> Paul은 자기 TTY를 점유 중이므로 패널은 사람의 두 번째 터미널이다).
 
 - 대상 프로젝트: $1
 - 입력: 사용자 아이디어·문제 진술 + `$1/.agent-team/00-plan/charter.md`

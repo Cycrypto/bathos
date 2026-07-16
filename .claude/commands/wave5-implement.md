@@ -10,11 +10,27 @@ model: sonnet
 
 ---
 
+## 모델 선택 (스폰 전 필수 — User Sovereignty)
+
+1. `./core/target/release/bathos -s $1/.agent-team/_state model detect` 실행(session_backend 기록).
+2. `bathos model show --wave W5`로 역할별 유효 runtime/model 표를 사용자에게 제시하고 묻는다:
+   "이번 웨이브 역할별 모델입니다. 변경할 역할이 있습니까? (풀: fable5·sonnet5·haiku / GLM / Codex — 기본값 유지 가능)"
+3. 변경분만 `bathos model set <slug> --runtime <r> [--model <m>]`으로 기록.
+4. `bathos model validate --wave W5` — exit 2면 스폰 금지: 출력된 해소 선택지를
+   사용자에게 제시하고 재결정 받는다(자동 우회 금지).
+5. 스폰 분기: runtime=claude → 팀원 스폰 시 resolve된 model 지정 ·
+   runtime=codex → 해당 역할은 팀원으로 스폰하지 않고 `codex-adapter/run-role.sh` 위임 ·
+   runtime=glm → validate가 PASS를 준 경우에만(=전 배치 GLM 세션) 통상 스폰.
+
 ## 스폰
 
 **"Phillip"**(phillip-backend-engineer), **"Andrew"**(andrew-frontend-engineer), **"Stephen"**(stephen-ml-engineer) 동시 스폰.
 "ETHOS.md 먼저 읽고 작업하라" 지시. 각자 소유 경로를 명시하고 `BATHOS_OWNED_PATHS` 설정.
 각 역할 base 정의의 **"코드 주석(annotation) 표준"**(GitHub Docs code-annotation best practices 적용)에 따라 주석을 작성하도록 명시 지시한다. **모든 코드 주석은 영어로 작성한다**(문서는 한국어라도 소스코드 주석은 영어).
+
+> 🖥️ **패널 관측**: 별도 터미널에서 `bathos panes`(tmux/TUI 중 선택) — 패널 입력은
+> `_state/panes/inbox/`로 들어오며 게이트 체크포인트에서 반영된다(자동 기동 안 함 —
+> Paul은 자기 TTY를 점유 중이므로 패널은 사람의 두 번째 터미널이다).
 
 입력(공통): `$1/.agent-team/04-architecture/`(build-plan, api-contracts, erd, exceptions, patterns), `$1/.agent-team/03-story-engineering/`(스토리파일·헌법)
 

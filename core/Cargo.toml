@@ -10,6 +10,7 @@ members = [
     "crates/bathos-plug",
     "crates/bathos-cli",
     "crates/bathos-inspect",
+    "crates/bathos-tui",
 ]
 
 # ── 공유 의존 버전 (workspace 레벨 고정) ───────────────────────────────────

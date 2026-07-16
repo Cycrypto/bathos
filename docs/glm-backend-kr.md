@@ -55,6 +55,36 @@ BATHOS 에이전트 정의(`.claude/agents/_base/*.md`)의 `model` 필드는 **`
 unset ANTHROPIC_BASE_URL ANTHROPIC_AUTH_TOKEN API_TIMEOUT_MS
 ```
 
+## 5. 역할별 모델 혼합 제약 — `bathos model validate` (ADR-D-0005)
+
+이 문서의 "모델 스왑" 성격에는 **물리적 한계**가 하나 있다: 위 §1의 `ANTHROPIC_BASE_URL`은
+**프로세스 전역**이다 — 같은 Claude Code 프로세스 안에서 팀원 A는 GLM, 팀원 B는 Claude로
+나가게 하는 것은 불가능하다(env가 하나뿐이라 전 팀원+Paul 자신이 같은 백엔드를 공유).
+`_state/model-plan.json`(§A1, `bathos model`)으로 역할별 `runtime`을 지정할 수 있게 된
+뒤에도 이 제약은 사라지지 않으므로, `bathos model validate --wave <W>`가 웨이브 스폰
+전에 이를 강제한다:
+
+- **R1(불변식)**: 한 세션의 모든 인프로세스 팀원은 같은 백엔드를 쓴다 — "이 역할만 GLM"은
+  물리적으로 불가하며 이 사실을 UI/문서에서 숨기지 않는다.
+- **R2(충족 조건)**: `runtime=glm` 역할이 스폰 가능하려면 `session_backend=glm`이어야
+  한다(= 위 §1처럼 `source scripts/glm-env.sh` 후 `claude`를 띄운 세션). 이때 같은 배치의
+  `runtime=claude` 역할도 **사실상 GLM으로 구동**되므로 `validate`가 `E-MODEL-MIX`(exit 2)로
+  차단한다.
+- **R3(해소 선택지, `validate`가 출력)**: ① 배치 전체 GLM로 통일 ② GLM 희망 역할을
+  `claude`/`codex`로 재배정 ③ `mixed_policy=sequential` — claude 배치를 현 세션에서 먼저
+  끝내고 shutdown → 사용자가 `source scripts/glm-env.sh && claude`로 재기동한 새 세션에서
+  GLM 배치를 이어감(세션 재기동은 사람의 행동이라 자동화 불가 — 정직한 한계).
+- **R4(mismatch)**: `session_backend=glm`인 세션에서 `runtime=claude`를 명시한 역할이
+  있으면 `E-MODEL-BACKEND-MISMATCH` — "이 세션에서 claude 지정은 이행 불가(전부 GLM으로
+  나감)"를 알리고 사용자 확인 후 표기를 정정한다(침묵 오차단·침묵 오표기 둘 다 금지).
+
+Codex(`runtime=codex`)는 **별도 프로세스**라 이 제약에서 예외다 — GLM처럼 env를 공유하지
+않으므로 같은 배치의 Claude/GLM 팀원과 병행 무충돌(`codex-adapter/run-role.sh`로 위임,
+`docs/codex-adapter-kr.md` 참고).
+
+상세 설계·엣지케이스 전수: `.agent-team/04-architecture/w2-panes-model-design-kr.md`
+§A3.2(R1~R4 원문)·§B6(E1~E14)·ADR-D-0005. CLI 레퍼런스: `docs/COMMANDS-kr.md` §10.1.
+
 ## 상태 — 실연결 검증 하네스 (2026-07-16, Phillip)
 
 `scripts/glm-smoke-test.sh`가 이 문서의 "환경변수 2개면 GLM으로 구동된다"는

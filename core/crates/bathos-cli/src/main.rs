@@ -36,7 +36,13 @@
 use anyhow::{Context, Result};
 use bathos_gate_engine::{GateEngine, GateIssue, VerdictAggregator};
 use bathos_plug::{ModuleRegistry, PlugManager};
-use bathos_state::{model::GateType, schema::validate_manifest, store::StateStore, Verdict};
+use bathos_state::{
+    model::GateType,
+    model_plan::{self, ModelPlan, Runtime, SessionBackend},
+    schema::validate_manifest,
+    store::StateStore,
+    Verdict,
+};
 use bathos_story_engine::StoryEngine;
 use clap::{Parser, Subcommand};
 use std::path::{Path, PathBuf};
@@ -107,6 +113,18 @@ enum Commands {
         #[command(subcommand)]
         action: AuditAction,
     },
+    /// 역할별 모델/런타임 선택 (W2 panes/model 설계, ADR-D-0005/0006)
+    ///
+    /// `_state/model-plan.json`(schema `bathos/model-plan@1`)을 단일 SSOT로 삼아
+    /// Claude(fable5/sonnet5/haiku)·GLM·Codex 런타임을 역할별로 배선한다. plan
+    /// 부재/미등재 역할은 항상 agent frontmatter `model:`로 폴백(100% 하위호환).
+    Model {
+        /// `.claude/agents/_base/` 탐색 기준 프로젝트 루트 (기본값: 현재 디렉터리)
+        #[arg(long, default_value = ".")]
+        root: PathBuf,
+        #[command(subcommand)]
+        action: ModelAction,
+    },
     /// 위험 변경 diff 지문(fingerprint) 조회·승인 (Dynamis 신규, SS1 · CF-A1)
     ///
     /// `freeze-guard.sh`(위험 경로 Write/Edit/MultiEdit)가 재승인 방지를 위해 호출한다.
@@ -138,6 +156,32 @@ enum Commands {
         #[command(subcommand)]
         action: bathos_inspect::InspectCommand,
     },
+    /// Wave 패널 — tmux 실시간 분할 또는 bathos 대화식 TUI (B3/B4, ADR-D-0007~0009).
+    ///
+    /// 공유 데이터원은 `bathos inspect vm`과 동일한 `DashboardVM`(ADR-D-0007) — 이 서브커맨드는
+    /// 새 상태 계층을 만들지 않고 프론트엔드 선택·위임만 한다.
+    Panes {
+        /// tui(대화식 TUI) | tmux(scripts/bathos-panes.sh 위임) | dump(비대화 1프레임 스냅샷).
+        /// 미지정 + TTY: 대화형 선택(tmux/TUI) 후 `_state/panes/prefs`에 1줄 기억.
+        #[arg(long, value_enum)]
+        mode: Option<PanesMode>,
+        /// 대상 `.agent-team` 디렉터리. 미지정 시 cwd에서 상향 탐색(bathos-inspect와 동일 규약).
+        #[arg(long)]
+        path: Option<PathBuf>,
+        /// 표시할 웨이브(예: W5). 미지정 시 전체.
+        #[arg(long)]
+        wave: Option<String>,
+        /// 렌더 주기(초) — tmux 위임 시 그대로 전달, TUI는 tick 간격으로 사용.
+        #[arg(long, default_value_t = 2)]
+        interval: u64,
+    },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
+enum PanesMode {
+    Tui,
+    Tmux,
+    Dump,
 }
 
 // ── plug subcommands (B4 implementation) ─────────────────────────────────────
@@ -293,6 +337,86 @@ enum StoryAction {
     },
 }
 
+// ── model subcommands (W2 panes/model design §A1.4) ──────────────────────────
+
+#[derive(Subcommand)]
+enum ModelAction {
+    /// 역할별 유효 runtime/model 표를 출력한다 (source: plan|default|frontmatter|runtime-default).
+    Show {
+        /// 표시 대상을 이 웨이브의 역할군으로 제한 (예: W5). 미지정 시 plan에 등재된
+        /// 역할 + agents-dir에서 발견한 전 역할의 합집합을 표시.
+        #[arg(long)]
+        wave: Option<String>,
+        #[arg(long)]
+        json: bool,
+    },
+    /// 역할의 runtime/model을 plan에 기록한다 (변경분만 — 리드 세션 전용 단일 쓰기 경로).
+    Set {
+        /// agent 정의 slug (예: phillip-backend-engineer)
+        slug: String,
+        #[arg(long)]
+        runtime: String,
+        #[arg(long)]
+        model: Option<String>,
+        #[arg(long = "reasoning-effort")]
+        reasoning_effort: Option<String>,
+    },
+    /// plan에서 역할 항목을 제거한다 (→ frontmatter 폴백으로 복귀).
+    Unset { slug: String },
+    /// 현재 세션의 실제 백엔드(session_backend)를 판별해 plan에 기록한다
+    /// (env `ANTHROPIC_BASE_URL`에 `api.z.ai` 포함 → glm, 그 외 → claude).
+    Detect,
+    /// GLM/Codex 혼합 배치 규칙(R1~R4)을 검증한다. PASS=exit 0 / 위반=exit 2 + 해소 선택지.
+    Validate {
+        /// 검증 대상 웨이브 (예: W5). 미지정 시 plan에 등재된 모든 역할을 대상으로 검증.
+        #[arg(long)]
+        wave: Option<String>,
+    },
+    /// 한 역할의 유효 runtime/model/적용채널을 1줄 출력한다 (스크립트 소비용).
+    Resolve {
+        slug: String,
+        #[arg(long)]
+        json: bool,
+    },
+}
+
+/// `waves.<W?>` 역할군(role↔wave 배정). BATHOS의 정본은 프로젝트 `CLAUDE.md` §1/§2의
+/// 역할·모델 표다 — 여기서는 그 표를 `bathos model show/validate --wave`가 참조할 수
+/// 있는 정적 상수로 옮겨 적었을 뿐, 새로운 정책을 만들어내지 않는다(날조 금지).
+/// W3/W6의 겸직 보조 역할(Timothy)·독립 리뷰어(Thomas/Matthias)도 CLAUDE.md 표기 그대로 포함.
+fn wave_role_slugs(wave_id: &str) -> Option<&'static [&'static str]> {
+    match wave_id.to_ascii_uppercase().as_str() {
+        "W0" => Some(&["caleb-market-analyst", "john-reverse-specialist"]),
+        "W1" => Some(&["john-reverse-specialist", "caleb-market-analyst"]),
+        "W2" => Some(&[
+            "joshua-service-planner",
+            "james-architect",
+            "jonnathan-chief-designer",
+        ]),
+        "W3" => Some(&[
+            "matthew-story-engineer",
+            "thomas-code-reviewer",
+            "matthias-qa-validator",
+            "timothy-doc-specialist",
+        ]),
+        "W4" => Some(&["mark-ip-specialist", "nathanael-research-writer"]),
+        "W5" => Some(&[
+            "phillip-backend-engineer",
+            "andrew-frontend-engineer",
+            "stephen-ml-engineer",
+        ]),
+        "W6" => Some(&[
+            "thomas-code-reviewer",
+            "timothy-doc-specialist",
+            "matthias-qa-validator",
+            "mishael-security-specialist",
+            "hananiah-refactoring-specialist",
+            "martin-monitoring-reporter",
+        ]),
+        _ => None,
+    }
+}
+
 // ── audit subcommands (B-1 fix) ──────────────────────────────────────────────
 
 #[derive(Subcommand)]
@@ -387,10 +511,17 @@ fn run(cli: Cli) -> Result<i32> {
         Commands::Route { action } => handle_route(action, &cli.state_dir),
         Commands::Story { action } => handle_story(action, &cli.state_dir),
         Commands::Plug { action } => handle_plug(action, &cli.state_dir, &cli.modules_dir),
+        Commands::Model { root, action } => handle_model(action, &cli.state_dir, &root),
         Commands::Audit { action } => handle_audit(action, &cli.state_dir),
         Commands::Fingerprint { action } => handle_fingerprint(action, &cli.state_dir),
         Commands::Doctor { root } => handle_doctor(&root, &cli.state_dir, &cli.modules_dir),
         Commands::Inspect { common, action } => Ok(handle_inspect(common, action)),
+        Commands::Panes {
+            mode,
+            path,
+            wave,
+            interval,
+        } => Ok(handle_panes(mode, path, wave, interval)),
     }
 }
 
@@ -407,6 +538,205 @@ fn handle_inspect(
         Err(exit_code) => exit_code,
     }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Panes handler (W2 panes/model design §B4.2) — `bathos panes` frontend selection/delegation
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// This handler picks and delegates to exactly one of the three frontends — it never builds a
+// second state layer of its own. `--mode dump`/`tui` both go through `bathos-tui`'s public API
+// (`render_dump`/`run_tui`), which itself only ever calls `bathos-inspect`'s `load_project` +
+// `load_story_cards` + `build_vm` (ADR-D-0007) — the exact same pipeline `report`/`inspect vm`
+// use. `--mode tmux` execs `scripts/bathos-panes.sh` (a separate process, ADR-D-0009).
+
+fn handle_panes(
+    mode: Option<PanesMode>,
+    path: Option<PathBuf>,
+    wave: Option<String>,
+    interval: u64,
+) -> i32 {
+    let cwd = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
+    let agent_team_path = match bathos_inspect::context::resolve_agent_team_path(path, &cwd) {
+        Ok(p) => p,
+        Err(e) => {
+            eprintln!("{e}");
+            return 1;
+        }
+    };
+
+    let resolved_mode = mode.unwrap_or_else(|| resolve_default_mode(&agent_team_path));
+
+    match resolved_mode {
+        PanesMode::Tui => {
+            if !std::io::IsTerminal::is_terminal(&std::io::stdout()) {
+                eprintln!(
+                    "[E-PANES-NOTTY] 비대화형 환경(TTY 아님)에서는 대화식 TUI를 실행할 수 없습니다."
+                );
+                eprintln!("  안내: 파이프/CI에서는 `bathos panes --mode dump`를 사용하세요.");
+                return 1;
+            }
+            bathos_tui::run_tui(
+                &agent_team_path,
+                bathos_tui::TuiOpts {
+                    wave,
+                    interval: std::time::Duration::from_secs(interval),
+                },
+            )
+        }
+
+        PanesMode::Dump => {
+            let pv = match bathos_inspect::load_project(
+                &agent_team_path,
+                bathos_inspect::LoadOpts { verify_chain: true },
+            ) {
+                Ok(pv) => pv,
+                Err(e) => {
+                    eprintln!("[bathos panes] {e}");
+                    return 1;
+                }
+            };
+            let ctx = bathos_inspect::InspectCtx {
+                agent_team_path: agent_team_path.clone(),
+                json: false,
+                verbose: false,
+                strict: false,
+            };
+            let stories = bathos_inspect::dashboard::load_story_cards(&ctx, &pv);
+            let vm = bathos_inspect::dashboard::viewmodel::build_vm(&pv, &stories);
+            let (width, height) = crossterm::terminal::size().unwrap_or((100, 30));
+            print!(
+                "{}",
+                bathos_tui::render_dump(&vm, wave.as_deref(), width, height)
+            );
+            0
+        }
+
+        PanesMode::Tmux => exec_tmux_panes(&agent_team_path, wave.as_deref(), interval),
+    }
+}
+
+/// No `--mode` given: honors a previously-saved preference (`_state/panes/prefs`) if present;
+/// otherwise, on a real TTY, asks once and saves the answer (§B4.2 "선택 결과를 기억"). On a
+/// non-TTY with no saved preference, defaults to `dump` — the only mode that is always safe to
+/// run unattended (matches `--mode tui`'s own E-PANES-NOTTY guard: a script/CI invocation with
+/// no prior preference should get inert, pipeable text, never an interactive prompt it can't
+/// answer).
+fn resolve_default_mode(agent_team_path: &Path) -> PanesMode {
+    let prefs_path = agent_team_path.join("_state/panes/prefs");
+    if let Ok(saved) = std::fs::read_to_string(&prefs_path) {
+        match saved.trim() {
+            "tmux" => return PanesMode::Tmux,
+            "tui" => return PanesMode::Tui,
+            _ => {}
+        }
+    }
+
+    if !std::io::IsTerminal::is_terminal(&std::io::stdout()) {
+        return PanesMode::Dump;
+    }
+
+    let tmux_available = command_exists("tmux");
+    eprintln!("패널 프론트엔드를 선택하세요:");
+    eprintln!(
+        "  [1] tmux 실시간 분할{}",
+        if tmux_available {
+            " (tmux 감지됨)"
+        } else {
+            " (미설치 — 선택 불가)"
+        }
+    );
+    eprintln!("  [2] bathos TUI");
+    eprint!("선택 [1/2]: ");
+    use std::io::Write;
+    let _ = std::io::stdout().flush();
+
+    let mut line = String::new();
+    let chosen = if std::io::stdin().read_line(&mut line).is_ok() {
+        match line.trim() {
+            "1" if tmux_available => PanesMode::Tmux,
+            "1" => {
+                eprintln!("tmux 미설치 — bathos TUI로 대체합니다.");
+                PanesMode::Tui
+            }
+            _ => PanesMode::Tui,
+        }
+    } else {
+        PanesMode::Tui
+    };
+
+    let pref_str = match chosen {
+        PanesMode::Tmux => "tmux",
+        PanesMode::Tui => "tui",
+        PanesMode::Dump => "dump",
+    };
+    if let Some(dir) = prefs_path.parent() {
+        let _ = std::fs::create_dir_all(dir);
+    }
+    let _ = std::fs::write(&prefs_path, pref_str);
+
+    chosen
+}
+
+/// `--mode tmux`: execs `scripts/bathos-panes.sh up` (search order per §B4.2: `<project
+/// root>/scripts/` then `$BATHOS_HOME/scripts/`). A project root here is the agent_team_path's
+/// parent (`.agent-team`'s sibling), matching `bathos-panes.sh`'s own `--project` contract.
+fn exec_tmux_panes(agent_team_path: &Path, wave: Option<&str>, interval: u64) -> i32 {
+    let project_root = agent_team_path
+        .parent()
+        .map(Path::to_path_buf)
+        .unwrap_or_else(|| agent_team_path.to_path_buf());
+
+    let candidate = project_root.join("scripts/bathos-panes.sh");
+    let script_path = if candidate.is_file() {
+        Some(candidate)
+    } else if let Ok(home) = std::env::var("BATHOS_HOME") {
+        let p = PathBuf::from(home).join("scripts/bathos-panes.sh");
+        if p.is_file() {
+            Some(p)
+        } else {
+            None
+        }
+    } else {
+        None
+    };
+
+    let Some(script_path) = script_path else {
+        eprintln!(
+            "[E-PANES-SCRIPT-ABSENT] scripts/bathos-panes.sh를 찾을 수 없습니다 \
+             ({}/scripts/ 및 $BATHOS_HOME/scripts/ 모두 확인).",
+            project_root.display()
+        );
+        eprintln!(
+            "  수동 실행: bash <저장소>/scripts/bathos-panes.sh up --project '{}'{}",
+            project_root.display(),
+            wave.map(|w| format!(" --waves \"{w}\""))
+                .unwrap_or_default()
+        );
+        return 4;
+    };
+
+    let mut cmd = std::process::Command::new("bash");
+    cmd.arg(&script_path)
+        .arg("up")
+        .arg("--project")
+        .arg(&project_root)
+        .arg("--interval")
+        .arg(interval.to_string());
+    if let Some(w) = wave {
+        cmd.arg("--waves").arg(w);
+    }
+
+    match cmd.status() {
+        Ok(status) => status.code().unwrap_or(1),
+        Err(e) => {
+            eprintln!("[bathos panes] scripts/bathos-panes.sh 실행 실패: {e}");
+            1
+        }
+    }
+}
+
+// (`command_exists` is defined once, further below, alongside the `doctor` handler — reused
+// here rather than duplicated.)
 
 // ─────────────────────────────────────────────────────────────────────────────
 // State handler (B1 full implementation)
@@ -720,6 +1050,279 @@ fn handle_route(action: RouteAction, state_dir: &Path) -> Result<i32> {
             }
         }
     }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Model handler (W2 panes/model design §A1.4) — `_state/model-plan.json` CLI
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// Every subcommand here is a thin wrapper over `bathos_state::model_plan`'s pure
+// load/resolve/validate/save functions — this handler owns only I/O plumbing
+// (finding `.claude/agents/_base`, printing, exit codes, audit logging).
+
+fn handle_model(action: ModelAction, state_dir: &Path, root: &Path) -> Result<i32> {
+    let agents_dir = root.join(".claude/agents/_base");
+
+    match action {
+        // ── bathos model show ────────────────────────────────────────────────
+        ModelAction::Show { wave, json } => {
+            let (plan, warnings) = model_plan::load(state_dir);
+            for w in &warnings {
+                eprintln!("[bathos model show] {} — {}", w.code, w.message);
+            }
+
+            let slugs = roles_to_display(&plan, wave.as_deref(), &agents_dir);
+
+            let rows: Vec<serde_json::Value> = slugs
+                .iter()
+                .map(|slug| {
+                    let fm = model_plan::find_frontmatter_model(&agents_dir, slug);
+                    let eff = model_plan::resolve_effective(&plan, slug, fm.as_deref());
+                    serde_json::json!({
+                        "slug": slug,
+                        "runtime": eff.runtime.as_str(),
+                        "model": eff.model,
+                        "reasoning_effort": eff.reasoning_effort,
+                        "source": eff.source.as_str(),
+                    })
+                })
+                .collect();
+
+            if json {
+                println!("{}", serde_json::to_string_pretty(&rows)?);
+            } else {
+                println!(
+                    "역할별 모델 — session_backend={}{}",
+                    plan.session_backend.as_str(),
+                    wave.as_deref()
+                        .map(|w| format!(" wave={w}"))
+                        .unwrap_or_default()
+                );
+                println!("{:<32} {:<8} {:<20} source", "role", "runtime", "model");
+                for row in &rows {
+                    println!(
+                        "{:<32} {:<8} {:<20} {}",
+                        row["slug"].as_str().unwrap_or("?"),
+                        row["runtime"].as_str().unwrap_or("?"),
+                        row["model"].as_str().unwrap_or("(runtime default)"),
+                        row["source"].as_str().unwrap_or("?"),
+                    );
+                }
+            }
+            Ok(0)
+        }
+
+        // ── bathos model set ─────────────────────────────────────────────────
+        ModelAction::Set {
+            slug,
+            runtime,
+            model,
+            reasoning_effort,
+        } => {
+            let parsed_runtime = Runtime::parse(&runtime).map_err(|e| anyhow::anyhow!(e))?;
+
+            // E1 second half: an existing-but-corrupt-JSON plan is backed up before we
+            // overwrite it with a freshly reconstructed one (never silently discard bytes
+            // the user might want to recover by hand).
+            if model_plan::is_corrupt_json(state_dir) {
+                model_plan::backup_corrupt(state_dir).context("model-plan.json.bak 백업 실패")?;
+                eprintln!(
+                    "[bathos model set] ⚠ 기존 model-plan.json이 손상되어 있어 .bak로 백업했습니다"
+                );
+            }
+
+            let (mut plan, _warnings) = model_plan::load(state_dir);
+            plan.roles.insert(
+                slug.clone(),
+                bathos_state::model_plan::RoleModelSpec {
+                    runtime: parsed_runtime,
+                    model: model.clone(),
+                    reasoning_effort: reasoning_effort.clone(),
+                },
+            );
+            plan.updated = chrono::Utc::now();
+            plan.updated_by = "Paul".to_string();
+            model_plan::save(state_dir, &plan).context("model-plan.json 저장 실패")?;
+
+            // best-effort audit trail (never blocks — same fail-safe posture as `audit append`)
+            let _ = bathos_state::audit::append_audit_entry(
+                &state_dir.join("audit-log.jsonl"),
+                &read_project_id_from_state(state_dir),
+                "Paul",
+                "model.set",
+                &format!("{slug}→{runtime}"),
+            );
+
+            eprintln!(
+                "[bathos model set] ✓ {slug} → runtime={runtime}{}{}",
+                model.map(|m| format!(" model={m}")).unwrap_or_default(),
+                reasoning_effort
+                    .map(|r| format!(" reasoning_effort={r}"))
+                    .unwrap_or_default()
+            );
+            Ok(0)
+        }
+
+        // ── bathos model unset ───────────────────────────────────────────────
+        ModelAction::Unset { slug } => {
+            let (mut plan, _warnings) = model_plan::load(state_dir);
+            let existed = plan.roles.remove(&slug).is_some();
+            model_plan::save(state_dir, &plan).context("model-plan.json 저장 실패")?;
+            let _ = bathos_state::audit::append_audit_entry(
+                &state_dir.join("audit-log.jsonl"),
+                &read_project_id_from_state(state_dir),
+                "Paul",
+                "model.unset",
+                &slug,
+            );
+            if existed {
+                eprintln!("[bathos model unset] ✓ {slug} 제거 → frontmatter 폴백으로 복귀");
+            } else {
+                eprintln!("[bathos model unset] {slug}은 plan에 등재돼 있지 않았음(변화 없음)");
+            }
+            Ok(0)
+        }
+
+        // ── bathos model detect ──────────────────────────────────────────────
+        ModelAction::Detect => {
+            let backend = SessionBackend::detect_from_base_url(
+                std::env::var("ANTHROPIC_BASE_URL").ok().as_deref(),
+            );
+            let (mut plan, _warnings) = model_plan::load(state_dir);
+            plan.session_backend = backend;
+            plan.updated = chrono::Utc::now();
+            plan.updated_by = "Paul".to_string();
+            model_plan::save(state_dir, &plan).context("model-plan.json 저장 실패")?;
+            let _ = bathos_state::audit::append_audit_entry(
+                &state_dir.join("audit-log.jsonl"),
+                &read_project_id_from_state(state_dir),
+                "Paul",
+                "model.detect",
+                backend.as_str(),
+            );
+            eprintln!("[bathos model detect] session_backend={}", backend.as_str());
+            Ok(0)
+        }
+
+        // ── bathos model validate ────────────────────────────────────────────
+        ModelAction::Validate { wave } => {
+            let (plan, _warnings) = model_plan::load(state_dir);
+            let roles: Vec<String> = match &wave {
+                Some(w) => wave_role_slugs(w)
+                    .map(|s| s.iter().map(|x| x.to_string()).collect())
+                    .unwrap_or_else(|| plan.roles.keys().cloned().collect()),
+                None => plan.roles.keys().cloned().collect(),
+            };
+            let wave_label = wave.as_deref().unwrap_or("(all)");
+
+            match model_plan::validate_wave(&plan, wave_label, &roles) {
+                Ok(()) => {
+                    println!(
+                        "PASS — {wave_label} 역할 배치 혼합 규칙 위반 없음 ({} roles)",
+                        roles.len()
+                    );
+                    Ok(0)
+                }
+                Err(violation) => {
+                    eprintln!("{}", violation.message);
+                    eprintln!("해소 선택지:");
+                    for r in &violation.resolutions {
+                        eprintln!("  {r}");
+                    }
+                    let out = serde_json::json!({
+                        "code": violation.code,
+                        "message": violation.message,
+                        "resolutions": violation.resolutions,
+                    });
+                    println!("{out}");
+                    Ok(2)
+                }
+            }
+        }
+
+        // ── bathos model resolve ─────────────────────────────────────────────
+        ModelAction::Resolve { slug, json } => {
+            let (plan, _warnings) = model_plan::load(state_dir);
+            let fm = model_plan::find_frontmatter_model(&agents_dir, &slug);
+            let eff = model_plan::resolve_effective(&plan, &slug, fm.as_deref());
+            if json {
+                println!(
+                    "{}",
+                    serde_json::json!({
+                        "slug": slug,
+                        "runtime": eff.runtime.as_str(),
+                        "model": eff.model,
+                        "reasoning_effort": eff.reasoning_effort,
+                        "source": eff.source.as_str(),
+                    })
+                );
+            } else {
+                println!(
+                    "{}\t{}\t{}\t{}",
+                    slug,
+                    eff.runtime.as_str(),
+                    eff.model.as_deref().unwrap_or("-"),
+                    eff.source.as_str()
+                );
+            }
+            Ok(0)
+        }
+    }
+}
+
+/// Resolves the role slugs `bathos model show` should display: the wave's registered roster
+/// (`--wave`) if given, otherwise the union of every slug already in the plan and every slug
+/// discoverable under `agents_dir` (so `show` is useful even before any `set` has ever run —
+/// it should show the full "would-resolve-to-frontmatter" universe, not an empty table).
+fn roles_to_display(plan: &ModelPlan, wave: Option<&str>, agents_dir: &Path) -> Vec<String> {
+    if let Some(w) = wave {
+        if let Some(slugs) = wave_role_slugs(w) {
+            return slugs.iter().map(|s| s.to_string()).collect();
+        }
+    }
+
+    let mut set: std::collections::BTreeSet<String> = plan.roles.keys().cloned().collect();
+    if let Ok(entries) = std::fs::read_dir(agents_dir) {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.extension().and_then(|e| e.to_str()) != Some("md") {
+                continue;
+            }
+            if let Ok(content) = std::fs::read_to_string(&path) {
+                if let Some(slug) = frontmatter_slug(&content) {
+                    set.insert(slug);
+                }
+            }
+        }
+    }
+    set.into_iter().collect()
+}
+
+/// Minimal `slug:` frontmatter extraction for `roles_to_display`'s directory scan. Intentionally
+/// duplicated (not reused from `model_plan::find_frontmatter_model`, which is single-slug-keyed)
+/// rather than widening that function's private helper's visibility — this one needs "give me
+/// whatever slug this file declares", the other needs "does this file declare slug X".
+fn frontmatter_slug(content: &str) -> Option<String> {
+    let mut in_fm = false;
+    for (i, line) in content.lines().enumerate() {
+        let t = line.trim_end();
+        if i == 0 && t == "---" {
+            in_fm = true;
+            continue;
+        }
+        if in_fm && t == "---" {
+            break;
+        }
+        if in_fm {
+            if let Some(rest) = t.trim_start().strip_prefix("slug:") {
+                let v = rest.split('#').next().unwrap_or(rest).trim();
+                if !v.is_empty() {
+                    return Some(v.to_string());
+                }
+            }
+        }
+    }
+    None
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

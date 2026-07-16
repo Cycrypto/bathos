@@ -17,6 +17,10 @@ bathos-story-engine = { path = "../bathos-story-engine" }
 bathos-plug         = { path = "../bathos-plug" }
 # DevTools 파일럿(read-only) — `serve` feature는 전달하지 않아 기본 빌드는 가볍다.
 bathos-inspect      = { path = "../bathos-inspect" }
+# `bathos panes` (B4) — 대화식 TUI 위임.
+bathos-tui          = { path = "../bathos-tui" }
 clap                = { workspace = true }
 serde_json          = { workspace = true }
 anyhow              = { workspace = true }
+chrono              = { workspace = true }
+crossterm           = "0.29"
