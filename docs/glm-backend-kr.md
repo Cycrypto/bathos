@@ -65,10 +65,14 @@ unset ANTHROPIC_BASE_URL ANTHROPIC_AUTH_TOKEN API_TIMEOUT_MS
   요청 시 `Authorization: Bearer` 헤더가 401을 받고, `x-api-key` 헤더로
   1회 재시도해도 401(`"token expired or incorrect"`)이 옴을 실측했다 —
   즉 엔드포인트 자체는 살아있고 두 인증 방식 모두 서버가 인지한다.
-- **유효 키로의 성공 여부(V1~V7, 어떤 auth 방식이 실제 통과하는지, 응답
-  model 필드 echo 값)는 아직 미실증** — 유효 키 확보 후
-  `scripts/glm-smoke-test.sh --tool-use`를 1회 실행해 이 섹션에 결과를
-  추가할 것(설계 문서 리스크 R4, `.agent-team/04-architecture/w2-runtime-p4-design-kr.md` §D).
+- **✅ 유효 키 라이브 실증 완료 (2026-07-16, Paul):** GLM Coding Plan 키(API명 `βατηοσ-γλμ`)로
+  `Z_AI_API_KEY=<키> bash scripts/glm-smoke-test.sh` 1회 실행 → **RESULT: PASS**.
+  - **HTTP 200**, 정상 응답 본문, text 블록 존재(V1~V4 통과).
+  - **성공 auth 방식 = `Authorization: Bearer`**(1차 시도 성공, `x-api-key` 폴백 미발생).
+  - **model echo = `glm-4.7 → glm-4.7`**(요청·응답 모델 일치).
+  - 응답 텍스트 = 지시 토큰 `BATHOS-GLM-OK` 정확 반환(참고용).
+  - 즉 이 문서의 "환경변수 2개면 GLM으로 구동" 주장이 **실서버·유효키로 봉인됨**. (키는 문서·저장소에 기록하지 않음.)
+  - 남은 선택 검증: `--tool-use`(툴콜 라이브)·장기 에이전트 워크플로우 품질은 실사용에서 계측 권장.
 
 ## 출처
 - Z.ai × Claude Code 공식 가이드: https://docs.z.ai/scenario-example/develop-tools/claude
