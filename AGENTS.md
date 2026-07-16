@@ -2,6 +2,7 @@
 
 > **BATHOS**(그리스어 βάθος = '깊이·심연') — 표층 지식과 대비되는 압도적 깊이의 AI Workflow Agent. BMAD-METHOD v6 리버스 흡수로 14역할·5웨이브 → 17역할·7웨이브 진화.
 > 운영 규칙 상세는 `CLAUDE.md`, 운영 철학은 `ETHOS.md`(gstack 적응), 출처는 `CREDITS.md`. 모든 팀원은 스폰 시 ETHOS를 숙지합니다. "BMAD/BMad" 상표 사용 금지.
+> **전체 슬래시 커맨드(35개) 카테고리별 레퍼런스: [`docs/COMMANDS-kr.md`](docs/COMMANDS-kr.md).** 아래는 핵심 요약.
 
 ## 역할(서브에이전트) — `.claude/agents/`
 Paul(0·리드/CEO렌즈) · John(1·리버스) · Caleb(2·시장분석 +W0 Analyst 겸임) · Joshua(3·기획) · James(4·아키텍트) · Mark(5·IP) · Nathanael(6·논문) · Jonnathan(7·디자인) · Phillip(8·백엔드) · Andrew(9·프론트) · Stephen(10·ML) · Timothy(11·문서) · Thomas(12·리뷰) · **Michael(13·보안, 방어적 웹·사이버 보안 감사·하드닝, 신규)** · Hananiah(14·리팩토링, 동작보존) · Matthias(15·QA) · Martin(16·리포트) · **Matthew(17·Story Engineer, 스토리파일+W3 게이트)**.
@@ -39,6 +40,14 @@ Paul(0·리드/CEO렌즈) · John(1·리버스) · Caleb(2·시장분석 +W0 Ana
 
 ## 안전·스코핑 (gstack)
 `/guard`(careful+freeze 활성) · `/unfreeze`(잠금 해제). careful는 `PreToolUse` 훅으로 파괴적 명령을 차단.
+
+## 세션·메모리·원격 (BATHOS)
+- **세션 저장/복원:** `/save-session`(정본, 별칭 `/save`) → 다음 세션 `/cold-start`(정본, 별칭 `/resume`)로 무손실 복원. gstack 레거시 `/context-save`·`/context-restore` 동일 `_state`.
+- **크로스-프로젝트 메모리:** `/project-handoff`(전역 레지스트리 upsert) · `/recall`(이전 프로젝트 warm-start).
+- **리포트:** `/taskreport`(온디맨드 HTML) · 세션별 정식 리포트는 `result_report/generate-task-report.sh`(session_no 자동 증가·6항목).
+- **라우팅/현황:** `/route`(Lv0~4 확정) · `/team-status` · `/team-cleanup`.
+- **원격 개발:** `/remote-dev`(Remote Control 셋업·가이드 — 내 머신 세션을 폰/웹에서 조종, `_state`·안전훅 유지). ⚠️ 클라우드형(Web/Routines)은 fresh clone이라 BATHOS 상태·훅 부재 → 파이프라인 부적합. 상세 비교: `docs/COMMANDS-kr.md`.
+- **교육:** `/lecture`(David 튜터 강의안 생성).
 
 ## 권장 흐름
 `/team-kickoff` → `/wave0-analysis`(선택) → `/wave1-discovery` → `/wave2-design` *(필요 시 `/autoplan`로 락인)* → **`/wave3-story-gate`**(PASS/CONCERNS면 진입) → `/wave3-ip-research`(W4·선택) → `/wave4-implement`(W5) → `/wave5-verify-report`(W6) → `/team-confirm`. 위험 작업 전 `/guard`. (규모에 따라 scale-adaptive로 일부 웨이브 생략.)
