@@ -55,6 +55,21 @@ BATHOS 에이전트 정의(`.claude/agents/_base/*.md`)의 `model` 필드는 **`
 unset ANTHROPIC_BASE_URL ANTHROPIC_AUTH_TOKEN API_TIMEOUT_MS
 ```
 
+## 상태 — 실연결 검증 하네스 (2026-07-16, Phillip)
+
+`scripts/glm-smoke-test.sh`가 이 문서의 "환경변수 2개면 GLM으로 구동된다"는
+주장을 curl로 직접 검증하는 스모크 테스트다(`--dry-run`으로 키 없이 요청
+구성만 볼 수도 있음). 실키 없이 실증한 범위:
+
+- **인증 재시도 경로(ADR-P4-3) 실서버 확인:** 가짜 키로 `https://api.z.ai/api/anthropic/v1/messages`에
+  요청 시 `Authorization: Bearer` 헤더가 401을 받고, `x-api-key` 헤더로
+  1회 재시도해도 401(`"token expired or incorrect"`)이 옴을 실측했다 —
+  즉 엔드포인트 자체는 살아있고 두 인증 방식 모두 서버가 인지한다.
+- **유효 키로의 성공 여부(V1~V7, 어떤 auth 방식이 실제 통과하는지, 응답
+  model 필드 echo 값)는 아직 미실증** — 유효 키 확보 후
+  `scripts/glm-smoke-test.sh --tool-use`를 1회 실행해 이 섹션에 결과를
+  추가할 것(설계 문서 리스크 R4, `.agent-team/04-architecture/w2-runtime-p4-design-kr.md` §D).
+
 ## 출처
 - Z.ai × Claude Code 공식 가이드: https://docs.z.ai/scenario-example/develop-tools/claude
 - GLM Coding Plan × Claude Code: https://codingplan.run/guides/claude-code-with-glm

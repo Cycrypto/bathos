@@ -1,0 +1,54 @@
+# =============================================================================
+# BATHOS codex-adapter 훅 등록 예시 (2026-07 문서 기준 [문서] · 설치 시 재확인 ⚠️)
+# 복사 대상: ~/.codex/config.toml  (hooks.json 병용 시 병합·경고됨 [문서])
+# <BATHOS_ROOT>를 실제 절대경로로 치환할 것. 예: /Users/you/dev/bathos-dynamis
+#
+# 설치 후 첫 검증 항목(재확인 필요 — w2-runtime-p4-design-kr.md §B0/§B4):
+#   1. ⚠️[추정] tool_name 실측값 — 문서 예시는 "Bash"·"apply_patch"·MCP 이름뿐.
+#      실제 설치 후 PostToolUse(또는 이 훅의 stderr 로깅)로 tool_name을 실측해
+#      matcher를 좁히는 것을 권장(넓어도 스크립트 자체 트리거 판정으로 안전 —
+#      지연만 소폭 발생).
+#   2. ⚠️[추정] hooks.Stop의 matcher 생략 가능 여부 — 문서에 명시가 없어 아래는
+#      matcher 없이 등록(전체 매치를 가정). 등록 실패 시 matcher = ".*" 추가.
+#   3. ⚠️[추정] 훅 timeout(20s) 초과 시 Codex의 기본 처리(차단/통과)가 불명 —
+#      pretooluse-gate.sh는 로컬 파일 I/O만 하므로 실제로는 ms 단위로 끝난다
+#      ([실측 체감], NFS 등 특수 환경 제외).
+#   4. [features] hooks가 기본 활성인지 버전별로 다를 수 있음(P3 문서는
+#      "실험적"이라 했으나 이번 재확인은 "기본 활성"으로 나옴 — 상충, 재확인 요).
+# =============================================================================
+
+# --- W3 게이트: 소스 쓰기 + Bash 웨이브 진입 명령 인터셉트 ---
+[[hooks.PreToolUse]]
+matcher = "^(Bash|shell|local_shell|exec_command|apply_patch|write_file|edit|create_file)$"
+# ⚠️ tool_name 실측값에 맞게 축소 권장(위 항목 1). matcher가 넓어도 스크립트가
+#    자체 트리거 판정(T1/T2)으로 즉시 통과시키므로 안전(지연만 소폭).
+
+[[hooks.PreToolUse.hooks]]
+type = "command"
+command = '/bin/bash "<BATHOS_ROOT>/codex-adapter/hooks/pretooluse-gate.sh"'
+timeout = 20
+statusMessage = "BATHOS W3 gate check"
+# commandWindows = 'powershell -File "<BATHOS_ROOT>\\codex-adapter\\hooks\\pretooluse-gate.ps1"'
+#   .ps1 포트는 P4 범위 밖(README.md "Windows 공백" 참고). 필드 자체는 문서에 존재[문서].
+
+# --- SessionEnd 근사: 턴 종료마다 증분 저장 ---
+[[hooks.Stop]]
+# matcher 생략 가능 여부 ⚠️[추정](위 항목 2) — 등록 실패 시 matcher = ".*" 추가.
+
+[[hooks.Stop.hooks]]
+type = "command"
+command = '/bin/bash "<BATHOS_ROOT>/codex-adapter/hooks/stop-save.sh"'
+timeout = 20
+statusMessage = "BATHOS incremental save"
+
+# --- 선택 환경변수(둘 다 훅 스크립트가 자동 탐지하므로 보통 불필요) ---
+# BATHOS_BIN              = bathos 바이너리 절대경로 강제 지정
+# BATHOS_STATE_DIR        = _state 디렉터리 강제 지정
+# BATHOS_PROJECT_DIR      = 프로젝트 루트 강제 지정(기본: stdin의 cwd)
+# BATHOS_GATE_SRC_ERE     = pretooluse-gate.sh의 T1(소스 경로) 패턴 오버라이드
+# BATHOS_STOP_SAVE_DEBOUNCE = stop-save.sh 디바운스 초(기본 10, 0=끔)
+
+# 참고: 프로젝트별 state를 쓰므로 훅 스크립트는 stdin의 "cwd" 필드로 프로젝트를
+# 찾는다(w2-runtime-p4-design-kr.md §B1) — 이 config.toml이 유저 레벨(~/.codex/)
+# 이어도 여러 프로젝트를 오가며 안전하게 동작한다. _state가 없는 cwd(=비-BATHOS
+# 프로젝트)에서는 두 훅 모두 조용히 통과한다.
