@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BATHOS 작업 리포트 — session_no03 (소급)</title>
+<style>
+  :root{--abyss:#081215;--surface:#0f2226;--line:#1c3a40;--teal:#18b6c0;--teal-brand:#0e9aa1;--teal-soft:#7fd6dc;--ink:#e9f3f4;--muted:#8fabb0;--dim:#5f7c81;--amber:#e0a94f;
+    --mono:ui-monospace,'SFMono-Regular','JetBrains Mono',Menlo,Consolas,monospace;
+    --sans:'Pretendard','Pretendard Variable',-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sans KR',system-ui,sans-serif;}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:var(--sans);color:var(--ink);line-height:1.65;
+    background:radial-gradient(1000px 560px at 82% -10%,rgba(14,154,161,.16),transparent 60%),var(--abyss);-webkit-font-smoothing:antialiased}
+  .wrap{max-width:920px;margin:0 auto;padding:52px 26px 72px}
+  .eyebrow{font-family:var(--mono);font-size:.76rem;letter-spacing:.16em;text-transform:uppercase;color:var(--teal)}
+  h1{font-size:clamp(1.8rem,4vw,2.6rem);margin:12px 0 8px;font-weight:800;letter-spacing:-.01em}
+  .meta{font-family:var(--mono);color:var(--muted);font-size:.88rem}
+  .meta b{color:var(--teal-soft)}
+  .badge{display:inline-block;font-family:var(--mono);font-size:.72rem;color:var(--amber);border:1px solid rgba(224,169,79,.45);border-radius:999px;padding:2px 10px;margin-left:8px}
+  h2{font-size:1.2rem;margin:38px 0 4px;font-weight:800}
+  h2 .n{font-family:var(--mono);color:var(--teal);margin-right:.5em;font-size:.88em}
+  .rule{height:1px;background:linear-gradient(90deg,var(--teal-brand),transparent);margin:9px 0 14px;opacity:.6}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 20px;color:var(--ink)}
+  .card.state{border-left:3px solid var(--teal-brand)}
+  pre{font-family:var(--mono);font-size:.82rem;line-height:1.7;color:#cfe9ec;white-space:pre-wrap;word-break:break-word;margin:0;overflow-x:auto}
+  .times{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:4px}
+  @media(max-width:640px){.times{grid-template-columns:1fr}}
+  .tcard{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+  .tcard .lbl{font-family:var(--mono);font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--teal)}
+  .tcard .val{font-family:var(--mono);font-size:1.02rem;color:#fff;margin-top:6px;font-weight:700}
+  .tcard .val.dim{color:var(--dim);font-weight:500;font-size:.86rem}
+  .subh{font-family:var(--mono);font-size:.78rem;color:var(--teal-soft);margin:14px 0 6px;letter-spacing:.04em}
+  .note{font-family:var(--mono);font-size:.78rem;color:var(--amber);margin:0 0 14px}
+  footer{margin-top:46px;padding-top:16px;border-top:1px solid var(--line);color:var(--dim);font-family:var(--mono);font-size:.8rem;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">BATHOS Dynamis · 세션 작업 리포트</div>
+  <h1>작업 리포트 · session_no03<span class="badge">소급 백필 · RETROACTIVE</span></h1>
+  <div class="meta">프로젝트 <b>bathos-dynamis</b> · 세션 순번 <b>#3</b> · 원본 <b>2026-07-13-taskreport-1.html</b></div>
+  <p class="note">※ 이 리포트는 과거 세션 아카이브에서 소급 생성됨 — 원본에 기록된 사실만 포함(시작 시각·소요 시간은 당시 미기록).</p>
+
+  <h2><span class="n">1–3</span>작업 시각 &amp; 총 소요</h2>
+  <div class="rule"></div>
+  <div class="times">
+    <div class="tcard"><div class="lbl">작업 시작</div><div class="val dim">(소급 — 당시 미기록)</div></div>
+    <div class="tcard"><div class="lbl">작업 종료</div><div class="val">2026-07-13 05:49:17 KST</div></div>
+    <div class="tcard"><div class="lbl">총 작업 시간</div><div class="val dim">(소급 — 산출 불가)</div></div>
+  </div>
+
+  <h2><span class="n">4</span>작업 핵심 사항 <span style="font-size:.7em;color:var(--dim)">(원본 '현재 상태')</span></h2>
+  <div class="rule"></div>
+  <div class="card state"><pre>
+세션2(2026-07-12)에서 수행 완료: ① **역할 16→17 진화** — Michael(#13 Security Specialist) 신설 + 전원 +1 재번호(Hananiah14·Matthias15·Martin16·Matthew17), 전 범위 전파. ② **정합성 부채 청산** — 코드/훅 `#15`→`#17`. ③ **D-09 해결** — `manifest.json`을 엔진 정본 스키마로 마이그레이션(`state show`·`fingerprint approve` 복구), 스키마 `role_no` max 15→17, 재빌드. ④ **W6 전체 실행**(이 세션 강행, Michael·Hananiah=general-purpose+_base 주입) — Thomas·Timothy·Matthias·Michael·Hananiah·Martin 6역할 산출, **게이트 Release Readiness=CONCERNS**(blocking 0). ⑤ **(B) 재번호 잔재 청산** — matrix.rs/config.rs role_set에 Michael·Hananiah 추가, FEATURES 16→17, 고아파일 4개 격리. ⑥ **.claude/agents 정합** — 상위 레지스트리 번호 충돌 해소(matthias15·martin16·matthew17). ⑦ **Rust 주석 영어화** — 8개 크레이트 완료, **bathos-inspect 부분(미완)**.
+
+- 제품/작업 상태: 17역할·D-09·W6·주석EN(부분) · `cargo build` 정상 · 활성 팀원 **없음**(전부 정지)
+- 현재 레벨: **Lv3** · 진행 중 웨이브: 없음(W6 게이트까지 완료)
+
+**미완 / 다음 작업 (우선순위):**
+1. **✅ [완료] Rust 주석 영어화 — 9/9 크레이트(bathos-inspect 포함) 완료.** 검증: cargo build OK·test 22그룹 0 failed·진짜 미번역 주석 0. 의도적 한글 유지: 문자열 리터럴·clap `///` 도움말·doctest 코드·doc의 한글 문자열/섹션제목 인용·서빙 HTML 내 JS 주석.
+2. **[리드 결정 — 2·3·4 처리 완료(2026-07-13)]** ✅ ②engine.rs:436 `#15`→`Jonnathan`(콘텐츠 버그) · ✅ ③story-lint 스코핑 가드(lite→warn skip, doctor fail 해소) · ✅ ④clippy 0·SEC-04 server.py·SEC-01 careful-guard tee/dd/patch(fingerprint 승인)·SEC-02 감사체인 코드 정직표기. **잔여(후속):** ①clap `///` 도움말 영어화 여부(미결정 — 현재 한글=동작보존) · SEC-02 문서 "tamper-evident" 전체 sweep + HMAC 전환(파괴적, 후속). ✅ **story lite↔canonical 완전 통일 완료(2026-07-13)** — 15/15 canonical, `story compile` OK, 템플릿 정렬(Timothy G1 해소), doctor story PASS.
+3. **[선택]** W6 CONCERNS 후속 · 상위 `discovery_bmad_code/{CLAUDE,AGENTS}.md` 구 거버넌스(14/15역할, 별개 레이어) 정합.
+
+**▶ 다음 실행 커맨드:** (재개 시) `/cold-start` → 리드 결정 4건 처리(아래 #2) 또는 W6 CONCERNS 후속. Rust 주석 영어화는 9/9 완료. (Michael·Hananiah 정식 타입 스폰 원하면 **세션 재시작 후** 가능 — 레지스트리 등록됨.)</pre></div>
+
+  <h2><span class="n">5</span>중요 이슈</h2>
+  <div class="rule"></div>
+  <div class="card"><pre>(소급 백필 — 당시 별도 이슈 로그 없음. 상세는 원본 리포트 2026-07-13-taskreport-1.html 참조.)</pre></div>
+
+  <h2><span class="n">6</span>git commit / push / PR / merge 히스토리 <span style="font-size:.7em;color:var(--dim)">(원본 기록 기준)</span></h2>
+  <div class="rule"></div>
+  <div class="card"><pre>git repo 아님(파일 직접 저장)</pre></div>
+
+  <footer>
+    <span>BATHOS · βάθος — 표층이 아닌 깊이 · 소급 백필</span>
+    <span>task_report_20260713_054917_session_no03.html</span>
+  </footer>
+</div>
+</body>
+</html>
