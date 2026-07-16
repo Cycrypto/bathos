@@ -23,8 +23,39 @@ codex-adapter/
 │   ├── pretooluse-gate.sh       # W3 Implementation 게이트: FAIL이면 구현 진입 exit 2 차단
 │   ├── stop-save.sh             # SessionEnd 근사: 턴마다 증분 저장(state show 덤프)
 │   └── _test-codex-hooks.sh     # 시뮬레이션 테스트(실제 Codex 설치 불요, 18케이스: 게이트 B-1~B-10·B-15~B-18 + 저장 B-11~B-14, 37 assertion)
+├── run-role.sh                  # runtime=codex 역할 위임 러너(ADR-D-0006, §A3.3) — Claude Code 팀원이 아닌 별도 프로세스로 역할 실행
+├── _test-run-role.sh            # run-role.sh 스모크 테스트(T8, 10케이스·24 assertion, 스텁 codex로 실제 설치 불요)
 └── config.toml.example          # ~/.codex/config.toml 등록 예시(실측 스키마)
 ```
+
+### `run-role.sh` — Codex 런타임 위임 러너
+
+`_state/model-plan.json`에서 `runtime=codex`로 배정된 역할은 Claude Code 팀원으로
+스폰되지 않는다(GLM과 달리 별도 프로세스라 in-process 팀원과 병행 무충돌 —
+ADR-D-0006). 웨이브 커맨드가 대신 이 스크립트로 위임한다:
+
+```bash
+codex-adapter/run-role.sh <role-slug> <task-file.md> [--project <절대경로>] [--dry-run]
+```
+
+- **exit 0**=완료 / **1**=실행 실패(`.codex/agents/<slug>.toml` 부재 포함) /
+  **3**=`E-CODEX-ABSENT`(codex CLI 미설치) / **4**=`E-CODEX-AUTH`(미인증 — 선제
+  `codex login status` 검사 또는 `codex exec` 실행 결과 양쪽에서 판정 가능).
+- 프롬프트 = 역할 base md 본문(`.claude/agents/_base/<n>-<slug>.md`, `slug:`
+  프론트매터로 탐색) + `ETHOS.md` 전문 + 웨이브 커맨드가 작성한 task-file. 조립된
+  프롬프트를 `codex exec "<프롬프트>"`로 비대화 실행한다(⚠️[추정] — 라이브 인증
+  세션 미실측, §정직한 한계 참고). `bathos model resolve <slug> --json`이
+  `model`/`reasoning_effort` 오버라이드를 찾으면 `-c` 플래그로 전달한다.
+- `.codex/agents/<slug>.toml`이 프로젝트 로컬(`<project>/.codex/agents/`) 또는
+  `~/.codex/agents/`에 없으면 **자동 생성하지 않고** `scripts/to-codex.sh --write`
+  안내 후 exit 1로 끝난다(홈 디렉터리 쓰기는 사용자 승인 사안).
+- 완료/실패는 항상 `_state/panes/inbox/codex-<slug>-<ts>-<pid>.txt`에
+  `<DONE|FAIL|DRY-RUN><TAB><요약 1줄>`로 기록된다(bathos-tui `inbox.rs`와 동일
+  ts-pid·atomic tmp→mv 관례) — Codex는 Agent Teams 메시징/훅 밖이므로 이 파일이
+  Paul/패널이 진행을 감지하는 유일한 경로다(경계 명시, §A3.3).
+- 테스트: `bash codex-adapter/_test-run-role.sh` — 스텁 `codex` 바이너리로
+  10가지 분기(부재/TOML부재/인증실패 선제·사후/dry-run/정상실행/일반오류/
+  잘못된 slug/task-file 부재)를 24개 assertion으로 검증한다.
 
 ## 설치
 

@@ -99,6 +99,79 @@
 
 ---
 
+## 10. `bathos` CLI 서브커맨드 — 역할별 모델(A) + Wave 패널(B)
+
+> 위 1~9는 **슬래시 커맨드**(`.claude/commands/*.md`, Paul이 대화로 실행)이고 여기부터는
+> **`bathos` 엔진 바이너리**(`core/target/release/bathos`)를 직접 호출하는 CLI 서브커맨드다
+> (총 35개 슬래시 커맨드 집계에는 포함되지 않음). 설계 원본:
+> `.agent-team/04-architecture/w2-panes-model-design-kr.md`(James) — 구현: Phillip.
+> 각 웨이브 커맨드(`/wave0-analysis` ~ `/wave6-verify-report`)는 스폰 직전에 "## 모델 선택"
+> 절차로 `model detect/show/set/validate`를 호출하고, 스폰 완료 직후 `bathos panes` 관측을
+> 안내한다(§A2.3·§B4.3 정본 텍스트, 7개 웨이브 커맨드 모두 삽입 완료).
+
+### 10.1 `bathos model` — 역할별 모델/런타임 선택 (ADR-D-0005/0006)
+
+`_state/model-plan.json`(schema `bathos/model-plan@1`)을 SSOT로 삼아 역할별 `runtime`
+(`claude`/`glm`/`codex`)·`model`을 배정한다. **plan 파일이 없거나 그 역할이 미등재면 항상
+agent frontmatter `model:`로 폴백** — 이 기능을 한 번도 쓰지 않은 프로젝트는 이전과 100%
+동일하게 동작한다(하위호환이 최우선 제약).
+
+```
+bathos model show    [--wave W5] [--json]                 # 역할별 유효값 표 (source: plan|default|frontmatter|runtime-default)
+bathos model set     <slug> --runtime <r> [--model <m>] [--reasoning-effort <e>]   # plan에 기록(변경분만)
+bathos model unset   <slug>                                # plan에서 제거 → frontmatter 폴백
+bathos model detect                                        # session_backend 판별·기록(env ANTHROPIC_BASE_URL 검사)
+bathos model validate [--wave W5]                          # GLM/Codex 혼합 배치 규칙 검증. PASS=exit 0 / 위반=exit 2 + 해소 선택지
+bathos model resolve  <slug> [--json]                      # 한 역할의 유효 runtime/model/적용채널 1줄 출력(스크립트 소비용)
+```
+
+- **claude**: 팀원 스폰 파라미터로 역할별 상이 모델 지정 가능(fable5/sonnet5/haiku, 제약 없음).
+- **glm**: `ANTHROPIC_BASE_URL`이 프로세스 전역이라 **역할 단위 지정 불가** — 웨이브·세션 단위만.
+  같은 배치에 `claude`+`glm`이 섞이면 `validate`가 `E-MODEL-MIX`(exit 2)로 차단하고 해소
+  선택지 3종(배치 전체 GLM/역할 이동/순차 분할)을 제시한다. 상세·제약의 물리적 근거는
+  `docs/glm-backend-kr.md` §"모델/런타임 혼합 제약(ADR-D-0005)" 참고.
+- **codex**: 별도 CLI 프로세스라 Claude 팀원과 병행 무충돌(GLM과의 비대칭) — 팀원으로
+  스폰하지 않고 `codex-adapter/run-role.sh <slug> <task-file>`로 위임한다.
+- 오류 코드: `E-MODEL-ROLE-UNKNOWN`·`E-MODEL-RUNTIME-INVALID`·`E-MODEL-MIX`·
+  `E-MODEL-BACKEND-MISMATCH`·`E-MODEL-PLAN-CORRUPT`(파손 시 `.bak` 백업 후 재생성 안내).
+
+### 10.2 `bathos inspect vm` — Wave 패널 공유 데이터원 (ADR-D-0007)
+
+4개 프론트엔드(HTML report·live serve·tmux 패널·bathos TUI)가 공유하는 단일 데이터원
+`DashboardVM`을 노출한다. 새 상태 계층을 발명하지 않고 기존 `build_dashboard_vm_json`을
+재사용한다(Search Before Building).
+
+```
+bathos inspect vm [--path <.agent-team>] [--wave W5] [--format json|lines]
+```
+
+- `--format json`(기본) = `bathos inspect report --json`과 바이트 동일(기존 하위호환 유지).
+- `--format lines` = bash 3.2/jq-금지 환경용 TSV 라인 프로토콜(`proto`/`meta`/`wave`/`gate`/
+  `role`/`story`/`artifact`/`audit`/`chain` 레코드, 필드는 항상 뒤에만 추가). `scripts/bathos-panes.sh`가
+  이 출력을 `grep`/`cut`/`read`로만 소비한다(jq 불요).
+- `--wave W5`로 해당 웨이브 관련 레코드(웨이브 셀+게이트+역할/산출물/스토리)만 필터.
+
+### 10.3 `bathos panes` — Wave 패널 프론트엔드 선택 (ADR-D-0008/0009)
+
+```
+bathos panes [--mode tui|tmux|dump] [--path <.agent-team>] [--wave W5] [--interval 2]
+```
+
+- `--mode tui`(TTY 기본) = 내장 `bathos-tui` 크레이트(ratatui+crossterm) 대화식 패널.
+  탭 구성 = `Paul | W0…W6`(라우팅된 웨이브만), 키맵 `←/→·Tab`=탭 전환·`j/k`=스크롤·
+  `c`=confirm 모달·`f`=feedback 모달·`r`=새로고침·`q`=종료.
+- `--mode tmux` = `scripts/bathos-panes.sh up`으로 위임 — tmux 3.7 분할 패널(제어/상태/입력).
+  Windows 네이티브는 tmux 부재로 미지원(WSL 또는 `--mode tui` 권장).
+- `--mode dump` = 비대화 1프레임 렌더 스냅샷(테스트/CI/파이프 소비용).
+- 모드 미지정 + TTY: 대화형으로 tmux/TUI 중 선택받고 `_state/panes/prefs`에 기억(다음 기본값).
+- **패널의 confirm/feedback은 "제안 채널"**이다 — `_state/panes/inbox/`에 파일로 쌓이고
+  웨이브 흐름이 게이트 체크포인트에서 소비한다. 게이트 판정 정본 기록은 여전히
+  `bathos gate`(FACILITATOR 원칙, 근거 없는 자동 PASS 금지)이며 패널이 대신 기록하지 않는다.
+- 자동 기동 안 함 — Paul(Claude Code) 자신은 이미 자기 TTY를 점유 중이므로, 패널은
+  **사람이 여는 두 번째 터미널**의 관측/입력 도구다(각 웨이브 커맨드 말미의 힌트 1줄 참고).
+
+---
+
 ## 권장 흐름
 
 ```

@@ -1,0 +1,27 @@
+[package]
+name        = "bathos-tui"
+version     = "0.1.0"
+edition     = "2021"
+description = "BATHOS 대화식 TUI (`bathos panes`) — ratatui+crossterm, DashboardVM 순수 렌더 (ADR-D-0008)"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# read-only + inbox-only-write 불변식 (ADR-D-0008, w2-panes-model-design-kr.md §B4.1)
+#
+# 이 크레이트는 `bathos-inspect`(read-only DevTools 파일럿, CR-1)만 상태 조회에
+# 의존한다. 쓰기 엔진(bathos-wave-engine·bathos-gate-engine·bathos-router·bathos-plug)과
+# StateStore 쓰기 경로는 어떤 이유로도 추가하지 않는다 — 유일한 쓰기는 `inbox.rs`가
+# `_state/panes/inbox/` 하위에만 하는 파일 생성(§B2 계약)이며, 그 경로도 컴파일타임
+# 상수 + 런타임 assert로 강제한다(그 밖 경로에 쓰는 함수 자체가 없다).
+# ─────────────────────────────────────────────────────────────────────────────
+[dependencies]
+bathos-inspect = { path = "../bathos-inspect" }
+ratatui        = { version = "0.30", default-features = false, features = ["crossterm"] }
+crossterm      = "0.29"
+serde          = { workspace = true }
+# Only used by `render_dump`'s buffer→text flattening, to skip the "shadow" cell a wide
+# (e.g. Korean) character leaves in the next column — without this, dumped Korean text comes
+# out with a stray space after every character (see lib.rs `buffer_to_plain_text` doc comment).
+unicode-width  = "0.2"
+
+[dev-dependencies]
+tempfile = { workspace = true }

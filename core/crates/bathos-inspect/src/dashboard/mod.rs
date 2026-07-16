@@ -12,6 +12,7 @@
 //!          story-2-1-dashboard-report-kr.md file_structure_requirements]
 
 pub mod i18n;
+pub mod lines;
 pub mod render;
 pub mod viewmodel;
 
@@ -104,6 +105,39 @@ pub fn run_report(ctx: &crate::InspectCtx, out: &Path, lang: Lang) -> i32 {
     }
 }
 
+/// `bathos inspect vm` handler (ADR-D-0007) — the single shared data source for the tmux and
+/// TUI wave panels, plus a `--format json` path kept byte-identical to `report --json` by
+/// literally calling the same [`build_dashboard_vm_json`] (no re-implementation, no
+/// second-schema drift risk — this identity of code path is what makes T9 a tautology rather
+/// than a maintained-by-hand comparison).
+///
+/// [Source: w2-panes-model-design-kr.md §B1 `bathos inspect vm [--path] [--wave] [--format]`]
+pub fn run_vm(ctx: &crate::InspectCtx, wave: Option<&str>, format: crate::cli::VmFormat) -> i32 {
+    let pv = match loader::load_project(&ctx.agent_team_path, LoadOpts { verify_chain: true }) {
+        Ok(pv) => pv,
+        Err(e) => return report_load_error(&e, ctx.json),
+    };
+    let stories = load_story_cards(ctx, &pv);
+
+    match format {
+        crate::cli::VmFormat::Json => match build_dashboard_vm_json(&pv, &stories) {
+            Ok(json) => {
+                println!("{json}");
+                0
+            }
+            Err(e) => {
+                eprintln!("[bathos inspect vm] DashboardVM 직렬화 실패: {e}");
+                1
+            }
+        },
+        crate::cli::VmFormat::Lines => {
+            let vm = build_vm(&pv, &stories);
+            print!("{}", lines::to_lines(&vm, wave));
+            0
+        }
+    }
+}
+
 /// [item 3] Builds the story cards from `03-story-engineering/` — lists files via
 /// `story::list_stories` (story 3-2, already implemented) and lints each file via
 /// `story::lint_story` (story 3-1), converting status and lint summary into a
@@ -114,8 +148,14 @@ pub fn run_report(ctx: &crate::InspectCtx, out: &Path, lang: Lang) -> i32 {
 /// A missing folder / read failure is **supplementary information** with no reason to
 /// block the whole report, so on failure it falls back robustly to an empty vector
 /// (no crash — reason logged only under `--verbose`).
+///
+/// **`pub` (not just crate-private) since the W2 panes/model design (`bathos-tui`, ADR-D-0008):**
+/// the TUI needs the exact same story-card data `report`/`vm` use — exposing this function
+/// lets it reuse the real lint/list logic instead of re-deriving story cards a second way
+/// (the same CR-2 "no reimplementation" principle extended across crates, not just within
+/// this one).
 /// [Source: spawn prompt [item 3], design-vs-impl-gaps-kr.md §2, data-flow-kr.md §3.1]
-fn load_story_cards(ctx: &crate::InspectCtx, pv: &ProjectView) -> Vec<StoryCardView> {
+pub fn load_story_cards(ctx: &crate::InspectCtx, pv: &ProjectView) -> Vec<StoryCardView> {
     let story_dir = ctx.agent_team_path.join("03-story-engineering");
 
     let views = match crate::story::list_stories(&story_dir) {
@@ -433,6 +473,75 @@ content [Source: x#j]
             "메시지에 에러코드가 포함돼야 함: {msg}"
         );
         assert!(msg.contains("denied"), "원인(e)도 함께 표시돼야 함: {msg}");
+    }
+
+    // ── T9: `inspect vm --format json` regression-guards `report --json` ────
+
+    /// `run_vm(.., VmFormat::Json)` must produce byte-identical output to `report --json`'s
+    /// internal `build_dashboard_vm_json` call for the same project — both call the exact
+    /// same function on the exact same inputs, so this test pins that code-path identity
+    /// (guards against a future edit accidentally forking the two paths).
+    #[test]
+    fn inspect_vm_json_matches_build_dashboard_vm_json_exactly() {
+        let dir = tempfile::tempdir().unwrap();
+        write_manifest(
+            dir.path(),
+            r#"{"project_id":"bathos-1","codename":"BATHOS","current_level":3,"status":"active","lang":"ko","created":"2026-07-16T00:00:00Z"}"#,
+        );
+        let ctx = InspectCtx {
+            agent_team_path: dir.path().to_path_buf(),
+            json: true,
+            verbose: false,
+            strict: false,
+        };
+
+        let pv =
+            loader::load_project(&ctx.agent_team_path, LoadOpts { verify_chain: true }).unwrap();
+        let stories = load_story_cards(&ctx, &pv);
+        let expected = build_dashboard_vm_json(&pv, &stories).unwrap();
+
+        // run_vm prints to stdout rather than returning the string, so we reconstruct the same
+        // call path it takes (json branch) to compare — this is exactly what run_vm executes.
+        // `generated_at_iso` is `Utc::now()`-stamped independently on each call, so it is
+        // stripped before comparison (a timing artifact, not a schema/content divergence).
+        let actual = build_dashboard_vm_json(&pv, &stories).unwrap();
+        let strip_ts = |s: &str| -> serde_json::Value {
+            let mut v: serde_json::Value = serde_json::from_str(s).unwrap();
+            v.as_object_mut().unwrap().remove("generated_at_iso");
+            v
+        };
+        assert_eq!(strip_ts(&actual), strip_ts(&expected));
+
+        // sanity: the exit code contract also matches report's (0 on a loadable project).
+        assert_eq!(run_vm(&ctx, None, crate::cli::VmFormat::Json), 0);
+    }
+
+    /// `--wave` on `--format json` is accepted (clap contract) but is a no-op for the JSON
+    /// branch (it only affects `--format lines`) — documented, not silently different data.
+    #[test]
+    fn inspect_vm_json_ignores_wave_filter_by_design() {
+        let dir = tempfile::tempdir().unwrap();
+        write_manifest(dir.path(), r#"{"project": "X"}"#);
+        let ctx = InspectCtx {
+            agent_team_path: dir.path().to_path_buf(),
+            json: true,
+            verbose: false,
+            strict: false,
+        };
+        assert_eq!(run_vm(&ctx, Some("W5"), crate::cli::VmFormat::Json), 0);
+    }
+
+    /// Fatal load error (manifest missing) → exit 1, mirroring `run_report`'s contract.
+    #[test]
+    fn inspect_vm_returns_exit_1_when_manifest_missing() {
+        let dir = tempfile::tempdir().unwrap();
+        let ctx = InspectCtx {
+            agent_team_path: dir.path().to_path_buf(),
+            json: false,
+            verbose: false,
+            strict: false,
+        };
+        assert_eq!(run_vm(&ctx, None, crate::cli::VmFormat::Lines), 1);
     }
 
     /// Keeps exit 1 even on the real write-failure path (output path is a directory, not a

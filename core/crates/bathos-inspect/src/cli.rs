@@ -43,6 +43,17 @@ pub enum LangArg {
     Both,
 }
 
+/// `bathos inspect vm --format` — the shared `DashboardVM` data source (ADR-D-0007), rendered
+/// either as the existing pretty JSON dump (`json`, byte-identical to `report --json`) or as
+/// the bash-3.2/jq-free TSV "lines protocol" (`lines`, consumed by `scripts/bathos-panes.sh`
+/// and the `bathos-tui` crate). [Source: w2-panes-model-design-kr.md §B1]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, ValueEnum)]
+pub enum VmFormat {
+    #[default]
+    Json,
+    Lines,
+}
+
 /// The four `bathos inspect <sub>` subcommands.
 ///
 /// This story (1-1) defines only the contract surface (flags); the handlers are stubs.
@@ -99,4 +110,17 @@ pub enum InspectCommand {
     /// existing install/wiring preflight. This subcommand is exposed only as
     /// `bathos inspect doctor` and carries no alias.
     Doctor,
+
+    /// Shared `DashboardVM` data source for the wave panels (tmux/TUI, ADR-D-0007) —
+    /// `--format json` is byte-identical to `report --json` (same `build_dashboard_vm_json`
+    /// call); `--format lines` emits the bash-3.2/jq-free TSV protocol.
+    /// [Source: w2-panes-model-design-kr.md §B1]
+    Vm {
+        /// Scope wave/gate/role records to this wave (e.g. `W5`). Omit for all waves.
+        #[arg(long)]
+        wave: Option<String>,
+
+        #[arg(long, value_enum, default_value_t = VmFormat::Json)]
+        format: VmFormat,
+    },
 }
