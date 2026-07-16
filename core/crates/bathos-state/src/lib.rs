@@ -10,6 +10,8 @@
 //!   corruption / linkage breaks (KEYLESS; malicious forgery needs HMAC or external anchoring — SEC-02)
 //! - **error model** (`error`): 1:1 mapping of exceptions.md E-STATE-*
 //! - **fingerprint cache** (`fingerprint`, new in Dynamis): risky-change diff fingerprint normalization / re-approval prevention (SS1 · CF-A1)
+//! - **model plan** (`model_plan`, W2 panes/model design): per-role model/runtime selection
+//!   SSOT (`_state/model-plan.json`) — resolve priority chain + GLM/Codex mixed-batch validation
 //!
 //! ## Usage example
 //! ```rust,no_run
@@ -37,6 +39,7 @@ pub mod audit;
 pub mod error;
 pub mod fingerprint;
 pub mod model;
+pub mod model_plan;
 pub mod schema;
 pub mod store;
 
