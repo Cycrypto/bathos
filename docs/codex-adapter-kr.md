@@ -58,7 +58,14 @@ Codex 훅은 실험적(첫 도입 2026-03)·Windows 미지원 가능성 ⚠️. 
 ---
 
 ## 5. 남은 단계 (후속)
-- P4: (a)(b) 훅 재설계 실제 구현 + 검증 하네스.
+- **P4: 완료(2026-07-16, Phillip)** — (a)(b) 훅 재설계가 `codex-adapter/`에
+  실구현되었다: `hooks/pretooluse-gate.sh`(W3 게이트 exit-2) ·
+  `hooks/stop-save.sh`(Stop 증분 저장) · `hooks/_test-codex-hooks.sh`(14케이스
+  시뮬레이션, 실 Codex 불요 — 전부 통과) · `config.toml.example`. 상세는
+  `codex-adapter/README.md`와 `.agent-team/08-impl-notes/backend.md` 참고.
+  **미해소:** 실 Codex 미설치 상태라 `tool_name` 실측값(§3-a 트리거 매칭의
+  전제)은 여전히 문서 예시(`Bash`·`apply_patch`) 기준 ⚠️[추정]이다 — 설치
+  후 최우선 재확인 필요(fail-open 리스크).
 - P5: Codex+GLM 프록시 연동, 커맨드→skills 마이그레이션(공식 방향).
 - P6: `bathos runtime` 추상화(런타임 감지→어댑터 자동 선택).
 
