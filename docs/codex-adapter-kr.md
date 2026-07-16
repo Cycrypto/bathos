@@ -99,6 +99,14 @@ CLAUDE.md §9(종료 시 저장→리포트→종료 강제)는 Codex에 Session
   세션(auth 부재로 미실행) — 스키마·계약까지만 실측했고, 실제 인증 세션에서
   config 등록이 배선대로 동작하는지는 다음 실사용 시 확인 필요. 또한 이
   해소는 **v0.144.5 버전 고정**이므로 업그레이드 시 재확인 필요.
+- **P5.1: 완료(2026-07-17)** — 라이브 인증 Codex 세션에서 실제
+  `apply_patch` PreToolUse 입력을 확인한 결과, 패치는 `tool_input.command`에
+  실리고 대상 파일은 **절대경로**(`/Users/…/project/src/…`)로 온다. 옛
+  `SRC_ERE` 경계 `[^A-Za-z0-9_./-]`가 `/`를 경계로 인정하지 않아 절대경로
+  앞의 `src/`가 T1 소스쓰기로 발화하지 못하고 FAIL 게이트에서도 편집이
+  통과(fail-open)했다. 경계에 `/`를 추가해 수정하고, `_test-codex-hooks.sh`에
+  회귀 케이스 B-19~B-20 2건을 추가(→ 20케이스·40 assertion)했으며, 이
+  하네스를 **CI(`ci.yml` hooks job)에 연결**해 재발을 CI에서 강제한다.
 - P6: Codex+GLM 프록시 연동, 커맨드→skills 마이그레이션(공식 방향), 네이티브
   마이그레이션(AGENTS_MD/HOOKS/COMMANDS/SUBAGENTS/MCP import)을 `to-codex.sh`
   스캐폴드 변환의 대안으로 검토.
