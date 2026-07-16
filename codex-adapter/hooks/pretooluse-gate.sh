@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-# BATHOS P4 — codex-adapter/hooks/pretooluse-gate.sh
+# BATHOS P5 — codex-adapter/hooks/pretooluse-gate.sh
 # Codex PreToolUse 훅: W3 Implementation 게이트가 FAIL인 동안 "구현 웨이브(W5)
 # 진입"을 뜻하는 도구 호출만 exit 2로 물리 차단한다. 그 외 모든 상황은 통과.
 #
@@ -8,9 +8,19 @@
 # 의미론은 .claude/hooks/gate-enforce.sh(Claude Code용)와 문자 그대로 동일하게
 # 유지한다(ADR-P4-2) — 런타임이 달라도 게이트 정책은 하나다.
 #
+# P5 하드닝(2026-07-16, 실측 기반 — Codex v0.144.5 macos-x86_64 실제 설치본):
+#   실제 tool_name 값은 `shell` / `exec_command`(셸 실행) / `apply_patch`
+#   (파일 편집) 뿐이다. **`Bash`는 존재하지 않는다** — P4에서 문서 예시만
+#   보고 가정했던 `Bash` 매칭은 실측 결과 항상 미스매치라 T1/T2가 발화하지
+#   않고 게이트가 fail-open(무력화)되는 버그였다. 아래 트리거 판정은 실측
+#   3개 값만 사용한다(추정 이름 write_file/edit/create_file/local_shell도
+#   함께 제거 — 확인되지 않은 이름을 남겨 두는 것 자체가 "실측 기반"이라는
+#   전제를 흐린다).
+#
 # stdin/stdout/exit 계약:
-#   stdin  = Codex PreToolUse JSON 1개(session_id/turn_id/tool_name/tool_input/
-#            cwd/hook_event_name 등). 비-JSON/빈 입력 -> fail-safe exit 0.
+#   stdin  = Codex PreToolUse JSON 1개. 실측 필드(snake_case): hook_event_name,
+#            tool_name, tool_input, session_id, cwd, source, transcript_path,
+#            command. 비-JSON/빈 입력 -> fail-safe exit 0.
 #   stdout = 사용 안 함(비움 유지 — exit 0에서 무출력=성공).
 #   stderr = 차단 사유·경고만.
 #   exit   = 0(통과) | 2(차단). 그 외 코드는 절대 사용하지 않는다 — 내부 오류도
@@ -84,13 +94,28 @@ fi
 # (문서·산출물 쓰기는 게이트 대상이 아니다).
 SRC_ERE="${BATHOS_GATE_SRC_ERE:-(^|[^A-Za-z0-9_./-])(src|core/crates|core/src|codex-adapter/hooks)/}"
 
-# T2 웨이브 진입 명령 ERE (gate-enforce.sh is_w5_entry와 정렬).
+# T2 웨이브 진입 명령 ERE (gate-enforce.sh is_w5_entry와 정렬). 매칭 대상은
+# INPUT_FLAT 전체(= tool_input.command/argv를 포함한 stdin 원문의 개행제거본)
+# 다 — tool_input 내부만 잘라내는 정밀 JSON 파싱은 하지 않는다(§C0, jq 금지
+# 원칙). 명령 문자열이 아닌 다른 필드(session_id/cwd 등)에 이 패턴이 우연히
+# 등장할 가능성은 사실상 없으므로 과탐 리스크는 낮고, 설령 과탐해도 FAIL
+# 상태에서만 영향이 있어 careful 원칙(과차단 > 놓침)에 부합한다.
 W5_ENTRY_ERE='bathos[[:space:]]+wave[[:space:]]+(advance|start|enter)|wave.?5|wave.?4-implement|W5.*(진입|시작)|implement(ation)?[[:space:]]+(start|begin)'
 
 TRIGGER=""
 
+# T1(소스 쓰기) — tool_name 실측값(Codex v0.144.5)만 매칭한다:
+#   - apply_patch     : 파일 편집(유일한 편집 도구). tool_input에 대상 파일이
+#                        실린다(필드명 미문서화 — 패치 텍스트/파일 목록 어느
+#                        쪽이든 아래는 원문 전체를 대상으로 경로 패턴 검색).
+#   - shell/exec_command: 셸 실행 도구도 `sed -i`/`tee`/`cp`/`mv` 등으로 소스
+#                        경로에 직접 쓸 수 있으므로 T1 후보에 함께 넣는다
+#                        (T2 웨이브-진입 판정보다 먼저 검사 — 한 호출이 두
+#                        트리거에 동시 해당하면 source-write를 우선 보고).
+# ⚠️ `Bash`는 Codex tool_name으로 존재하지 않는다(실측 확정) — P4의 `Bash`
+# 매칭은 이 케이스에 절대 도달하지 못해 게이트가 fail-open 되는 버그였다.
 case "$TOOL" in
-  apply_patch|write_file|edit|create_file)
+  apply_patch|shell|exec_command)
     # 예외: ".agent-team/" 만 언급되면 트리거 아님(문서·산출물 쓰기는 게이트
     # 대상이 아니다) — ".agent-team/<...>" 경로 세그먼트를 원문에서 지운 뒤에도
     # SRC_ERE가 매치되면, 그 매치는 .agent-team/ 바깥의 진짜 소스 경로라는 뜻.
@@ -103,9 +128,12 @@ case "$TOOL" in
     ;;
 esac
 
+# T2(웨이브 진입 명령) — shell/exec_command만 대상(apply_patch는 명령 실행이
+# 아니므로 해당 없음). T1에서 이미 source-write로 판정됐으면 재검사하지
+# 않는다(하나의 도구 호출은 한 TRIGGER만 보고).
 if [ -z "$TRIGGER" ]; then
   case "$TOOL" in
-    Bash|bash|shell|local_shell|exec_command)
+    shell|exec_command)
       if printf '%s' "$INPUT_FLAT" | grep -Eiq "$W5_ENTRY_ERE"; then
         TRIGGER="wave-entry-command"
       fi
