@@ -92,7 +92,9 @@ fi
 # --------------------------------------------------------------------------
 # T1 소스 경로 패턴(env로 오버라이드 가능). ".agent-team/" 전용 언급은 제외
 # (문서·산출물 쓰기는 게이트 대상이 아니다).
-SRC_ERE="${BATHOS_GATE_SRC_ERE:-(^|[^A-Za-z0-9_./-])(src|core/crates|core/src|codex-adapter/hooks)/}"
+# 상대 경로(src/...)뿐 아니라 Codex apply_patch가 전달하는 절대 경로(.../src/...)도 감지한다.
+# `/`를 명시적인 경계로 허용하지 않으면 절대 경로가 fail-open으로 통과한다.
+SRC_ERE="${BATHOS_GATE_SRC_ERE:-(^|/|[^A-Za-z0-9_./-])(src|core/crates|core/src|codex-adapter/hooks)/}"
 
 # T2 웨이브 진입 명령 ERE (gate-enforce.sh is_w5_entry와 정렬). 매칭 대상은
 # INPUT_FLAT 전체(= tool_input.command/argv를 포함한 stdin 원문의 개행제거본)

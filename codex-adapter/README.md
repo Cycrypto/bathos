@@ -22,7 +22,7 @@ codex-adapter/
 ├── hooks/
 │   ├── pretooluse-gate.sh       # W3 Implementation 게이트: FAIL이면 구현 진입 exit 2 차단
 │   ├── stop-save.sh             # SessionEnd 근사: 턴마다 증분 저장(state show 덤프)
-│   └── _test-codex-hooks.sh     # 시뮬레이션 테스트(실제 Codex 설치 불요, 18케이스: 게이트 B-1~B-10·B-15~B-18 + 저장 B-11~B-14, 37 assertion)
+│   └── _test-codex-hooks.sh     # 시뮬레이션 테스트(실제 Codex 설치 불요, 20케이스: 게이트 B-1~B-10·B-15~B-20 + 저장 B-11~B-14, 40 assertion)
 ├── run-role.sh                  # runtime=codex 역할 위임 러너(ADR-D-0006, §A3.3) — Claude Code 팀원이 아닌 별도 프로세스로 역할 실행
 ├── _test-run-role.sh            # run-role.sh 스모크 테스트(T8, 10케이스·24 assertion, 스텁 codex로 실제 설치 불요)
 └── config.toml.example          # ~/.codex/config.toml 등록 예시(실측 스키마)
@@ -124,6 +124,11 @@ codex-adapter/run-role.sh <role-slug> <task-file.md> [--project <절대경로>] 
   게이트가 무력화되는 버그가 실측으로 확정됐다. `pretooluse-gate.sh`를
   실측 3종 tool_name(`shell`/`exec_command`/`apply_patch`)으로 갱신하고
   `_test-codex-hooks.sh`에 회귀 케이스(B-15~B-18)를 추가해 재발을 감시한다.
+  **P5.1(2026-07-17) 후속 수정:** 실제 `apply_patch`는 패치를
+  `tool_input.command`에 싣고 대상 파일을 **절대경로**로 지목하는데, 옛
+  `SRC_ERE` 경계 `[^A-Za-z0-9_./-]`가 `/`를 경계로 인정하지 않아 절대경로 앞의
+  `src/`가 T1에서 미발화(fail-open)했다. 경계에 `/`를 추가해 수정하고
+  회귀 케이스 B-19~B-20으로 잠갔다.
   **단, 이 해소는 v0.144.5(macos-x86_64) 기준이다 — 다른 버전/플랫폼으로
   업그레이드하면 `codex features list`·PreToolUse stdin을 재실측할 것.**
 - **라이브 인증 세션 미실행(남은 미실증)** — 이번 실측은 로컬 API 키 없이
@@ -147,13 +152,16 @@ bash codex-adapter/hooks/_test-codex-hooks.sh
 ```
 
 실제 Codex 설치나 실제 `bathos` 빌드 없이도 동작한다(스텁 `bathos`를
-`mktemp` 디렉터리에 생성해 `gate show`/`state show` 출력을 재생). 18개
-설계 테스트 케이스(게이트 B-1~B-10·B-15~B-18, 저장 B-11~B-14)를 세분화한
-37개 assertion으로 검증하며, 전부 통과 시 `전체 통과` + exit 0으로 끝난다.
+`mktemp` 디렉터리에 생성해 `gate show`/`state show` 출력을 재생). 20개
+설계 테스트 케이스(게이트 B-1~B-10·B-15~B-20, 저장 B-11~B-14)를 세분화한
+40개 assertion으로 검증하며, 전부 통과 시 `전체 통과` + exit 0으로 끝난다.
 B-15~B-18은 P5(2026-07-16) 실측 회귀 케이스로, (a) `exec_command`의 웨이브
 진입 명령 차단, (b) `shell`의 소스 직접쓰기(`sed -i`) 차단, (c) 폐기된
 `Bash` 가정이 여전히 무해함(비트리거·bathos 미호출), (d) 무관 tool_name
-통과를 계약화한다.
+통과를 계약화한다. B-19~B-20은 P5.1(2026-07-17) 절대경로 회귀로, 실제
+`apply_patch`가 `tool_input.command`에 싣는 **절대경로**(`/…/src/…`)가
+소스쓰기(T1)로 발화하는지(FAIL→exit 2)와, 넓어진 경계가 게이트 판정을
+넘어 과차단하지 않는지(PASS→exit 0)를 계약화한다.
 
 추가로 실제 `bathos` 바이너리(`core/target/release/bathos`)를 빌드해 두면
 두 훅을 실제 프로젝트 state 사본에 대해 수동으로 돌려 통합 확인도 가능하다

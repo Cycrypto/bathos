@@ -76,6 +76,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   management), `docs/MODULE-GUIDE-{en,kr}.md` (custom plugin authoring), and a
   Documentation navigation hub in `README.md`.
 
+### Fixed
+
+- **Codex adapter W3 gate no longer fails open on absolute `apply_patch` paths.**
+  Real Codex `apply_patch` PreToolUse input carries the patch in `tool_input.command`
+  and names files by absolute path (`/…/project/src/…`). The old `SRC_ERE` boundary
+  class excluded `/`, so `src/` preceded by `/` never matched — the T1 source-write
+  trigger stayed silent and a `FAIL` W3 gate let source edits through
+  (`hook_exit=0`). `SRC_ERE` now treats `/` as a source-path boundary, so absolute
+  and nested source paths trigger the block (`hook_exit=2`). Guarded by new
+  regression cases **B-19/B-20** in `codex-adapter/hooks/_test-codex-hooks.sh`
+  (20 cases · 40 assertions), and the Codex adapter harness is now run in CI
+  (`.github/workflows/ci.yml` `hooks` job) so this can't silently regress.
+
 ## [0.1.0] — 2026-06-30
 
 First public release. BATHOS builds and runs end-to-end on Claude Code.

@@ -16,6 +16,11 @@
 # 진입 명령을 검증하고, B-15는 옛 P4 가정이던 Bash가 더 이상 필요/유효하지
 # 않음 — 오지 않는 값이므로 무해 통과만 확인 — 을 별도로 남겨 둔다).
 #
+# P5.1 갱신(2026-07-17): B-19~B-20을 추가해 절대경로 apply_patch 회귀를
+# 계약화한다 — 실제 Codex는 패치를 tool_input.command에 싣고 파일을 절대경로로
+# 지목하는데, 옛 SRC_ERE 경계가 '/'를 인정하지 않아 T1이 미발화(fail-open)했다.
+# 경계에 '/'를 추가한 수정을 B-19(FAIL->exit2)·B-20(PASS->exit0)으로 잠근다.
+#
 # 실행: bash codex-adapter/hooks/_test-codex-hooks.sh
 # =============================================================================
 set -uo pipefail
@@ -147,6 +152,13 @@ json_legacy_bash_wave() {
 json_unrelated_tool() {
   # 게이트 트리거와 무관한 tool_name(가상의 read 계열 도구) -> 항상 통과.
   printf '{"session_id":"s1","turn_id":"t1","hook_event_name":"PreToolUse","tool_name":"read_file","cwd":"%s","tool_input":{"path":"README.md"}}' "$1"
+}
+json_apply_patch_abspath() {
+  # T1 절대경로 회귀: 실제 Codex apply_patch는 패치를 tool_input.command에 싣고
+  # `*** Update File:` 헤더는 파일을 **절대경로**로 지목한다(/Users/.../src/...).
+  # $1 = 픽스처 프로젝트 절대경로. src/ 앞이 '/'인 절대경로가 SRC_ERE 경계에
+  # 걸려 source-write로 발화하는지(= 옛 ERE의 fail-open 재발 방지)를 계약화한다.
+  printf '{"session_id":"s1","turn_id":"t1","hook_event_name":"PreToolUse","tool_name":"apply_patch","cwd":"%s","tool_input":{"command":"*** Begin Patch *** Update File: %s/src/main.rs @@ -BASELINE +MODIFIED *** End Patch"}}' "$1" "$1"
 }
 json_stop() {
   printf '{"session_id":"s1","turn_id":"t9","hook_event_name":"Stop","stop_hook_active":false,"cwd":"%s","last_assistant_message":"done"}' "$1"
@@ -324,6 +336,34 @@ if [ ! -s "$STUB18/calls.log" ]; then
 else
   assert_true "B-18 calls.log 비어있음(비트리거 -> bathos 미호출)" 0
 fi
+
+# --------------------------------------------------------------------------
+# B-19 ~ B-20: 절대경로 apply_patch 회귀(2026-07-17) — SRC_ERE '/' 경계
+# --------------------------------------------------------------------------
+# 실제 Codex apply_patch는 패치를 tool_input.command에 싣고 대상 파일을
+# **절대경로**(/Users/.../src/...)로 지목한다. 옛 SRC_ERE 경계 [^A-Za-z0-9_./-]는
+# '/'를 경계로 인정하지 않아 절대경로 앞의 src/가 매치되지 않았고(T1 미발화),
+# FAIL 게이트에서도 소스 편집이 exit 0으로 통과하는 fail-open 버그였다. 경계에
+# '/'를 추가한 수정을 계약화한다 — B-19는 옛 ERE에서 반드시 red가 되는 케이스다.
+
+# --- B-19: apply_patch + 절대경로 src/, verdict=FAIL -> exit 2, stderr에 source-write ---
+P19="$(make_fixture_project b19)"
+STUB19="$TMPDIR_BASE/stub-b19"; make_stub_bathos "$STUB19" "FAIL"
+RES="$(BATHOS_BIN="$STUB19/bathos" run_hook "$HOOKS_DIR/pretooluse-gate.sh" "$(json_apply_patch_abspath "$P19")")"
+EC="$(get_exit "$RES")"; ERR="$(get_stderr "$RES")"
+assert_exit "B-19 apply_patch 절대경로 src/ + FAIL -> 차단(exit 2)" 2 "$EC"
+if printf '%s' "$ERR" | grep -q 'source-write'; then
+  assert_true "B-19 stderr에 source-write 포함" 1
+else
+  assert_true "B-19 stderr에 source-write 포함" 0
+fi
+
+# --- B-20: apply_patch + 절대경로 src/, verdict=PASS -> exit 0 (넓어진 경계가 게이트 판정을 넘어서 과차단하지 않음) ---
+P20="$(make_fixture_project b20)"
+STUB20="$TMPDIR_BASE/stub-b20"; make_stub_bathos "$STUB20" "PASS"
+RES="$(BATHOS_BIN="$STUB20/bathos" run_hook "$HOOKS_DIR/pretooluse-gate.sh" "$(json_apply_patch_abspath "$P20")")"
+EC="$(get_exit "$RES")"
+assert_exit "B-20 apply_patch 절대경로 src/ + PASS -> 통과(exit 0)" 0 "$EC"
 
 # ==========================================================================
 # B-11 ~ B-14: stop-save.sh
