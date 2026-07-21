@@ -78,6 +78,9 @@ jobs:
           BATHOS_BIN: ${{ github.workspace }}/core/target/release/bathos
         run: bash .claude/hooks/_test-hooks.sh
 
+      - name: Run Codex adapter hook harness (self-stubbed, no binary)
+        run: bash codex-adapter/hooks/_test-codex-hooks.sh
+
   windows:
     name: Windows (engine build · test · PowerShell hook lint)
     runs-on: windows-latest
