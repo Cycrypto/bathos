@@ -37,7 +37,7 @@ use anyhow::{Context, Result};
 use bathos_gate_engine::{GateEngine, GateIssue, VerdictAggregator};
 use bathos_plug::{ModuleRegistry, PlugManager};
 use bathos_state::{
-    model::GateType,
+    model::{GateType, Project},
     model_plan::{self, ModelPlan, Runtime, SessionBackend},
     schema::validate_manifest,
     store::StateStore,
@@ -213,6 +213,27 @@ enum StateAction {
     Validate,
     /// manifest.json의 현재 상태를 JSON으로 출력한다.
     Show,
+    /// 스키마 유효 manifest.json seed를 결정적으로 생성한다 (kickoff 부트스트랩).
+    ///
+    /// `Project::new` + `StateStore::create`(쓰기 전 스키마 검증)로 항상 유효한 seed를 만든다.
+    /// 기존 manifest가 있으면 `--force` 없이는 덮어쓰지 않는다. (Cycrypto/bathos#1)
+    Init {
+        /// 제품 코드명 (codename, 예: BATHOS).
+        #[arg(long)]
+        codename: String,
+        /// Scale-Adaptive 레벨 (0~4). 미지정 시 0 (잠정 — /route에서 확정).
+        #[arg(long, default_value_t = 0)]
+        level: u8,
+        /// 주 언어 코드 (기본 ko).
+        #[arg(long, default_value = "ko")]
+        lang: String,
+        /// 프로젝트 ID (미지정 시 bathos-<uuid> 자동생성; 지정 시 'bathos-' 접두 필수).
+        #[arg(long)]
+        project_id: Option<String>,
+        /// 기존 manifest.json을 덮어쓴다.
+        #[arg(long)]
+        force: bool,
+    },
 }
 
 // ── gate subcommands (B3 implementation) ─────────────────────────────────────
@@ -772,6 +793,56 @@ fn handle_state(action: StateAction, state_dir: &Path) -> Result<i32> {
             let json = serde_json::to_string_pretty(project).context("프로젝트 직렬화 실패")?;
 
             println!("{}", json);
+            Ok(0)
+        }
+
+        StateAction::Init {
+            codename,
+            level,
+            lang,
+            project_id,
+            force,
+        } => {
+            // Deterministic, schema-valid manifest seed for kickoff bootstrap.
+            // Rationale: the engine previously had no create/init command, so the very
+            // first manifest.json was hand-authored by an LLM against a strict schema —
+            // non-deterministic across runtimes (Codex-run kickoff produced an invalid
+            // manifest). This stamps a guaranteed-valid seed. [Cycrypto/bathos#1]
+            let manifest_path = state_dir.join("manifest.json");
+            if manifest_path.exists() && !force {
+                eprintln!(
+                    "[E-STATE-EXISTS] manifest.json이 이미 존재합니다: {}",
+                    manifest_path.display()
+                );
+                eprintln!("[bathos state init] 덮어쓰려면 --force 를 지정하세요.");
+                return Ok(1);
+            }
+            if level > 4 {
+                eprintln!("[E-ARG] --level 은 0~4 여야 합니다 (받음: {level}).");
+                return Ok(2);
+            }
+            // Project::new fills the schema-required defaults (project_id=bathos-<uuid>,
+            // status=Active, created=now(RFC3339), empty relation vecs).
+            let mut project = Project::new(codename, level);
+            project.lang = lang;
+            if let Some(pid) = project_id {
+                if !pid.starts_with("bathos-") {
+                    eprintln!(
+                        "[E-ARG] --project-id 는 'bathos-' 로 시작해야 합니다 (받음: {pid})."
+                    );
+                    return Ok(2);
+                }
+                project.project_id = pid;
+            }
+            let project_id = project.project_id.clone();
+            // StateStore::create validates the manifest against the JSON Schema before
+            // the atomic write, so a successful return guarantees a valid seed.
+            StateStore::create(state_dir, project)
+                .with_context(|| format!("state seed 생성 실패: {}", state_dir.display()))?;
+            println!(
+                "[bathos state init] ✓ manifest.json 생성: {} (project_id={project_id}, level={level})",
+                manifest_path.display()
+            );
             Ok(0)
         }
     }

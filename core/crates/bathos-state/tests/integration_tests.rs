@@ -283,3 +283,49 @@ fn atomic_write_no_corruption_on_multiple_commits() {
     let final_store = StateStore::open(dir.path()).expect("final open after multiple commits");
     assert_eq!(final_store.project().codename, "BATHOS");
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// `bathos state init` seed determinism (Cycrypto/bathos#1)
+//
+// The CLI `state init` builds a Project via `Project::new` and persists it through
+// `StateStore::create`, which schema-validates before the atomic write. These tests
+// lock the guarantee that the produced seed is always schema-valid, removing the
+// previous reliance on an LLM hand-authoring a schema-correct manifest.
+// ─────────────────────────────────────────────────────────────────────────────
+
+#[test]
+fn state_init_seed_is_schema_valid_for_all_levels() {
+    for level in 0..=4u8 {
+        let dir = temp_state_dir();
+        let mut project = Project::new("BATHOS", level);
+        project.lang = "en".into(); // exercises the `--lang` override path
+
+        // The seed must validate before it ever touches disk.
+        let json = serde_json::to_value(&project).expect("serialize");
+        validate_manifest(&json).expect("seed must be schema-valid");
+
+        let store = StateStore::create(dir.path(), project).expect("create must succeed");
+        assert_eq!(store.project().current_level, level);
+
+        // Re-read from disk and validate — exactly what `bathos state validate` does.
+        let content =
+            std::fs::read_to_string(dir.path().join("manifest.json")).expect("read manifest");
+        let value: serde_json::Value = serde_json::from_str(&content).expect("parse manifest");
+        validate_manifest(&value).expect("on-disk seed must be schema-valid");
+    }
+}
+
+#[test]
+fn state_init_custom_project_id_is_valid() {
+    // exercises the `--project-id bathos-...` override path
+    let dir = temp_state_dir();
+    let mut project = Project::new("BATHOS", 0);
+    project.project_id = "bathos-mycustom-id".into();
+
+    let store = StateStore::create(dir.path(), project).expect("create must succeed");
+    assert_eq!(store.project().project_id, "bathos-mycustom-id");
+
+    let content = std::fs::read_to_string(dir.path().join("manifest.json")).expect("read manifest");
+    let value: serde_json::Value = serde_json::from_str(&content).expect("parse manifest");
+    validate_manifest(&value).expect("custom project_id seed must be schema-valid");
+}
