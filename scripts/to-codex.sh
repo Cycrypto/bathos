@@ -111,6 +111,12 @@ fm_val(){ # $1=file $2=key
 }
 # 본문(두 번째 --- 이후) 추출
 body_after_fm(){ awk 'p{print} /^---[[:space:]]*$/{c++; if(c==2)p=1}' "$1"; }
+first_body_description(){
+  awk '
+    /^---[[:space:]]*$/ && c < 2 { c++; next }
+    c >= 2 && $0 !~ /^[[:space:]]*$/ && $0 !~ /^#/ { print; exit }
+  ' "$1"
+}
 
 # ---------------------------------------------------------------------------
 # §2. 분류 데이터 (andrew-command-classification.md §1~4 그대로 — .claude 미접촉)
@@ -362,7 +368,7 @@ if [ -d "$AGT_SRC" ]; then
     fi
 
     # description = 본문 첫 비어있지 않은 non-heading 줄
-    desc="$(body_after_fm "$f" | sed '/^[[:space:]]*$/d; /^#/d' | head -1)"
+    desc="$(first_body_description "$f")"
     [ -z "$desc" ] && desc="BATHOS role $slug"
     nagt=$((nagt+1))
 
@@ -466,7 +472,7 @@ if [ -d "$AGT_SRC" ]; then
       continue
     fi
 
-    desc="$(body_after_fm "$f" | sed '/^[[:space:]]*$/d; /^#/d' | head -1)"
+    desc="$(first_body_description "$f")"
     [ -z "$desc" ] && desc="BATHOS role $slug"
     cm="$(model_for "$model")"
     ce="$(effort_for "$model")"
